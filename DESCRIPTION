@@ -1,0 +1,19 @@
+Package: GeoplotRgui
+Title: Web Interface to GeoplotR
+Version: 0.1
+Date: 2020-10-23
+Authors@R: c(person("Tim", "Band", email = "p.vermeesch@ucl.ac.uk", role = c("aut", "cre")))
+Description: Front end for GeoplotR rock identification suite
+Author: Tim Band [aut, cre]
+Maintainer: Tim Band <t.band@ucl.ac.uk>
+Depends: R (>= 3.0.0)
+Imports: GeoplotR (>= 0.1),
+    grDevices (>= 3.6.2),
+    httpuv (>= 1.5.4),
+    jsonlite (>= 1.6.1),
+    later (>= 1.0)
+License: GPL-3
+URL: http://isoplotr.london-geochron.com
+LazyData: true
+RoxygenNote: 7.1.1
+Encoding: UTF-8
