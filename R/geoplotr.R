@@ -1,9 +1,14 @@
-
 rrpc <- function(interface) { function(ws) {
   ws$onMessage(function(binary, message) {
     df <- jsonlite::fromJSON(message);
     method <- df$method
     params <- df$params
+    pnames <- names(params)
+    rnames <- pnames[grep("^rrpc\\.", pnames)]
+    # all parameters whos names begin with "rrpc."
+    rparams <- params[rnames]
+    # remove names beginning "rrpc." from params
+    params[rnames] <- NULL
     envelope <- list()
     envelope$jsonrpc <- "2.0"
     envelope$id <- df$id
@@ -14,19 +19,18 @@ rrpc <- function(interface) { function(ws) {
       error <- NULL
       envelope$result <- tryCatch(
         withCallingHandlers(
-          if (is.null(params$rrpc.resultformat)) {
-            do.call(interface[[method]], params)
-          } else {
-            resultformat = params$rrpc.resultformat
-            params[["rrpc.resultformat"]] = NULL
-            encodePlotAs(resultformat, function() {
+          if ("rrpc.resultformat" %in% rnames) {
+            encodePlotAs(rparams$rrpc.resultformat, function() {
               do.call(interface[[method]], params)
             })
+          } else {
+            do.call(interface[[method]], params)
           },
           error=function(e) {
             error <<- list(message = e$message,
                 call = format(e$call),
-                stack = simpleError(format(sys.calls())))
+                stack = format(sys.calls()))
+            simpleError(error)
           }
         ),
         error=function(err) {
@@ -84,7 +88,7 @@ browseTo <- function(server) {
 #' @seealso [encodePlotAsPng()]
 #' @seealso [encodePlotAsPdf()]
 encodePlot <- function(device, mimeType, width, height, plotFn) {
-  tempFilename <- tempfile(pattern='plot', fileext='.png')
+  tempFilename <- tempfile(pattern='plot', fileext='.tmp')
   device(file=tempFilename, width=as.numeric(width), height=as.numeric(height))
   plotFn()
   grDevices::dev.off()

@@ -1,27 +1,53 @@
 function geoplotr() {
-  var testData;
+  var headers = ['TIO2(WT%)', 'ZR(PPM)', 'Y(PPM)'];
+  var inputGrid;
+  function getNumberColumn(header) {
+    var index = headers.indexOf(header);
+    if (index < 0) {
+      console.error("No such column", header);
+      return [];
+    }
+    var c = inputGrid.getColumn(index);
+    var i;
+    for (i = 0; i != c.length; ++i) {
+      c[i] = parseFloat(c[i]);
+    }
+    return c;
+  }
   rrpc.initialize(function() {
     rrpc.call('testData', {}, function(result, err) {
-      testData = {Ti:[],Zr:[],Y:[]};
       if (err) {
         console.error(err);
         return;
       }
-      for (var i = 0; i != result.length; ++i) {
+      var i, j;
+      var rows = [];
+      for (i = 0; i != result.length; ++i) {
         var d = result[i];
-        testData.Ti.push(d['TIO2(WT%)']);
-        testData.Zr.push(d['ZR(PPM)']);
-        testData.Y.push(d['Y(PPM)']);
+        var row = [];
+        for (j = 0; j != headers.length; ++j) {
+          row.push(d[headers[j]]);
+        }
+        rows.push(row);
       }
+      inputGrid = createDataEntryGrid('deg-input', headers, rows);
     })}, function(err) {
       console.error(err);
     }
   );
+  var left = document.createElement('p');
+  left.textContent = 'Here is the text of the left bit of this thing. It has some words in it, which hopefully should wrap at some point.';
+  var right = document.createElement('p');
+  right.textContent = 'Here is the text of the right bit of this thing. It also has some words in it, which hopefully should wrap at some point, and they certainly will if the left does, as the right is longer.';
+  toolkit.verticalDivide(document.getElementById('middle'), left, right);
   document.getElementById('doplot').onclick = function() {
+    var br = document.getElementById('plot').getBoundingClientRect();
+    console.log('current plot bounding rectangle', br);
     rrpc.call('TiZrY', {
-      Ti: testData.Ti,
-      Zr: testData.Zr,
-      Y: testData.Y,
+      Ti: getNumberColumn('TIO2(WT%)'),
+      Zr: getNumberColumn('ZR(PPM)'),
+      Y: getNumberColumn('Y(PPM)'),
+      units: ['wt%', 'ppm', 'ppm'],
       type: 'QDA',
       plot: 'ternary',
       'rrpc.resultformat': {
