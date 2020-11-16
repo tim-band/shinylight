@@ -13,21 +13,6 @@ var toolkit = function() {
   function setAttributes(el, vals) {
     forEach(vals, el.setAttribute.bind(el));
   }
-  function headerFooter(container, header, middle, footer) {
-    container.append(header, middle, footer);
-    var fix = { position: 'fixed', left: '0', right: '0' }
-    setAll(middle.style, fix);
-    setAll(fix, { bottom: '0' });
-    setAll(footer.style, fix);
-    setAll(fix, { top: '0' }, [ 'bottom' ]);
-    setAll(header.style, fix);
-    var resize = function() {
-      var top = header.offsetHeight;
-      setAll(middle.style, { top: top, height: footer.offsetTop - top });
-    };
-    resize();
-    window.addEventListener('resize', resize);
-  }
   function throttle(delay, f) {
     var pending = false;
     var args;
@@ -39,32 +24,13 @@ var toolkit = function() {
       }
     }
   }
-  function vDivide(container, left, right) {
+  function setDivideSize(container, left, right, divider, img, leftProportion) {
     var gripWidth = 10;
     var gripHeight = 30;
-    var divider = document.createElement('div');
-    var img = document.createElement('img');
-    setAttributes(img, {
-      src: "data:image/png;base64," +
-      "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAeCAQAAAC/fEe7AAACgUlEQVQoFQF2Aon9AAAAPaQ9/z2k" +
-      "AAAAAD2kPf89pAAAAQAAPfwAAwD9wwQAAD38AAMA/cMEAgAAAAMAAAADAAAAAAADAAAAAwAAAgAA" +
-      "AAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAA" +
-      "AAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAA" +
-      "AAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAA" +
-      "AAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-      "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAA" +
-      "AAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAA" +
-      "AAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAA" +
-      "AAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAA" +
-      "AAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAA" +
-      "AAAAAAAAAAAAAgAAAPoAAAD6AAAAAAD6AAAA+gAAAgAAAI0A+ACNAAAAAACNAPgAjQAAgSwUTtuT" +
-      "0kgAAAAASUVORK5CYII="
-    });
-    divider.appendChild(img);
     var height = container.offsetHeight;
     setAll(img.style, {
       position: 'fixed',
-      top: (height - gripHeight) / 2 + 'px'
+      top: container.offsetTop + (height - gripHeight) / 2 + 'px'
     });
     function setXnow(x) {
       divider.style.left = x + 'px',
@@ -92,7 +58,10 @@ var toolkit = function() {
         container.onmousemove = set;
         container.onmouseup = function(e) {
           set(e);
-          setAll(container, {onmousemove: null, onmouseup: null});
+          setAll(container, {
+            onmousemove: null,
+            onmouseup: null
+          });
         }
         ev.preventDefault();
       },
@@ -105,7 +74,11 @@ var toolkit = function() {
         container.ontouchmove = set;
         function finishPos(e) {
           set(e);
-          setAll(container, {ontouchmove: null, ontouchend: null, ontouchcancel: null});
+          setAll(container, {
+            ontouchmove: null,
+            ontouchend: null,
+            ontouchcancel: null
+          });
         }
         container.ontouchend = function(e) {
           finishPos(e);
@@ -120,19 +93,51 @@ var toolkit = function() {
       position: 'fixed',
       left: container.offsetLeft + 'px',
       top: container.offsetTop + 'px',
-      height: height + 'px'
+      height: height + 'px',
+      margin: '0 0 0 0'
     });
     setAll(right.style, {
       position: 'fixed',
       top: container.offsetTop + 'px',
-      height: height + 'px'
+      height: height + 'px',
+      margin: '0 0 0 0'
     });
-    container.append(left, divider, right);
-    var x = Math.floor((container.offsetWidth - gripWidth) / 2);
+    var x = Math.floor((container.offsetWidth - gripWidth) * leftProportion);
     setX(container.offsetLeft + x);
   }
+  function vDivide(container, left, right) {
+    var divider = document.createElement('div');
+    var img = document.createElement('img');
+    setAttributes(img, {
+      src: "data:image/png;base64," +
+      "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAeCAQAAAC/fEe7AAACgUlEQVQoFQF2Aon9AAAAPaQ9/z2k" +
+      "AAAAAD2kPf89pAAAAQAAPfwAAwD9wwQAAD38AAMA/cMEAgAAAAMAAAADAAAAAAADAAAAAwAAAgAA" +
+      "AAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAA" +
+      "AAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAA" +
+      "AAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAA" +
+      "AAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAA" +
+      "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAA" +
+      "AAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAA" +
+      "AAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAA" +
+      "AAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAA" +
+      "AAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAA" +
+      "AAAAAAAAAAAAAgAAAPoAAAD6AAAAAAD6AAAA+gAAAgAAAI0A+ACNAAAAAACNAPgAjQAAgSwUTtuT" +
+      "0kgAAAAASUVORK5CYII="
+    });
+    divider.appendChild(img);
+    container.append(left, divider, right);
+    setAll(container.style, {
+      overflow: 'hidden'
+    });
+    function setSize() {
+      var lw = left.offsetWidth;
+      var w = lw + right.offsetWidth;
+      setDivideSize(container, left, right, divider, img, lw / w);
+    }
+    window.addEventListener('resize', setSize);
+    setDivideSize(container, left, right, divider, img, 0.5);
+  }
   return {
-    fixedHeaderFooter: headerFooter,
     verticalDivide: vDivide
   };
 }();
