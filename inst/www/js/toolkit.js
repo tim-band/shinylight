@@ -29,15 +29,14 @@ var toolkit = function() {
     window.addEventListener('resize', resize);
   }
   function throttle(delay, f) {
-    var ready = true;
-    return function(ev) {
-      if (!ready) {
-        ev.preventDefault();
-        return;
+    var pending = false;
+    var args;
+    return function() {
+      args = arguments;
+      if (!pending) {
+        pending = true;
+        setTimeout(function() { pending = false; f.apply(null, args) }, delay);
       }
-      ready = false;
-      setTimeout(function() { ready = true; }, delay);
-      f.call(null, ev);
     }
   }
   function vDivide(container, left, right) {
@@ -67,13 +66,14 @@ var toolkit = function() {
       position: 'fixed',
       top: (height - gripHeight) / 2 + 'px'
     });
-    function setX(x) {
+    function setXnow(x) {
       divider.style.left = x + 'px',
       img.style.left = x + 'px',
       left.style.width = x - left.offsetLeft + 'px';
       right.style.left = x + gripWidth + 'px';
       right.style.width = container.offsetWidth - gripWidth - x + 'px';
     }
+    var setX = throttle(150, setXnow);
     setAll(divider.style, {
       position: 'fixed',
       'background-color': '#b0b0b0',
@@ -82,8 +82,6 @@ var toolkit = function() {
       top: container.offsetTop + 'px',
       height: height + 'px'
     });
-    setAttributes(divider, {
-    });
     setAll(divider, {
       onmousedown: function(ev) {
         var offset = ev.clientX - divider.offsetLeft;
@@ -91,7 +89,7 @@ var toolkit = function() {
           setX(e.clientX - offset);
           e.preventDefault();
         }
-        container.onmousemove = throttle(300, set);
+        container.onmousemove = set;
         container.onmouseup = function(e) {
           set(e);
           setAll(container, {onmousemove: null, onmouseup: null});
@@ -100,8 +98,11 @@ var toolkit = function() {
       },
       ontouchstart: function(ev) {
         var offset = ev.touch[0].clientX - divider.offsetLeft;
-        function set(e) { setX(e.touch[0].clientX - offset); }
-        container.ontouchmove = throttle(300, set);
+        function set(e) {
+          setX(e.touch[0].clientX - offset);
+          e.preventDefault();
+        }
+        container.ontouchmove = set;
         function finishPos(e) {
           set(e);
           setAll(container, {ontouchmove: null, ontouchend: null, ontouchcancel: null});
