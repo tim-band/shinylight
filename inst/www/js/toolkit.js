@@ -24,6 +24,26 @@ var toolkit = function() {
       }
     }
   }
+  function whenQuiet(ticks, f) {
+    var ticksLeft = 0;
+    var args;
+    function tick() {
+      if (0 < ticksLeft) {
+        --ticksLeft;
+        setTimeout(tick, 100);
+      } else {
+        f.apply(args);
+      }
+    }
+    return function() {
+      args = arguments;
+      var stopped = ticksLeft <= 0;
+      ticksLeft = ticks;
+      if (stopped) {
+        tick();
+      }
+    }
+  }
   function setDivideSize(container, left, right, divider, img, leftProportion) {
     var gripWidth = 10;
     var gripHeight = 30;
@@ -105,7 +125,7 @@ var toolkit = function() {
     var x = Math.floor((container.offsetWidth - gripWidth) * leftProportion);
     setX(container.offsetLeft + x);
   }
-  function vDivide(container, left, right) {
+  function vDivide(container, left, right, updateSize) {
     var divider = document.createElement('div');
     var img = document.createElement('img');
     setAttributes(img, {
@@ -133,12 +153,16 @@ var toolkit = function() {
       var lw = left.offsetWidth;
       var w = lw + right.offsetWidth;
       setDivideSize(container, left, right, divider, img, lw / w);
+      if (updateSize) {
+        updateSize();
+      }
     }
     window.addEventListener('resize', setSize);
     setDivideSize(container, left, right, divider, img, 0.5);
   }
   return {
-    verticalDivide: vDivide
+    verticalDivide: vDivide,
+    whenQuiet: whenQuiet
   };
 }();
 

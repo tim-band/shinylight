@@ -30,16 +30,19 @@ function geoplotr() {
         }
         rows.push(row);
       }
-      inputGrid = createDataEntryGrid('deg-input', headers, rows);
+      inputGrid = createDataEntryGrid(null, headers, rows);
+      var table = inputGrid.getTable();
+      table.classList.add('data-entry-grid');
+      var left = document.createElement('div');
+      left.style.overflow = 'auto';
+      left.appendChild(table);
+      var right = document.createElement('p');
+      right.textContent = 'Here is the text of the right bit of this thing, where the output should go. It also has some words in it, which hopefully should wrap at some point, and they certainly will if the left does, as the right is longer.';
+      toolkit.verticalDivide(document.getElementById('middle'), left, right);
     })}, function(err) {
       console.error(err);
     }
   );
-  var left = document.createElement('p');
-  left.textContent = 'Here is the text of the left bit of this thing. It has some words in it, which hopefully should wrap at some point.';
-  var right = document.createElement('p');
-  right.textContent = 'Here is the text of the right bit of this thing. It also has some words in it, which hopefully should wrap at some point, and they certainly will if the left does, as the right is longer.';
-  toolkit.verticalDivide(document.getElementById('middle'), left, right);
   document.getElementById('doplot').onclick = function() {
     var br = document.getElementById('plot').getBoundingClientRect();
     console.log('current plot bounding rectangle', br);
