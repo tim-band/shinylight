@@ -44,7 +44,7 @@ var toolkit = function() {
       }
     }
   }
-  function setDivideSize(container, left, right, divider, img, leftProportion) {
+  function setDivideSize(container, left, right, divider, img, leftProportion, updateSize) {
     var gripWidth = 10;
     var gripHeight = 30;
     var height = container.offsetHeight;
@@ -58,6 +58,9 @@ var toolkit = function() {
       left.style.width = x - left.offsetLeft + 'px';
       right.style.left = x + gripWidth + 'px';
       right.style.width = container.offsetWidth - gripWidth - x + 'px';
+      if (updateSize) {
+        updateSize();
+      }
     }
     var setX = throttle(150, setXnow);
     setAll(divider.style, {
@@ -150,15 +153,13 @@ var toolkit = function() {
       overflow: 'hidden'
     });
     function setSize() {
+      console.log('setSize');
       var lw = left.offsetWidth;
       var w = lw + right.offsetWidth;
-      setDivideSize(container, left, right, divider, img, lw / w);
-      if (updateSize) {
-        updateSize();
-      }
+      setDivideSize(container, left, right, divider, img, lw / w, updateSize);
     }
     window.addEventListener('resize', setSize);
-    setDivideSize(container, left, right, divider, img, 0.5);
+    setDivideSize(container, left, right, divider, img, 0.5, updateSize);
   }
   return {
     verticalDivide: vDivide,
