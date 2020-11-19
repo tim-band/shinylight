@@ -22,3 +22,12 @@
   width: 100%;
   overflow: scroll;
 }
+
+.subheader select {
+  width: 100%;
+  border: 1px solid #666;
+  border-radius: 5px;
+  padding: 0 0 0 0;
+  line-height: 1.2;
+  background-color: #ffe;
+}
