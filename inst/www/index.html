@@ -13,22 +13,12 @@
 <header>
 </header>
 <body onload="geoplotr()">
-  <div class="top">
-    <select id="param-plot" name="plot">
-      <option value="ternary">Ternary</option>
-      <option value="logratio">Log ratio</option>
-      <option value="none">None</option>
-    </select>
-    <select id="param-tizry-type" name="type">
-      <option value="LDA">LDA</option>
-      <option value="QDA">QDA</option>
-      <option value="Pearce">Pearce</option>
-    </select>
+  <div id="top" class="top">
   </div>
   <div id="middle">
   </div>
   <div class="bottom">
-    Some text here <button id="doplot">Plot</button> and here <button id="data">Get Data</button>
+    <span id="status-message"></span>
   </div>
 </body>
 </main>

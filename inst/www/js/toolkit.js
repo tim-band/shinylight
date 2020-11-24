@@ -132,20 +132,20 @@ var toolkit = function() {
     var divider = document.createElement('div');
     var img = document.createElement('img');
     setAttributes(img, {
-      src: "data:image/png;base64," +
-      "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAeCAQAAAC/fEe7AAACgUlEQVQoFQF2Aon9AAAAPaQ9/z2k" +
-      "AAAAAD2kPf89pAAAAQAAPfwAAwD9wwQAAD38AAMA/cMEAgAAAAMAAAADAAAAAAADAAAAAwAAAgAA" +
-      "AAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAA" +
-      "AAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAA" +
-      "AAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAA" +
-      "AAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAA" +
-      "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAA" +
-      "AAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAA" +
-      "AAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAA" +
-      "AAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAA" +
-      "AAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAA" +
-      "AAAAAAAAAAAAAgAAAPoAAAD6AAAAAAD6AAAA+gAAAgAAAI0A+ACNAAAAAACNAPgAjQAAgSwUTtuT" +
-      "0kgAAAAASUVORK5CYII="
+      src: 'data:image/png;base64,' +
+      'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAeCAQAAAC/fEe7AAACgUlEQVQoFQF2Aon9AAAAPaQ9/z2k' +
+      'AAAAAD2kPf89pAAAAQAAPfwAAwD9wwQAAD38AAMA/cMEAgAAAAMAAAADAAAAAAADAAAAAwAAAgAA' +
+      'AAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAA' +
+      'AAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAA' +
+      'AAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAA' +
+      'AAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAA' +
+      'AgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAA' +
+      'AAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAA' +
+      'AAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAA' +
+      'AAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAA' +
+      'AAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAA' +
+      'AAAAAAAAAAAAAgAAAPoAAAD6AAAAAAD6AAAA+gAAAgAAAI0A+ACNAAAAAACNAPgAjQAAgSwUTtuT' +
+      '0kgAAAAASUVORK5CYII='
     });
     divider.appendChild(img);
     container.append(left, divider, right);
@@ -153,7 +153,6 @@ var toolkit = function() {
       overflow: 'hidden'
     });
     function setSize() {
-      console.log('setSize');
       var lw = left.offsetWidth;
       var w = lw + right.offsetWidth;
       setDivideSize(container, left, right, divider, img, lw / w, updateSize);
@@ -161,9 +160,34 @@ var toolkit = function() {
     window.addEventListener('resize', setSize);
     setDivideSize(container, left, right, divider, img, 0.5, updateSize);
   }
+  function paramId(v) {
+    return 'param-' + v;
+  }
+  function paramButton(paramName, labelText, values, callback) {
+    var lab = document.createElement('label');
+    lab.setAttribute('for', paramId(paramName));
+    lab.textContent = labelText;
+    var select = document.createElement('select');
+    select.id = paramId(paramName);
+    var ks = Object.keys(values);
+    for (var i = 0; i != ks.length; ++i) {
+      var k = ks[i];
+      var opt = document.createElement('option');
+      opt.value = k;
+      opt.textContent = values[k];
+      select.appendChild(opt);
+    }
+    if (callback) {
+      select.onchange = callback;
+    }
+    var span = document.createElement('span');
+    span.append(lab, select);
+    return span;
+  }
   return {
     verticalDivide: vDivide,
-    whenQuiet: whenQuiet
+    whenQuiet: whenQuiet,
+    paramButton: paramButton
   };
 }();
 

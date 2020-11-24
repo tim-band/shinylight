@@ -16,29 +16,35 @@ rrpc <- function(interface) { function(ws) {
       envelope$error <- "no such method"
       envelope$result <- NULL
     } else {
-      error <- NULL
-      envelope$result <- tryCatch(
+      r <- tryCatch(
         withCallingHandlers(
           if ("rrpc.resultformat" %in% rnames) {
-            encodePlotAs(rparams$rrpc.resultformat, function() {
+            result <- encodePlotAs(rparams$rrpc.resultformat, function() {
               do.call(interface[[method]], params)
             })
+            list(error=NULL, result=result)
           } else {
-            do.call(interface[[method]], params)
+            list(error=NULL,
+              result=list(
+                data=do.call(interface[[method]], params),
+                plot=NULL
+              )
+            )
           },
           error=function(e) {
-            error <<- list(message = e$message,
+            error <- list(message = e$message,
                 call = format(e$call),
                 stack = format(sys.calls()))
-            simpleError(error)
+            list(error=simpleError(error), result=NULL)
           }
         ),
         error=function(err) {
           print(err);
-          NULL
-          }
+          list(error=err, result=NULL)
+        }
       )
-      envelope$error <- error;
+      envelope$result <- r$result
+      envelope$error <- r$error
     }
     ws$send(jsonlite::toJSON(envelope))
   })
@@ -85,16 +91,23 @@ browseTo <- function(server) {
 #' @param width Width of the plot in units applicable to `device`
 #' @param height Height of the plot in units applicable to `device`
 #' @param plotFn Function to call to perform the plot
+#' @return list with two keys, whose values can each be NULL:
+#' 'plot' is a plot in HTML img src form and 'data' is a data frame or other
+#' non-plot result.
 #' @seealso [encodePlotAsPng()]
 #' @seealso [encodePlotAsPdf()]
 encodePlot <- function(device, mimeType, width, height, plotFn) {
   tempFilename <- tempfile(pattern='plot', fileext='.tmp')
   device(file=tempFilename, width=as.numeric(width), height=as.numeric(height))
-  plotFn()
+  data <- plotFn()
+  plot <- NULL
   grDevices::dev.off()
   fileSize <- file.size(tempFilename)
-  raw <- readBin(tempFilename, what="raw", n=fileSize)
-  paste0("data:", mimeType, ";base64,", jsonlite::base64_enc(raw))
+  if (!is.na(fileSize)) {
+    raw <- readBin(tempFilename, what="raw", n=fileSize)
+    plot <- paste0("data:", mimeType, ";base64,", jsonlite::base64_enc(raw))
+  }
+  list(plot=plot, data=data)
 }
 
 #' Renders a plot as a base64-encoded PNG
@@ -105,6 +118,9 @@ encodePlot <- function(device, mimeType, width, height, plotFn) {
 #' format$type is "png", "pdf" or "csv", and format$width and format$height are
 #' the dimensions of the PDF (in inches) or PNG (in pixels) if appropriate.
 #' @param plotFn Function to call to perform the plot
+#' @return list with two keys, whose values can each be NULL:
+#' 'plot' is a plot in HTML img src form and 'data' is a data frame or other
+#' non-plot result.
 #' @seealso [rrpcServer()]
 encodePlotAs <- function(format, plotFn) {
   type <- format$type
@@ -216,4 +232,3 @@ daemon <- function(port=NULL, host='127.0.0.1') {
     later::run_now(9999)
   }
 }
-

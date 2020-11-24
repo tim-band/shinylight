@@ -4,6 +4,12 @@
   left: 0;
   right: 0;
   height: 50px;
+  text-align: center;
+}
+
+.top span {
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 .bottom {
@@ -21,6 +27,10 @@
   left: 0;
   width: 100%;
   overflow: scroll;
+}
+
+#output {
+  overflow: auto;
 }
 
 .subheader select {
