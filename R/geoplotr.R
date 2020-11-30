@@ -160,6 +160,68 @@ fetchTestData <- function() {
   }
 }
 
+getColumn = function(column) {
+  fetchTestData()
+  get("test", dataEnvironment)[,column]
+}
+
+functions <- list(
+  TiZrT=list(
+    params=list(
+      Ti="proportionCol",
+      Zr="proportionCol",
+      Y="proportionCol",
+      units="subheader",
+      type="analysisType",
+      plot="plotType"
+    ),
+    example=list(
+      Ti=getColumn("TIO2(WT%)"),
+      Zr=getColumn("ZR(PPM)"),
+      Y=getColumn("Y(PPM)"),
+      units=c("wt%", "ppm", "ppm"),
+      type="LDA",
+      plot="Ternary"
+    )
+  ),
+  TAS=list(
+    params=list(
+      Na2O="weightCol",
+      K2O="weightCol",
+      SiO2="weightCol"
+    ),
+    example=list(
+      Na2O=getColumn("NA2O(WT%)"),
+      K2O=getColumn("K2O(WT%)"),
+      SiO2=getColumn("SIO2(WT%)")
+    )
+  )
+)
+
+types <- list(
+  plotType=list(
+    kind="enum",
+    values=c("none", "ternary", "logratio")
+  ),
+  analysisType=list(
+    kind="enum",
+    values=c("LDA", "QDA", "Pearce")
+  ),
+  proportionCol=list(
+    kind="column",
+    subtype="float",
+    unittype="proportion"
+  ),
+  proportion=list(
+    kind="enum",
+    values=c("wt%", "ppm")
+  ),
+  weightCol=list(
+    kind="column",
+    subtype="float"
+  )
+)
+
 #' Starts the \code{GeoplotR} GUI
 #'
 #' Opens a web-browser with a Graphical User Interface (GUI) for the
@@ -182,9 +244,8 @@ GeoplotR <- function(host='0.0.0.0', port=NULL) {
     interface=list(
       TiZrY = GeoplotR::TiZrY,
       TAS = GeoplotR::TAS,
-      testData = function() {
-        fetchTestData()
-        get("test", dataEnvironment)
+      getSchema = function() {
+        list(functions=functions, types=types)
       }
     )
   )

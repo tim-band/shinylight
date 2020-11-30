@@ -1,10 +1,17 @@
 function geoplotr() {
-  var headers = ['TIO2(WT%)', 'ZR(PPM)', 'Y(PPM)'];
   var inputGrid;
   var output;
   var outputImg;
   var outputError;
   var outputTable;
+  var schema;
+  // The SELECT element that chooses the function to be called
+  var functionSelector;
+  var parameterSelectors = [];
+  // The name of the parameter (if required) that takes the list
+  // of column subheaders
+  var subheaderParam;
+  var top = document.getElementById('top');
   var statusMessage = document.getElementById('status-message');
   function arrayWidth(a) {
     var max = 0;
@@ -46,12 +53,11 @@ function geoplotr() {
     }
   }
   function showTable(data) {
-    var ks = Object.keys(data);
     var headers = [];
     var table = [];
-    for (var i = 0; i !== ks.length; ++i) {
-      appendColumns(headers, table, data, ks[i]);
-    }
+    toolkit.forEach(data, function(k,v) {
+      appendColumns(headers, table, data, k);
+    });
     outputTable.init(headers, table);
     outputError.style.display = 'none';
     outputTable.getTable().style.display = 'table';
@@ -123,95 +129,130 @@ function geoplotr() {
   }
   function unitSelect(unit, initial, onchange) {
     var sel = document.createElement('select');
-    var ids = Object.keys(unit);
-    for (var i = 0; i !== ids.length; ++i) {
-      var id = ids[i];
+    toolkit.forEach(unit, function(id, text) {
       var opt =document.createElement('option');
-      opt.textContent = unit[id];
+      opt.textContent = text;
       opt.setAttribute('value', id.toLowerCase());
       if (initial === id) {
         opt.setAttribute('selected', 'true');
       }
       sel.appendChild(opt);
-    }
+    });
     sel.onchange = onchange;
     return sel;
   }
-  rrpc.initialize(function() {
-    rrpc.call('testData', {}, function(result, err) {
-      var data = result.data;
-      // table
-      if (err) {
-        console.error(err);
-        return;
+  function setInputGrid(headers, subheaders, units, functionDescriptor) {
+    var c;
+    var rowCount = 0;
+    var data = [];
+    for (c = 0; c != headers.length; ++c) {
+      var e = functionDescriptor.example[headers[c]];
+      data[c] = e;
+      rowCount = Math.max(e.length, rowCount);
+    }
+    var r;
+    var rows = [];
+    for (r = 0; r !== rowCount; ++r) {
+      var row = [];
+      for (c = 0; c !== headers.length; ++c) {
+        row.push(data[c][r]);
       }
-      var i, j;
-      var rows = [];
-      for (i = 0; i !== data.length; ++i) {
-        var d = data[i];
-        var row = [];
-        for (j = 0; j !== headers.length; ++j) {
-          row.push(d[headers[j]]);
-        }
-        rows.push(row);
-      }
-      var colHeaders = [];
-      var colSubheaders = [];
-      var re = /^(.*)\((.*)\)\s*$/;
-      for (i = 0; i !== headers.length; ++i) {
-        var parts = re.exec(headers[i]);
-        colHeaders.push(parts[1]);
-        colSubheaders.push(parts[2]);
-      }
-      inputGrid = createDataEntryGrid(null, colHeaders, rows);
-      var unitProportion = {
-        'WT%': '% by weight',
-        'PPM': 'ppm'
-      };
-      for (let i = 0; i !== headers.length; ++i) {
-        inputGrid.getColumnSubheader(i).appendChild(
-          unitSelect(unitProportion, colSubheaders[i], doplot)
+      rows.push(row);
+    }
+    inputGrid.init(headers, rows);
+    if (!subheaders) return;
+    for (c = 0; c !== subheaders.length; ++c) {
+      var s = subheaders[c];
+      if (s) {
+        var vals = {};
+        toolkit.forEach(schema.types[s].values, function(i, v) {
+          vals[v] = v; // TODO: localization
+        });
+        inputGrid.getColumnSubheader(c).appendChild(
+            unitSelect(vals, units[c], doplot)
         );
       }
-      var table = inputGrid.getTable();
-      table.classList.add('data-entry-grid');
-      table.id = 'input-table';
-      // vertical dividing line
-      var left = document.createElement('div');
-      left.style.overflow = 'auto';
-      left.appendChild(table);
-      output = document.createElement('div');
-      output.id = 'output';
-      outputImg = document.createElement('img');
-      outputImg.id = 'output-plot';
-      outputImg.setAttribute('style', 'width: 100%; height: 100%; display: none;');
-      outputError = document.createElement('div');
-      outputError.id = 'output-error';
-      outputError.setAttribute('style', 'width: 100%; height: 100%; display: none;');
-      outputTable = createDataEntryGrid(null, 5, 5);
-      outputTable.getTable().classList.add('data-entry-grid');
-      outputTable.getTable().setAttribute('style', 'width: 100%; height: 100%; display: none;');
-      output.append(outputError, outputImg, outputTable.getTable());
-      toolkit.verticalDivide(document.getElementById('middle'), left, output, doplot);
-      inputGrid.addWatcher(doplot);
-      // top buttons
-      var top = document.getElementById('top');
-      top.textContent = '';
-      top.append(
-        toolkit.paramButton('plot', 'Plot type', {
-          ternary: 'Ternary',
-          logratio: 'Log ratio',
-          none: 'None'
-        }, doplot),
-        toolkit.paramButton('type', 'Analysis type', {
-          LDA: 'LDA',
-          QDA: 'QDA',
-          Pearce: 'Pearce'
-        }, doplot)
-      );
-      doplot();
-    })}, function(err) {
-      console.error(err);
     }
-  );
+  }
+  function setParameters() {
+    toolkit.forEach(parameterSelectors, function(i,s) {
+      if (s.parentNode) {
+        s.parentNode.removeChild(s);
+      }
+    });
+    parameterSelectors = [];
+    var selected = functionSelector.value;
+    if (!selected) {
+      selected = functionSelector.options[0].value;
+    }
+    subheaderParam = null;
+    var fd = schema.functions[selected];
+    var headers = [];
+    var subheaders = [];
+    toolkit.forEach(fd.params, function(k, typeName) {
+      var t = schema.types[typeName[0]];
+      if (typeof(t) === 'undefined') {
+        if (typeName[0] === 'subheader') {
+          subheaderParam = k;
+        } else {
+          console.warn('Did not understand type name', typeName[0]);
+        }
+      } else if (t.kind[0] === 'enum') {
+        var vals = {};
+        toolkit.forEach(t.values, function(i, v) { vals[v] = v; }); // TODO: localization
+        var button = toolkit.paramButton(k, k, vals, doplot);
+        parameterSelectors.push(button);
+        top.appendChild(button);
+      } else if (t.kind[0] === 'column') {
+        subheaders.push(t.unittype ? t.unittype[0] : null);
+        headers.push(k); // TODO: localization
+      } else {
+        console.warn('Did not understand type kind', t.kind[0]);
+      }
+    });
+    setInputGrid(headers,
+      subheaderParam? subheaders : null,
+      subheaderParam? fd.example[subheaderParam] : [],
+      fd);
+  }
+  rrpc.initialize(function() {
+    rrpc.call('getSchema', {}, function(result, err) {
+      schema = result.data;
+      setupScreen()
+      // top buttons
+      top.textContent = '';
+      var fns = {};
+      toolkit.forEach(schema.functions, function(k) {
+        fns[k] = k; // TODO: localization
+      });
+      var fs = toolkit.paramButton('function', 'Function', fns, setParameters);
+      functionSelector = fs.getElementsByTagName('select')[0];
+      top.appendChild(functionSelector);
+      setParameters();
+    });
+  });
+  function setupScreen() {
+    inputGrid = createDataEntryGrid(null, 5, 5);
+    var table = inputGrid.getTable();
+    table.id = 'input-table';
+    // vertical dividing line
+    var left = document.createElement('div');
+    left.style.overflow = 'auto';
+    left.appendChild(table);
+    output = document.createElement('div');
+    output.id = 'output';
+    outputImg = document.createElement('img');
+    outputImg.id = 'output-plot';
+    outputImg.setAttribute('style', 'width: 100%; height: 100%; display: none;');
+    outputError = document.createElement('div');
+    outputError.id = 'output-error';
+    outputError.setAttribute('style', 'width: 100%; height: 100%; display: none;');
+    outputTable = createDataEntryGrid(null, 5, 5);
+    outputTable.getTable().classList.add('data-entry-grid');
+    outputTable.getTable().setAttribute('style', 'width: 100%; height: 100%; display: none;');
+    output.append(outputError, outputImg, outputTable.getTable());
+    toolkit.verticalDivide(document.getElementById('middle'), left, output, doplot);
+    inputGrid.addWatcher(doplot);
+    doplot();
+  }
 }

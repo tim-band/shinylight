@@ -169,14 +169,12 @@ var toolkit = function() {
     lab.textContent = labelText;
     var select = document.createElement('select');
     select.id = paramId(paramName);
-    var ks = Object.keys(values);
-    for (var i = 0; i != ks.length; ++i) {
-      var k = ks[i];
+    forEach(values, function(k,v) {
       var opt = document.createElement('option');
       opt.value = k;
-      opt.textContent = values[k];
+      opt.textContent = v;
       select.appendChild(opt);
-    }
+    });
     if (callback) {
       select.onchange = callback;
     }
@@ -185,6 +183,7 @@ var toolkit = function() {
     return span;
   }
   return {
+    forEach: forEach,
     verticalDivide: vDivide,
     whenQuiet: whenQuiet,
     paramButton: paramButton
