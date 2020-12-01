@@ -163,7 +163,7 @@ var toolkit = function() {
   function paramId(v) {
     return 'param-' + v;
   }
-  function paramButton(paramName, labelText, values, callback) {
+  function paramButton(paramName, labelText, values, initial, callback) {
     var lab = document.createElement('label');
     lab.setAttribute('for', paramId(paramName));
     lab.textContent = labelText;
@@ -173,6 +173,9 @@ var toolkit = function() {
       var opt = document.createElement('option');
       opt.value = k;
       opt.textContent = v;
+      if (k === initial) {
+        opt.selected = true;
+      }
       select.appendChild(opt);
     });
     if (callback) {

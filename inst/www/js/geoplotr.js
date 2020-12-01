@@ -7,10 +7,15 @@ function geoplotr() {
   var schema;
   // The SELECT element that chooses the function to be called
   var functionSelector;
-  var parameterSelectors = [];
+  // paramId -> parameter element
+  var parameterSelectors = {};
+  // paramId -> column index in input table
+  var headerParams = {};
   // The name of the parameter (if required) that takes the list
   // of column subheaders
   var subheaderParam;
+  // type names of subheaders in each column
+  var subheaders = [];
   var top = document.getElementById('top');
   var statusMessage = document.getElementById('status-message');
   function arrayWidth(a) {
@@ -78,22 +83,36 @@ function geoplotr() {
   function getParam(id) {
     return document.getElementById('param-'+id).value;
   }
+  function unitSettings() {
+    var results = [];
+    for (var i = 0; i != subheaders.length; ++i) {
+      if (subheaders[i]) {
+        results.push(getUnitSetting(i));
+      }
+    }
+    return results;
+  }
   function doPlotNow() {
     var br = output.getBoundingClientRect();
-    rrpc.call('TiZrY', {
-      Ti: getColumn(0),
-      Zr: getColumn(1),
-      Y: getColumn(2),
-      units: [getUnitSetting(0), getUnitSetting(1), getUnitSetting(2)],
-      type: getParam('type'),
-      plot: getParam('plot'),
+    var fn = selectedFunction();
+    var params = {
       'rrpc.resultformat': {
         type: 'png',
         width: br.width,
         height: br.height
       }
-    }, function(result, err) {
-      statusMessage.textContent = "";
+    };
+    toolkit.forEach(headerParams, function(paramId, columnIndex) {
+      params[paramId] = getColumn(columnIndex);
+    });
+    toolkit.forEach(parameterSelectors, function(paramId, element) {
+      params[paramId] = getParam(paramId);
+    });
+    if (subheaderParam) {
+      params[subheaderParam] = unitSettings();
+    }
+    rrpc.call(fn, params, function(result, err) {
+      statusMessage.textContent = '';
       if (err) {
         showError(err);
       } else if (result) {
@@ -102,7 +121,7 @@ function geoplotr() {
         } else if (result.data) {
           showTable(result.data);
         } else {
-          showError("no data returned");
+          showError('no data returned');
         }
       }
     });
@@ -146,7 +165,8 @@ function geoplotr() {
     var rowCount = 0;
     var data = [];
     for (c = 0; c != headers.length; ++c) {
-      var e = functionDescriptor.example[headers[c]];
+      var exampleName = functionDescriptor.example[headers[c]];
+      var e = schema.data[exampleName[0]];
       data[c] = e;
       rowCount = Math.max(e.length, rowCount);
     }
@@ -180,39 +200,43 @@ function geoplotr() {
         s.parentNode.removeChild(s);
       }
     });
-    parameterSelectors = [];
-    var selected = functionSelector.value;
-    if (!selected) {
-      selected = functionSelector.options[0].value;
-    }
+    parameterSelectors = {};
+    var selected = selectedFunction();
     subheaderParam = null;
     var fd = schema.functions[selected];
     var headers = [];
-    var subheaders = [];
-    toolkit.forEach(fd.params, function(k, typeName) {
+    subheaders = [];
+    headerParams = {};
+    toolkit.forEach(fd.params, function(paramId, typeName) {
       var t = schema.types[typeName[0]];
       if (typeof(t) === 'undefined') {
         if (typeName[0] === 'subheader') {
-          subheaderParam = k;
+          subheaderParam = paramId;
         } else {
           console.warn('Did not understand type name', typeName[0]);
         }
       } else if (t.kind[0] === 'enum') {
         var vals = {};
         toolkit.forEach(t.values, function(i, v) { vals[v] = v; }); // TODO: localization
-        var button = toolkit.paramButton(k, k, vals, doplot);
-        parameterSelectors.push(button);
+        var initialExample = fd.example[paramId];
+        var initial = initialExample? schema.data[initialExample[0]] : null;
+        var button = toolkit.paramButton(paramId, paramId, vals,
+            initial? initial[0] : null, doplot);
+        parameterSelectors[paramId] = button;
         top.appendChild(button);
       } else if (t.kind[0] === 'column') {
         subheaders.push(t.unittype ? t.unittype[0] : null);
-        headers.push(k); // TODO: localization
+        headerParams[paramId] = headers.length;
+        headers.push(paramId); // TODO: localization
       } else {
         console.warn('Did not understand type kind', t.kind[0]);
       }
     });
+    var subheaderExampleName = subheaderParam? fd.example[subheaderParam] : [];
+    var subheaderExample = subheaderExampleName.length? schema.data[subheaderExampleName[0]] : []
     setInputGrid(headers,
       subheaderParam? subheaders : null,
-      subheaderParam? fd.example[subheaderParam] : [],
+      subheaderExample,
       fd);
   }
   rrpc.initialize(function() {
@@ -225,12 +249,20 @@ function geoplotr() {
       toolkit.forEach(schema.functions, function(k) {
         fns[k] = k; // TODO: localization
       });
-      var fs = toolkit.paramButton('function', 'Function', fns, setParameters);
+      var fs = toolkit.paramButton('function', 'Function', fns, null, setParameters);
       functionSelector = fs.getElementsByTagName('select')[0];
       top.appendChild(functionSelector);
       setParameters();
     });
   });
+  function selectedFunction() {
+    var selected = functionSelector.value;
+    if (!selected) {
+      selected = functionSelector.options[0].value;
+    }
+    return selected;
+  }
+
   function setupScreen() {
     inputGrid = createDataEntryGrid(null, 5, 5);
     var table = inputGrid.getTable();

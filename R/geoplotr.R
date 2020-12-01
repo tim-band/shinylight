@@ -166,7 +166,7 @@ getColumn = function(column) {
 }
 
 functions <- list(
-  TiZrT=list(
+  TiZrY=list(
     params=list(
       Ti="proportionCol",
       Zr="proportionCol",
@@ -176,12 +176,12 @@ functions <- list(
       plot="plotType"
     ),
     example=list(
-      Ti=getColumn("TIO2(WT%)"),
-      Zr=getColumn("ZR(PPM)"),
-      Y=getColumn("Y(PPM)"),
-      units=c("wt%", "ppm", "ppm"),
-      type="LDA",
-      plot="Ternary"
+      Ti="Ti",
+      Zr="Zr",
+      Y="Y",
+      units="tizry_units",
+      type="tizry_type",
+      plot="tizry_plot"
     )
   ),
   TAS=list(
@@ -191,9 +191,9 @@ functions <- list(
       SiO2="weightCol"
     ),
     example=list(
-      Na2O=getColumn("NA2O(WT%)"),
-      K2O=getColumn("K2O(WT%)"),
-      SiO2=getColumn("SIO2(WT%)")
+      Na2O="Na2O",
+      K2O="K2O",
+      SiO2="SiO2"
     )
   )
 )
@@ -222,6 +222,18 @@ types <- list(
   )
 )
 
+examples <- list(
+  Na2O=getColumn("NA2O(WT%)"),
+  K2O=getColumn("K2O(WT%)"),
+  SiO2=getColumn("SIO2(WT%)"),
+  Ti=getColumn("TIO2(WT%)"),
+  Zr=getColumn("ZR(PPM)"),
+  Y=getColumn("Y(PPM)"),
+  tizry_units=c("wt%", "ppm", "ppm"),
+  tizry_type="LDA",
+  tizry_plot="ternary"
+)
+
 #' Starts the \code{GeoplotR} GUI
 #'
 #' Opens a web-browser with a Graphical User Interface (GUI) for the
@@ -245,7 +257,7 @@ GeoplotR <- function(host='0.0.0.0', port=NULL) {
       TiZrY = GeoplotR::TiZrY,
       TAS = GeoplotR::TAS,
       getSchema = function() {
-        list(functions=functions, types=types)
+        list(functions=functions, types=types, data=examples)
       }
     )
   )
