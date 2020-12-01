@@ -15,7 +15,7 @@ function geoplotr() {
   // of column subheaders
   var subheaderParam;
   // type names of subheaders in each column
-  var subheaders = [];
+  var subheaderChoices = [];
   var top = document.getElementById('top');
   var statusMessage = document.getElementById('status-message');
   function arrayWidth(a) {
@@ -85,8 +85,8 @@ function geoplotr() {
   }
   function unitSettings() {
     var results = [];
-    for (var i = 0; i != subheaders.length; ++i) {
-      if (subheaders[i]) {
+    for (var i = 0; i != subheaderChoices.length; ++i) {
+      if (subheaderChoices[i]) {
         results.push(getUnitSetting(i));
       }
     }
@@ -160,36 +160,90 @@ function geoplotr() {
     sel.onchange = onchange;
     return sel;
   }
-  function setInputGrid(headers, subheaders, units, functionDescriptor) {
-    var c;
-    var rowCount = 0;
-    var data = [];
-    for (c = 0; c != headers.length; ++c) {
-      var exampleName = functionDescriptor.example[headers[c]];
-      var e = schema.data[exampleName[0]];
-      data[c] = e;
-      rowCount = Math.max(e.length, rowCount);
+  function getUnitValues(typeDescriptor) {
+    if (!('unittype' in typeDescriptor)) {
+      return null;
     }
-    var r;
-    var rows = [];
-    for (r = 0; r !== rowCount; ++r) {
-      var row = [];
-      for (c = 0; c !== headers.length; ++c) {
-        row.push(data[c][r]);
+    var t = typeDescriptor.unittype[0];
+    if (!(t in schema.types)) {
+      console.error('no such type:', t);
+      return null;
+    }
+    var ut = schema.types[t];
+    if (ut.kind[0] !== 'enum') {
+      console.error('unittype must be enum:', t);
+      return null;
+    }
+    return ut.values;
+  }
+  function noop() {}
+  function forEachParam(functionDescriptor, enumFn, columnFn, subheaderFn) {
+    if (!enumFn) {
+      enumFn = noop;
+    }
+    if (!columnFn) {
+      columnFn = noop;
+    }
+    if (!subheaderFn) {
+      subheaderFn = noop;
+    }
+    toolkit.forEach(functionDescriptor, function(paramId, paramKey) {
+      var p = schema.params[paramKey[0]];
+      var d = schema.data[p.data[0]];
+      var t = schema.types[p.type[0]];
+      if (typeof(t) === 'undefined') {
+        if (p.type[0] === 'subheader') {
+          subheaderFn(paramId, d);
+        } else {
+          console.warn('Did not understand type name', p.type[0]);
+        }
+      } else if (t.kind[0] === 'enum') {
+        enumFn(paramId, d, t.values);
+      } else if (t.kind[0] === 'column') {
+        columnFn(paramId, d, getUnitValues(t));
+      } else {
+        console.warn('Did not understand type kind', t.kind[0]);
       }
-      rows.push(row);
+    });
+  }
+  // turn an array of ids into an object mapping
+  // ids to localized strings (if available)
+  function localizeArray(array) {
+    var vals = {};
+    toolkit.forEach(array, function(i, v) {
+      vals[v] = v; // TODO: locallization
+    });
+    return vals;
+  }
+  // transposes an array of arrays so that
+  // result[i][j] === arrays[j][i] for each i and j
+  function transpose(arrays) {
+    var rows = 0;
+    toolkit.forEach(arrays, function(i, a) {
+      if (rows < a.length) rows = a.length;
+    });
+    var result = [];
+    // fill([]) doesn't work: it would give each row a reference to the
+    // same array.
+    for (var r = 0; r !== rows; ++r) {
+      result[r] = [];
     }
+    toolkit.forEach(arrays, function(i, a) {
+      toolkit.forEach(a, function(j, v) {
+        result[j][i] = v;
+      });
+    });
+    return result;
+  }
+  function setInputGrid(headers, subheaders, units, data) {
+    var rows = transpose(data);
     inputGrid.init(headers, rows);
     if (!subheaders) return;
     for (c = 0; c !== subheaders.length; ++c) {
       var s = subheaders[c];
       if (s) {
-        var vals = {};
-        toolkit.forEach(schema.types[s].values, function(i, v) {
-          vals[v] = v; // TODO: localization
-        });
         inputGrid.getColumnSubheader(c).appendChild(
-            unitSelect(vals, units[c], doplot)
+            unitSelect(localizeArray(s), units[c], doplot)
         );
       }
     }
@@ -205,39 +259,28 @@ function geoplotr() {
     subheaderParam = null;
     var fd = schema.functions[selected];
     var headers = [];
-    subheaders = [];
+    var data = [];
+    subheaderChoices = [];
+    var subheaderInitials = [];
     headerParams = {};
-    toolkit.forEach(fd.params, function(paramId, typeName) {
-      var t = schema.types[typeName[0]];
-      if (typeof(t) === 'undefined') {
-        if (typeName[0] === 'subheader') {
-          subheaderParam = paramId;
-        } else {
-          console.warn('Did not understand type name', typeName[0]);
-        }
-      } else if (t.kind[0] === 'enum') {
-        var vals = {};
-        toolkit.forEach(t.values, function(i, v) { vals[v] = v; }); // TODO: localization
-        var initialExample = fd.example[paramId];
-        var initial = initialExample? schema.data[initialExample[0]] : null;
-        var button = toolkit.paramButton(paramId, paramId, vals,
-            initial? initial[0] : null, doplot);
-        parameterSelectors[paramId] = button;
-        top.appendChild(button);
-      } else if (t.kind[0] === 'column') {
-        subheaders.push(t.unittype ? t.unittype[0] : null);
-        headerParams[paramId] = headers.length;
-        headers.push(paramId); // TODO: localization
-      } else {
-        console.warn('Did not understand type kind', t.kind[0]);
-      }
+    forEachParam(fd, function(paramId, initialEnum, enumValues) {
+      var button = toolkit.paramButton(paramId, paramId, localizeArray(enumValues),
+          initialEnum[0], doplot);
+      parameterSelectors[paramId] = button;
+      top.appendChild(button);
+    }, function(paramId, columnData, units) {
+      headerParams[paramId] = headers.length;
+      headers.push(paramId);
+      data.push(columnData);
+      subheaderChoices.push(units);
+    }, function(paramId, dataUnits) {
+      subheaderParam = paramId;
+      subheaderInitials = dataUnits;
     });
-    var subheaderExampleName = subheaderParam? fd.example[subheaderParam] : [];
-    var subheaderExample = subheaderExampleName.length? schema.data[subheaderExampleName[0]] : []
     setInputGrid(headers,
-      subheaderParam? subheaders : null,
-      subheaderExample,
-      fd);
+      subheaderParam? subheaderChoices : null,
+      subheaderInitials,
+      data);
   }
   rrpc.initialize(function() {
     rrpc.call('getSchema', {}, function(result, err) {
@@ -245,10 +288,7 @@ function geoplotr() {
       setupScreen()
       // top buttons
       top.textContent = '';
-      var fns = {};
-      toolkit.forEach(schema.functions, function(k) {
-        fns[k] = k; // TODO: localization
-      });
+      var fns = localizeArray(Object.keys(schema.functions));
       var fs = toolkit.paramButton('function', 'Function', fns, null, setParameters);
       functionSelector = fs.getElementsByTagName('select')[0];
       top.appendChild(functionSelector);

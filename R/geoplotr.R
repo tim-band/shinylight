@@ -167,43 +167,38 @@ getColumn = function(column) {
 
 functions <- list(
   TiZrY=list(
-    params=list(
-      Ti="proportionCol",
-      Zr="proportionCol",
-      Y="proportionCol",
-      units="subheader",
-      type="analysisType",
-      plot="plotType"
-    ),
-    example=list(
-      Ti="Ti",
-      Zr="Zr",
-      Y="Y",
-      units="tizry_units",
-      type="tizry_type",
-      plot="tizry_plot"
-    )
+    Ti="Ti",
+    Zr="Zr",
+    Y="Y",
+    units="tizry_units",
+    type="tizry_type",
+    plot="tizry_plot"
   ),
   TAS=list(
-    params=list(
-      Na2O="weightCol",
-      K2O="weightCol",
-      SiO2="weightCol"
-    ),
-    example=list(
-      Na2O="Na2O",
-      K2O="K2O",
-      SiO2="SiO2"
-    )
+    Na2O="Na2O",
+    K2O="K2O",
+    SiO2="SiO2"
   )
 )
 
+params <- list(
+  Na2O=list(type="weightCol", data="Na2O"),
+  K2O=list(type="weightCol", data="K2O"),
+  SiO2=list(type="weightCol", data="SiO2"),
+  Ti=list(type="proportionCol", data="Ti"),
+  Zr=list(type="proportionCol", data="Zr"),
+  Y=list(type="proportionCol", data="Y"),
+  tizry_units=list(type="subheader", data="tizry_units"),
+  tizry_type=list(type="tizry_type", data="tizry_type"),
+  tizry_plot=list(type="tizry_plot", data="tizry_plot")
+)
+
 types <- list(
-  plotType=list(
+  tizry_plot=list(
     kind="enum",
     values=c("none", "ternary", "logratio")
   ),
-  analysisType=list(
+  tizry_type=list(
     kind="enum",
     values=c("LDA", "QDA", "Pearce")
   ),
@@ -257,7 +252,7 @@ GeoplotR <- function(host='0.0.0.0', port=NULL) {
       TiZrY = GeoplotR::TiZrY,
       TAS = GeoplotR::TAS,
       getSchema = function() {
-        list(functions=functions, types=types, data=examples)
+        list(functions=functions, params=params, types=types, data=examples)
       }
     )
   )
