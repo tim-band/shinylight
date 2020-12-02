@@ -7,8 +7,12 @@ function geoplotr() {
   var schema;
   // The SELECT element that chooses the function to be called
   var functionSelector;
-  // paramId -> parameter element
-  var parameterSelectors = {};
+  // paramKey -> parameter element
+  var allParameterSelectors ={};
+  // paramKeys that are currently active, mapped to their paramId
+  // (the paramKey is the parameters ID in the schema, the paramId
+  // is its ID in the currently selected function)
+  var shownParameters = {};
   // paramId -> column index in input table
   var headerParams = {};
   // The name of the parameter (if required) that takes the list
@@ -80,9 +84,6 @@ function geoplotr() {
     outputTable.getTable().style.display = 'none';
     outputImg.style.display = 'block';
   }
-  function getParam(id) {
-    return document.getElementById('param-'+id).value;
-  }
   function unitSettings() {
     var results = [];
     for (var i = 0; i != subheaderChoices.length; ++i) {
@@ -105,8 +106,13 @@ function geoplotr() {
     toolkit.forEach(headerParams, function(paramId, columnIndex) {
       params[paramId] = getColumn(columnIndex);
     });
-    toolkit.forEach(parameterSelectors, function(paramId, element) {
-      params[paramId] = getParam(paramId);
+    toolkit.forEach(shownParameters, function(paramKey, paramId) {
+      var es = allParameterSelectors[paramKey].getElementsByTagName('select');
+      if (es.length === 0) {
+        console.error('Internal error, no such parameter select element', paramKey);
+      } else {
+        params[paramId] = es[0].value;
+      }
     });
     if (subheaderParam) {
       params[subheaderParam] = unitSettings();
@@ -206,6 +212,15 @@ function geoplotr() {
       }
     });
   }
+  function forEachEnumParam(callback) {
+    toolkit.forEach(schema.params, function(paramKey, p) {
+      var d = schema.data[p.data[0]];
+      var t = schema.types[p.type[0]];
+      if (typeof(t) !== 'undefined' && t.kind[0] === 'enum') {
+        callback(paramKey, d, t.values);
+      }
+    });
+  }
   // turn an array of ids into an object mapping
   // ids to localized strings (if available)
   function localizeArray(array) {
@@ -249,12 +264,10 @@ function geoplotr() {
     }
   }
   function setParameters() {
-    toolkit.forEach(parameterSelectors, function(i,s) {
-      if (s.parentNode) {
-        s.parentNode.removeChild(s);
-      }
+    toolkit.forEach(shownParameters, function(k,i) {
+      allParameterSelectors[k].style.display = 'none';
     });
-    parameterSelectors = {};
+    shownParameters = {};
     var selected = selectedFunction();
     subheaderParam = null;
     var fd = schema.functions[selected];
@@ -263,10 +276,11 @@ function geoplotr() {
     subheaderChoices = [];
     var subheaderInitials = [];
     headerParams = {};
-    forEachParam(fd, function(paramId, initialEnum, enumValues) {
-      var button = toolkit.paramButton(paramId, paramId, localizeArray(enumValues),
-          initialEnum[0], doplot);
-      parameterSelectors[paramId] = button;
+    forEachParam(fd, function(paramId, initialEnum, enumValues, paramKey) {
+      var button = toolkit.paramButton(paramId, paramId,
+        localizeArray(enumValues), initialEnum[0], doplot);
+      shownParameters[paramKey] = paramId;
+      allParameterSelectors[paramKey].style.display = 'inline';
       top.appendChild(button);
     }, function(paramId, columnData, units) {
       headerParams[paramId] = headers.length;
@@ -285,7 +299,8 @@ function geoplotr() {
   rrpc.initialize(function() {
     rrpc.call('getSchema', {}, function(result, err) {
       schema = result.data;
-      setupScreen()
+      setupScreen();
+      addParamButtons();
       // top buttons
       top.textContent = '';
       var fns = localizeArray(Object.keys(schema.functions));
@@ -326,5 +341,15 @@ function geoplotr() {
     toolkit.verticalDivide(document.getElementById('middle'), left, output, doplot);
     inputGrid.addWatcher(doplot);
     doplot();
+  }
+
+  function addParamButtons() {
+    allParameterSelectors = {};
+    forEachEnumParam(function(paramKey, initial, values) {
+      var button = toolkit.paramButton(paramKey, paramKey,
+        localizeArray(values), initial[0], doplot);
+      allParameterSelectors[paramKey] = button;
+      top.appendChild(button);
+    });
   }
 }
