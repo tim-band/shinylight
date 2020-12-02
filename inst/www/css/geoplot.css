@@ -18,6 +18,7 @@
   left: 0;
   right: 0;
   height: 50px;
+  text-align: center;
 }
 
 #middle {
@@ -40,4 +41,14 @@
   padding: 0 0 0 0;
   line-height: 1.2;
   background-color: #ffe;
+}
+
+.disabled {
+  color: #999;
+  background-color: #ccc;
+}
+
+#status-message {
+  display: inline-block;
+  min-width: 20ch;
 }
