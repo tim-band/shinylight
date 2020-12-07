@@ -1,0 +1,32 @@
+{
+  "functions": {
+    "TiZrY": "Ti-Zr-Y",
+    "TAS": "TAS"
+  },
+  "params" : {
+    "Ti": "Ti",
+    "Zr": "Zr",
+    "Y": "Y",
+    "tizry_type": "Analysis type",
+    "tizry_plot": "Plot type",
+    "Na2O": "Na₂O",
+    "K2O": "K₂O",
+    "SiO2": "SiO₂"
+  },
+  "types": {
+    "tizry_plot": {
+      "none": "None",
+      "ternary": "Ternary",
+      "logratio": "Log Ratio"
+    },
+    "tizry_type": {
+      "LDA": "LDA",
+      "QDA": "QDA",
+      "Pearce": "Pearce"
+    },
+    "proportion": {
+      "wt%": "weight %",
+      "ppm": "ppm"
+    }
+  }
+}

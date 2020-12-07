@@ -4,6 +4,7 @@ function geoplotr() {
   var outputImg;
   var outputError;
   var outputTable;
+  var translationDict = {};
   var schema;
   // The SELECT element that chooses the function to be called
   var functionSelector;
@@ -22,6 +23,38 @@ function geoplotr() {
   var subheaderChoices = [];
   var top = document.getElementById('top');
   var statusMessage = document.getElementById('status-message');
+
+  function getHttp(url, callback, errorCallback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
+        if (xhr.status === 200) {
+          callback(xhr.responseText);
+        } else {
+          errorCallback(xhr);
+        }
+      }
+    }
+    xhr.send();
+  }
+
+  function getJson(url, callback) {
+    getHttp(url, function(text) {
+      callback(JSON.parse(text));
+    }, function() {
+      callback({});
+    });
+  }
+
+  function loadTranslations(callback) {
+    getJson('lang/app.json', function(app) {
+      getJson('lang/framework.json', function(fw) {
+        callback({ app: app, framework: fw });
+      });
+    });
+  }
+
   function arrayWidth(a) {
     var max = 0;
     for(var i = 0; i !== a.length; ++i) {
@@ -107,7 +140,6 @@ function geoplotr() {
         height: 7
       }
     }, function(result) {
-      console.log('result:', result);
       download('geoplot.pdf', result.plot);
     });
   }
@@ -154,7 +186,6 @@ function geoplotr() {
       var pageButtonTable = document.getElementById('output-page-table');
       var pageButtonPlot = document.getElementById('output-page-plot');
       if (1 < outputs) {
-        console.log('enabled');
         pageSettingContainer.classList.remove('disabled');
         pageButtonPlot.disabled = false;
         pageButtonTable.disabled = false;
@@ -164,7 +195,6 @@ function geoplotr() {
           page = 'plot';
         }
       } else {
-        console.log('disabled');
         pageSettingContainer.classList.add('disabled');
         pageButtonPlot.disabled = true;
         pageButtonTable.disabled = true;
@@ -172,7 +202,6 @@ function geoplotr() {
       if (outputs === 0) {
         setError('no data returned');
       }
-      console.log('setting page', page);
       pageButtonPlot.checked = page === 'plot';
       pageButtonTable.checked = page === 'table';
       setVisibleOutput(page);
@@ -206,7 +235,8 @@ function geoplotr() {
   };
   var doplot2 = toolkit.whenQuiet(14, displayPlotNow);
   function doplot() {
-    statusMessage.textContent = 'updating...';
+    var message = translations(['framework', 'updating'], 'updating...');
+    statusMessage.textContent = message;
     doplot2();
   }
   function getColumn(index) {
@@ -278,7 +308,7 @@ function geoplotr() {
       } else if (t.kind[0] === 'enum') {
         enumFn(paramId, d, t.values, paramKey);
       } else if (t.kind[0] === 'column') {
-        columnFn(paramId, d, getUnitValues(t));
+        columnFn(paramId, d, getUnitValues(t), t.unittype[0]);
       } else {
         console.warn('Did not understand type kind', t.kind[0]);
       }
@@ -289,18 +319,50 @@ function geoplotr() {
       var d = schema.data[p.data[0]];
       var t = schema.types[p.type[0]];
       if (typeof(t) === 'object' && t.kind[0] === 'enum') {
-        callback(paramKey, d, t.values);
+        callback(paramKey, d, t.values, paramKey);
       }
     });
   }
   // turn an array of ids into an object mapping
   // ids to localized strings (if available)
-  function localizeArray(array) {
+  function localizeArray(dictionary, array) {
     var vals = {};
     toolkit.forEach(array, function(i, v) {
-      vals[v] = v; // TODO: locallization
+      vals[v] = v in dictionary? dictionary[v] : v;
     });
     return vals;
+  }
+  function translations(path, defaultValue) {
+    var t = translationDict;
+    for (var i = 0; i !== path.length; ++i) {
+      var p = path[i];
+      if (p in t) {
+        t = t[p];
+      } else {
+        return defaultValue? defaultValue : {};
+      }
+    }
+    return t;
+  }
+  function localizeParams(array) {
+    return localizeArray(translations(['app', 'params']), array);
+  }
+  function localizeFunctions(array) {
+    return localizeArray(translations(['app', 'functions']), array);
+  }
+  function localizeEnums(type, array) {
+    return localizeArray(translations(['app', 'types', type]), array);
+  }
+  function localizeHeaders(array) {
+    var trs = translations(['app', 'params']);
+    if (!trs) {
+      return array;
+    }
+    var h = [];
+    toolkit.forEach(array, function(i, v) {
+      h[i] = v in trs? trs[v] : v;
+    });
+    return h;
   }
   // transposes an array of arrays so that
   // result[i][j] === arrays[j][i] for each i and j
@@ -322,15 +384,15 @@ function geoplotr() {
     });
     return result;
   }
-  function setInputGrid(headers, subheaders, units, data) {
+  function setInputGrid(headers, headerParams, subheaders, units, data) {
     var rows = transpose(data);
-    inputGrid.init(headers, rows);
+    inputGrid.init(localizeHeaders(headers), rows);
     if (!subheaders) return;
     for (c = 0; c !== subheaders.length; ++c) {
       var s = subheaders[c];
       if (s) {
         inputGrid.getColumnSubheader(c).appendChild(
-            unitSelect(localizeArray(s), units[c], doplot)
+            unitSelect(localizeEnums(headerParams[c], s), units[c], doplot)
         );
       }
     }
@@ -347,37 +409,43 @@ function geoplotr() {
     var data = [];
     subheaderChoices = [];
     var subheaderInitials = [];
+    var subheaderTypes = [];
     headerParams = {};
     forEachParam(fd, function(paramId, initialEnum, enumValues, paramKey) {
       shownParameters[paramKey] = paramId;
       var e = allParameterSelectors[paramKey];
       e.style.display = 'inline';
       e.selected = initialEnum;
-    }, function(paramId, columnData, units) {
+    }, function(paramId, columnData, units, columnType) {
       headerParams[paramId] = headers.length;
       headers.push(paramId);
       data.push(columnData);
       subheaderChoices.push(units);
+      subheaderTypes.push(columnType);
     }, function(paramId, dataUnits) {
       subheaderParam = paramId;
       subheaderInitials = dataUnits;
     });
     setInputGrid(headers,
+      subheaderTypes,
       subheaderParam? subheaderChoices : null,
       subheaderInitials,
       data);
   }
-  rrpc.initialize(function() {
-    rrpc.call('getSchema', {}, function(result, err) {
-      schema = result.data;
-      setupScreen();
-      var fns = localizeArray(Object.keys(schema.functions));
-      var fs = toolkit.paramButton('function', 'Function', fns, null, setParameters);
-      functionSelector = fs.getElementsByTagName('select')[0];
-      top.textContent ='';
-      top.appendChild(functionSelector);
-      addParamButtons();
-      setParameters();
+  loadTranslations(function(tr) {
+    translationDict = tr;
+    rrpc.initialize(function() {
+      rrpc.call('getSchema', {}, function(result, err) {
+        schema = result.data;
+        setupScreen();
+        var fns = localizeFunctions(Object.keys(schema.functions));
+        var fs = toolkit.paramButton('function', 'Function', fns, null, setParameters);
+        functionSelector = fs.getElementsByTagName('select')[0];
+        top.textContent ='';
+        top.appendChild(functionSelector);
+        addParamButtons();
+        setParameters();
+      });
     });
   });
   function selectedFunction() {
@@ -413,15 +481,24 @@ function geoplotr() {
     doplot();
     document.getElementById('download-pdf').onclick = downloadPlot;
     document.getElementById('download-csv').onclick = downloadCsv;
+    var tr = translations(['framework']);
+    var labels = document.getElementById('bottom').getElementsByTagName('label');
+    toolkit.forEach(labels, function(i, label) {
+      var id = label.getAttribute('for');
+      if (id in tr) {
+        label.textContent = tr[id];
+      }
+    });
     document.getElementById('output-page-plot').onchange = function() { setVisibleOutput('plot') };
     document.getElementById('output-page-table').onchange = function() { setVisibleOutput('table') };
   }
 
   function addParamButtons() {
     allParameterSelectors = {};
-    forEachEnumParam(function(paramKey, initial, values) {
-      var button = toolkit.paramButton(paramKey, paramKey,
-        localizeArray(values), initial[0], doplot);
+    forEachEnumParam(function(paramKey, initial, values, unit) {
+      var name = translations(['app', 'params', paramKey], paramKey);
+      var button = toolkit.paramButton(paramKey, name,
+        localizeEnums(unit, values), initial[0], doplot);
       top.appendChild(button);
       allParameterSelectors[paramKey] = button;
     });

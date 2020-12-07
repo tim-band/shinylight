@@ -164,6 +164,7 @@ var toolkit = function() {
     return 'param-' + v;
   }
   function paramButton(paramName, labelText, values, initial, callback) {
+    console.log('make param Button', paramName, labelText, values);
     var lab = document.createElement('label');
     lab.setAttribute('for', paramId(paramName));
     lab.textContent = labelText;

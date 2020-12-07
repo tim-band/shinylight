@@ -52,10 +52,23 @@ rrpc <- function(interface) { function(ws) {
 
 rrpcServer <- function(interface, host='0.0.0.0', port=NULL, appDir=NULL, root="/") {
   app <- list(onWSOpen=rrpc(interface))
-  if (!is.null(appDir)) {
-    paths <- list()
-    paths[[root]] <- appDir
-    app$staticPaths <- paths
+  paths <- list("/lang"=httpuv::excludeStaticPath())
+  paths[[root]] <- appDir
+  app$staticPaths <- paths
+  langs <- list.dirs(path=file.path(appDir, "locales"), full.names=FALSE, recursive=FALSE)
+  lang <- 'en'
+  app$call <- function(req) {
+    al <- req$HTTP_ACCEPT_LANGUAGE
+    als <- strsplit(al, ",", fixed=TRUE)[[1]]
+    langPath <- c(sub(";.*", "", als), "en", langs[1])
+    lang <- intersect(langPath, langs)[1]
+    host <- req$HTTP_HOST
+    path <- sub("^/lang/", paste0("/locales/", lang, "/"), req$PATH_INFO)
+    list(
+      status=307L,
+      headers=list("Location"=paste0(req$rook.url_scheme, "://", host, path)),
+      body=""
+    )
   }
   if (is.null(port)) {
     port <- httpuv::randomPort(min=8192, max=40000, host=host)

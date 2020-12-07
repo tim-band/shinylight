@@ -1,0 +1,32 @@
+{
+  "functions": {
+    "TiZrY": "Ti-Zr-Y",
+    "TAS": "TAS"
+  },
+  "params" : {
+    "Ti": "Titanio",
+    "Zr": "Zircone",
+    "Y": "Ittrio",
+    "tizry_type": "Tipo d'analisi",
+    "tizry_plot": "Tipo di grafico",
+    "Na2O": "Na₂O",
+    "K2O": "K₂O",
+    "SiO2": "SiO₂"
+  },
+  "types": {
+    "tizry_plot": {
+      "none": "Niente",
+      "ternary": "Ternario",
+      "logratio": "Log Ratio"
+    },
+    "tizry_type": {
+      "LDA": "LDA",
+      "QDA": "QDA",
+      "Pearce": "Pearce"
+    },
+    "proportion": {
+      "wt%": "% peso",
+      "ppm": "ppm"
+    }
+  }
+}
