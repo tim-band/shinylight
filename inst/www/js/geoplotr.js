@@ -295,7 +295,7 @@ function geoplotr() {
     if (!subheaderFn) {
       subheaderFn = noop;
     }
-    toolkit.forEach(functionDescriptor, function(paramId, paramKey) {
+    toolkit.forEach(functionDescriptor.params, function(paramId, paramKey) {
       var p = schema.params[paramKey[0]];
       var d = schema.data[p.data[0]];
       var t = schema.types[p.type[0]];
@@ -328,7 +328,7 @@ function geoplotr() {
   function localizeArray(dictionary, array) {
     var vals = {};
     toolkit.forEach(array, function(i, v) {
-      vals[v] = v in dictionary? dictionary[v] : v;
+      vals[v] = v in dictionary && 'name' in dictionary[v]? dictionary[v].name : v;
     });
     return vals;
   }
@@ -344,9 +344,6 @@ function geoplotr() {
     }
     return t;
   }
-  function localizeParams(array) {
-    return localizeArray(translations(['app', 'params']), array);
-  }
   function localizeFunctions(array) {
     return localizeArray(translations(['app', 'functions']), array);
   }
@@ -360,7 +357,7 @@ function geoplotr() {
     }
     var h = [];
     toolkit.forEach(array, function(i, v) {
-      h[i] = v in trs? trs[v] : v;
+      h[i] = v in trs && 'name' in trs[v]? trs[v].name : v;
     });
     return h;
   }
@@ -438,16 +435,24 @@ function geoplotr() {
       rrpc.call('getSchema', {}, function(result, err) {
         schema = result.data;
         setupScreen();
-        var fns = localizeFunctions(Object.keys(schema.functions));
-        var fs = toolkit.paramButton('function', 'Function', fns, null, setParameters);
-        functionSelector = fs.getElementsByTagName('select')[0];
-        top.textContent ='';
-        top.appendChild(functionSelector);
+        addFunctionSelectButton();
+        var optionsButton = document.createElement('button');
+        optionsButton.textContent = translations(['framework', 'options'], 'Options');
+        top.appendChild(optionsButton);
         addParamButtons();
         setParameters();
       });
     });
   });
+
+  function addFunctionSelectButton() {
+    var fns = localizeFunctions(Object.keys(schema.functions));
+    var fs = toolkit.paramButton('function', 'Function', fns, null, setParameters);
+    functionSelector = fs.getElementsByTagName('select')[0];
+    top.textContent = '';
+    top.appendChild(functionSelector);
+  }
+
   function selectedFunction() {
     var selected = functionSelector.value;
     if (!selected) {
@@ -479,24 +484,28 @@ function geoplotr() {
     toolkit.verticalDivide(document.getElementById('middle'), left, output, doplot);
     inputGrid.addWatcher(doplot);
     doplot();
+    addDownloadButtons();
+  }
+
+  function addDownloadButtons() {
     document.getElementById('download-pdf').onclick = downloadPlot;
     document.getElementById('download-csv').onclick = downloadCsv;
     var tr = translations(['framework']);
     var labels = document.getElementById('bottom').getElementsByTagName('label');
-    toolkit.forEach(labels, function(i, label) {
+    toolkit.forEach(labels, function (i, label) {
       var id = label.getAttribute('for');
       if (id in tr) {
         label.textContent = tr[id];
       }
     });
-    document.getElementById('output-page-plot').onchange = function() { setVisibleOutput('plot') };
-    document.getElementById('output-page-table').onchange = function() { setVisibleOutput('table') };
+    document.getElementById('output-page-plot').onchange = function () { setVisibleOutput('plot'); };
+    document.getElementById('output-page-table').onchange = function () { setVisibleOutput('table'); };
   }
 
   function addParamButtons() {
     allParameterSelectors = {};
     forEachEnumParam(function(paramKey, initial, values, unit) {
-      var name = translations(['app', 'params', paramKey], paramKey);
+      var name = translations(['app', 'params', paramKey, 'name'], paramKey);
       var button = toolkit.paramButton(paramKey, name,
         localizeEnums(unit, values), initial[0], doplot);
       top.appendChild(button);

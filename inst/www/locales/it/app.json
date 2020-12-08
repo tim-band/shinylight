@@ -1,32 +1,78 @@
 {
   "functions": {
-    "TiZrY": "Ti-Zr-Y",
-    "TAS": "TAS"
+    "TiZrY": {
+    	"name": "Ti-Zr-Y",
+		  "help": "Ti-Zr-Y diagramma di discriminazione tettonica"
+	  },
+    "TAS": {
+	    "name": "TAS",
+		  "help": "Total Alkali Silica diagram"
+	  }
   },
   "params" : {
-    "Ti": "Titanio",
-    "Zr": "Zircone",
-    "Y": "Ittrio",
-    "tizry_type": "Tipo d'analisi",
-    "tizry_plot": "Tipo di grafico",
-    "Na2O": "Na₂O",
-    "K2O": "K₂O",
-    "SiO2": "SiO₂"
+    "Ti": {
+      "name": "Ti",
+      "help": "Concentrazioni di titanio (ppm) o TiO₂ (% in peso)"
+    },
+    "Zr": {
+  		"name": "Zr",
+	  	"help": "Concentrazioni di Zircone"
+	  },
+    "Y": {
+      "name": "Y",
+      "help": "Concentrazioni di Ittrio"
+    },
+    "tizry_type": {
+      "name": "Tipo d'analisi"
+    },
+    "tizry_plot": {
+      "name": "Tipo di grafico"
+    },
+    "Na2O": {
+      "name": "Na₂O"
+    },
+    "K2O": {
+      "name": "K₂O"
+    },
+    "SiO2": {
+      "name": "SiO₂"
+    }
   },
   "types": {
     "tizry_plot": {
-      "none": "Niente",
-      "ternary": "Ternario",
-      "logratio": "Log Ratio"
+      "none": {
+        "name": "Niente",
+        "help": "Non facere nulla diagramma"
+      },
+      "ternary": {
+        "name": "Ternario",
+        "help": "Diagramma ternario"
+      },
+      "logratio": {
+        "name": "Log Ratio"
+      }
     },
     "tizry_type": {
-      "LDA": "LDA",
-      "QDA": "QDA",
-      "Pearce": "Pearce"
+      "LDA": {
+        "name": "LDA"
+      },
+      "QDA": {
+        "name": "QDA"
+      },
+      "Pearce": {
+        "name": "Pearce",
+        "help": "Diagramma di Pearce"
+      }
     },
     "proportion": {
-      "wt%": "% peso",
-      "ppm": "ppm"
+      "wt%": {
+        "name": "% peso",
+        "help": "percentuale in peso"
+      },
+      "ppm": {
+        "name": "ppm",
+        "help": "parti per milione"
+      }
     }
   }
 }

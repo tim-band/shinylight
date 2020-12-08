@@ -180,17 +180,23 @@ getColumn = function(column) {
 
 functions <- list(
   TiZrY=list(
-    Ti="Ti",
-    Zr="Zr",
-    Y="Y",
-    units="tizry_units",
-    type="tizry_type",
-    plot="tizry_plot"
+    params=list(
+      Ti="Ti",
+      Zr="Zr",
+      Y="Y",
+      units="tizry_units",
+      type="tizry_type",
+      plot="tizry_plot"
+    ),
+    optiongroups=c("plot")
   ),
   TAS=list(
-    Na2O="Na2O",
-    K2O="K2O",
-    SiO2="SiO2"
+    params=list(
+      Na2O="Na2O",
+      K2O="K2O",
+      SiO2="SiO2"
+    ),
+    optiongroups=c("plot")
   )
 )
 
@@ -204,6 +210,16 @@ params <- list(
   tizry_units=list(type="subheader", data="tizry_units"),
   tizry_type=list(type="tizry_type", data="tizry_type"),
   tizry_plot=list(type="tizry_plot", data="tizry_plot")
+)
+
+optiongroups <- list(
+  plot=list(
+    pch=list(type="u8"),
+    col=list(type="color"),
+    bg=list(type="color"),
+    lwd=list(type="u8"),
+    cex=list(type="f")
+  )
 )
 
 types <- list(
@@ -265,7 +281,8 @@ GeoplotR <- function(host='0.0.0.0', port=NULL) {
       TiZrY = GeoplotR::TiZrY,
       TAS = GeoplotR::TAS,
       getSchema = function() {
-        list(functions=functions, params=params, types=types, data=examples)
+        list(functions=functions, params=params, types=types,
+          data=examples, optiongroups=optiongroups)
       }
     )
   )
