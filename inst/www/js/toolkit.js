@@ -189,7 +189,7 @@ var toolkit = function() {
     return 'param-' + v;
   }
   // paramName: ID of parameter, param-<paramName> will be set as the
-  // element's ID.
+  // element's ID (optional).
   // labelTranslations: A dictionary with two optional keys; 'name' gives the
   // label to display and 'help' gives HTML help text. 'help' has no effect
   // unless 'name' is also present.
@@ -221,7 +221,7 @@ var toolkit = function() {
       downArrow.className = 'option-down-arrow';
       optr.append(opt, downArrow);
       options[id] = optr;
-      var trs = valueTranslations[id];
+      var trs = id in valueTranslations? valueTranslations[id] : {};
       optDiv.textContent = 'name' in trs? trs.name : id;
       if (!initial && !selectedOption) {
         initial = id;
@@ -248,7 +248,9 @@ var toolkit = function() {
       };
     });
     var span = document.createElement('span');
-    span.id = paramId(paramName);
+    if (paramName) {
+      span.id = paramId(paramName);
+    }
     span.className = "param-button";
     if ('name' in labelTranslations) {
       var lab = document.createElement('span');

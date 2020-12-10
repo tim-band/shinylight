@@ -246,25 +246,11 @@ function geoplotr() {
     return c;
   }
   function getUnitSetting(index) {
-    var selects = inputGrid.getColumnSubheader(index).getElementsByTagName('select');
-    if (selects.length === 0) {
+    var nodes = inputGrid.getColumnSubheader(index).childNodes;
+    if (nodes.length === 0) {
       return '';
     }
-    return selects[0].value;
-  }
-  function unitSelect(unit, initial, onchange) {
-    var sel = document.createElement('select');
-    toolkit.forEach(unit, function(id, text) {
-      var opt =document.createElement('option');
-      opt.textContent = text;
-      opt.setAttribute('value', id.toLowerCase());
-      if (initial === id) {
-        opt.setAttribute('selected', 'true');
-      }
-      sel.appendChild(opt);
-    });
-    sel.onchange = onchange;
-    return sel;
+    return toolkit.getSelectedParam(nodes[0]);
   }
   function getUnitValues(typeDescriptor) {
     if (!('unittype' in typeDescriptor)) {
@@ -346,12 +332,6 @@ function geoplotr() {
     }
     return t;
   }
-  function localizeFunctions(array) {
-    return localizeArray(translations(['app', 'functions']), array);
-  }
-  function localizeEnums(type, array) {
-    return localizeArray(translations(['app', 'types', type]), array);
-  }
   function localizeHeaders(array) {
     var trs = translations(['app', 'params']);
     if (!trs) {
@@ -391,9 +371,15 @@ function geoplotr() {
     for (c = 0; c !== subheaders.length; ++c) {
       var s = subheaders[c];
       if (s) {
-        inputGrid.getColumnSubheader(c).appendChild(
-            unitSelect(localizeEnums(headerParams[c], s), units[c], doplot)
-        );
+        const paramKey = headerParams[c];
+        var type = schema.types[paramKey];
+        console.log(headerParams[c], type);
+        if (type.kind[0] === 'enum') {
+          var select = toolkit.paramButton(null, {},
+            type.values, translations(['app', 'types', paramKey], {}),
+            units[c], doplot);
+          inputGrid.getColumnSubheader(c).appendChild(select);
+        }
       }
     }
   }
