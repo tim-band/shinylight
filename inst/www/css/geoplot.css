@@ -52,3 +52,78 @@
   display: inline-block;
   min-width: 20ch;
 }
+
+.param-label .tooltip {
+  visibility: hidden;
+  position: absolute;
+  margin-top: 40px;
+  margin-left: -150px;
+  width: 300px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 3px;
+  padding: 5px 5px;
+  z-index: 1;
+  overflow: visible;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+.param-label:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.5s;
+}
+
+.param-option .option-tooltip {
+  visibility: hidden;
+  position: absolute;
+  margin-top: 40px;
+  margin-left: -300px;
+  width: 300px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 3px;
+  padding: 5px 5px;
+  z-index: 1;
+  overflow: visible;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+.param-button table {
+  background-color: #222;
+  color: #eee;
+  padding: 3px;
+  margin: 3px;
+  border-radius: 3px;
+}
+
+.param-button .open tr.selected {
+  background-color: #248;
+}
+
+.open .param-option:hover .option-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.5s;
+}
+
+.param-option div {
+  height: 0;
+  overflow: hidden;
+}
+
+.param-option.selected div {
+  height: auto;
+}
+
+.param-button .open .param-option div {
+  height: auto;
+}
+
+.param-button .open .option-down-arrow {
+  visibility: hidden;
+}

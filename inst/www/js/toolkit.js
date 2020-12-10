@@ -1,10 +1,35 @@
 var toolkit = function() {
   function forEach(a, f) {
     var k = Object.keys(a), i = 0;
-    for (; i != k.length; ++i) {
+    for (; i !== k.length; ++i) {
       var ki = k[i];
       f(ki, a[ki]);
     }
+  }
+  function findPrevious(a, k) {
+    var prev = null;
+    var ks = Object.keys(a), i = 0;
+    for (; i !== ks.length; ++i) {
+      var c = ks[i];
+      if (c === k) {
+        return prev;
+      }
+      prev = c;
+    }
+    return null;
+  }
+  function findNext(a, k) {
+    var seen = false;
+    var ks = Object.keys(a), i = 0;
+    for (; i !== ks.length; ++i) {
+      var c = ks[i];
+      if (seen) {
+        return c;
+      } else if (c === k) {
+        seen = true;
+      }
+    }
+    return null;
   }
   function setAll(target, vals, dels) {
     forEach(vals, function(k, v) { target[k] = v; });
@@ -163,34 +188,117 @@ var toolkit = function() {
   function paramId(v) {
     return 'param-' + v;
   }
-  function paramButton(paramName, labelText, values, initial, callback) {
-    console.log('make param Button', paramName, labelText, values);
+  function paramButton(paramName, labelText, values, initial, callback, help) {
     var lab = document.createElement('label');
     lab.setAttribute('for', paramId(paramName));
     lab.textContent = labelText;
-    var select = document.createElement('select');
-    select.id = paramId(paramName);
+    lab.className = 'param-label';
+    var select = document.createElement('table');
+    select.style.display = 'inline-block';
+    select.style.verticalAlign = 'top';
+    select.style.borderCollapse = 'collapse';
+    var options = {};
     forEach(values, function(k,v) {
-      var opt = document.createElement('option');
-      opt.value = k;
-      opt.textContent = v;
-      if (k === initial) {
-        opt.selected = true;
+      var optr = document.createElement('tr');
+      var opt = document.createElement('td');
+      opt.style.padding = '0px';
+      var optDiv = document.createElement('div');
+      opt.appendChild(optDiv);
+      var downArrow = document.createElement('td');
+      downArrow.style.padding = '0px';
+      var downArrowDiv = document.createElement('div');
+      downArrow.appendChild(downArrowDiv);
+      downArrowDiv.textContent = '\u25bc';
+      downArrow.className = 'option-down-arrow';
+      optr.append(opt, downArrow);
+      optr.value = k;
+      options[k] = optr;
+      optDiv.textContent = v;
+      if (!initial && !selectedOption) {
+        initial = k;
       }
-      select.appendChild(opt);
+      if (k === initial) {
+        optr.classList.add('selected');
+      }
+      select.appendChild(optr);
+      var h = document.createElement('span')
+      h.className = "option-tooltip";
+      h.innerHTML = "some <i>" + k + "</i> help"
+      optr.classList.add('param-option');
+      optr.appendChild(h);
+      optr.onclick = function() {
+        if (select.classList.contains('open')) {
+          if (!optr.classList.contains('selected')) {
+            span.setSelectedParam(k);
+          }
+          select.classList.remove('open');
+        } else {
+          select.classList.add('open');
+        }
+      };
     });
-    if (callback) {
-      select.onchange = callback;
-    }
     var span = document.createElement('span');
+    span.id = paramId(paramName);
+    span.className = "param-button";
     span.append(lab, select);
+    if (help) {
+      var h = document.createElement('span');
+      h.className = "tooltip";
+      h.innerHTML = help;
+      lab.appendChild(h);
+    }
+    select.onblur = function() {
+      select.classList.remove('open');
+    }
+    var selectedOption = null;
+    function setSelected(value) {
+      if (selectedOption === value || !options[value]) {
+        return;
+      }
+      if (selectedOption) {
+        options[selectedOption].classList.remove('selected');
+      }
+      selectedOption = value;
+      options[selectedOption].classList.add('selected');
+    };
+    span.setSelectedParam = function(value) {
+      setSelected(value);
+      callback();
+    };
+    span.getSelectedParam = function() {
+      return selectedOption;
+    }
+    setSelected(initial);
+    select.tabIndex = 0;
+    select.onkeydown = function(ev) {
+      var goTo = null;
+      if (ev.key === 'ArrowDown') {
+        goTo = findNext(options, selectedOption);
+      } else if (ev.key === 'ArrowUp') {
+        goTo = findPrevious(options, selectedOption);
+      } else if (ev.key === 'Enter') {
+        select.classList.remove('open');
+        return;
+      } else {
+        return;
+      }
+      span.setSelectedParam(goTo);
+    }
     return span;
+  }
+  function getSelectedParam(paramButton) {
+    return paramButton.getSelectedParam();
+  }
+  function setSelectedParam(paramButton, value) {
+    return paramButton.setSelectedParam(value);
   }
   return {
     forEach: forEach,
     verticalDivide: vDivide,
     whenQuiet: whenQuiet,
-    paramButton: paramButton
+    paramButton: paramButton,
+    getSelectedParam: getSelectedParam,
+    setSelectedParam: setSelectedParam
   };
 }();
 

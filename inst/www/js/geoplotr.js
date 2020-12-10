@@ -66,9 +66,8 @@ function geoplotr() {
     }
     return max;
   }
-  function appendColumns(headers, table, data, key) {
+  function appendColumns(headers, table, key, columns) {
     var existingColumnCount = headers.length;
-    var columns = data[key];
     var width = arrayWidth(columns);
     if (width === 1) {
       headers.push(key);
@@ -95,10 +94,13 @@ function geoplotr() {
     }
   }
   function makeTable(data) {
+    if (Array.isArray(data)) {
+      return { headers: ['out'], rows: data.map(function(x) { return [x]; }) };
+    }
     var headers = [];
     var table = [];
     toolkit.forEach(data, function(k,v) {
-      appendColumns(headers, table, data, k);
+      appendColumns(headers, table, k, v);
     });
     return { headers: headers, rows: table };
   }
@@ -213,12 +215,8 @@ function geoplotr() {
       params[paramId] = getColumn(columnIndex);
     });
     toolkit.forEach(shownParameters, function(paramKey, paramId) {
-      var es = allParameterSelectors[paramKey].getElementsByTagName('select');
-      if (es.length === 0) {
-        console.error('Internal error, no such parameter select element', paramKey);
-      } else {
-        params[paramId] = es[0].value;
-      }
+      var e = allParameterSelectors[paramKey];
+      params[paramId] = toolkit.getSelectedParam(e);
     });
     if (subheaderParam) {
       params[subheaderParam] = unitSettings();
@@ -308,7 +306,7 @@ function geoplotr() {
       } else if (t.kind[0] === 'enum') {
         enumFn(paramId, d, t.values, paramKey);
       } else if (t.kind[0] === 'column') {
-        columnFn(paramId, d, getUnitValues(t), t.unittype[0]);
+        columnFn(paramId, d, getUnitValues(t), t.unittype? t.unittype[0] : null);
       } else {
         console.warn('Did not understand type kind', t.kind[0]);
       }
@@ -381,6 +379,7 @@ function geoplotr() {
     });
     return result;
   }
+
   function setInputGrid(headers, headerParams, subheaders, units, data) {
     var rows = transpose(data);
     inputGrid.init(localizeHeaders(headers), rows);
@@ -394,6 +393,7 @@ function geoplotr() {
       }
     }
   }
+
   function setParameters() {
     toolkit.forEach(shownParameters, function(k,i) {
       allParameterSelectors[k].style.display = 'none';
@@ -412,7 +412,7 @@ function geoplotr() {
       shownParameters[paramKey] = paramId;
       var e = allParameterSelectors[paramKey];
       e.style.display = 'inline';
-      e.selected = initialEnum;
+      toolkit.setSelectedParam(e, initialEnum[0]);
     }, function(paramId, columnData, units, columnType) {
       headerParams[paramId] = headers.length;
       headers.push(paramId);
@@ -428,7 +428,8 @@ function geoplotr() {
       subheaderParam? subheaderChoices : null,
       subheaderInitials,
       data);
-  }
+    }
+
   loadTranslations(function(tr) {
     translationDict = tr;
     rrpc.initialize(function() {
@@ -436,9 +437,6 @@ function geoplotr() {
         schema = result.data;
         setupScreen();
         addFunctionSelectButton();
-        var optionsButton = document.createElement('button');
-        optionsButton.textContent = translations(['framework', 'options'], 'Options');
-        top.appendChild(optionsButton);
         addParamButtons();
         setParameters();
       });
@@ -447,18 +445,16 @@ function geoplotr() {
 
   function addFunctionSelectButton() {
     var fns = localizeFunctions(Object.keys(schema.functions));
-    var fs = toolkit.paramButton('function', 'Function', fns, null, setParameters);
-    functionSelector = fs.getElementsByTagName('select')[0];
+    functionSelector = toolkit.paramButton('function',
+      translations(['framework','functions'], 'Function'),
+      fns, null, setParameters,
+      translations(['framework','functions-help'], null));
     top.textContent = '';
     top.appendChild(functionSelector);
   }
 
   function selectedFunction() {
-    var selected = functionSelector.value;
-    if (!selected) {
-      selected = functionSelector.options[0].value;
-    }
-    return selected;
+    return toolkit.getSelectedParam(functionSelector);
   }
 
   function setupScreen() {
@@ -507,7 +503,7 @@ function geoplotr() {
     forEachEnumParam(function(paramKey, initial, values, unit) {
       var name = translations(['app', 'params', paramKey, 'name'], paramKey);
       var button = toolkit.paramButton(paramKey, name,
-        localizeEnums(unit, values), initial[0], doplot);
+        localizeEnums(unit, values), initial[0], doplot, 'some <b>parameter</b> help');
       top.appendChild(button);
       allParameterSelectors[paramKey] = button;
     });

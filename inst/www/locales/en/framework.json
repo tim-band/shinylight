@@ -2,5 +2,7 @@
   "output-page-plot": "Plot",
   "output-page-table": "Table",
   "updating...": "updating",
-  "options": "Options"
+  "options": "Options",
+  "functions": "Select function",
+  "functions-help": "Select the function you want to use"
 }
