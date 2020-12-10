@@ -188,18 +188,27 @@ var toolkit = function() {
   function paramId(v) {
     return 'param-' + v;
   }
-  function paramButton(paramName, labelText, values, initial, callback, help) {
-    var lab = document.createElement('label');
-    lab.setAttribute('for', paramId(paramName));
-    lab.textContent = labelText;
-    lab.className = 'param-label';
+  // paramName: ID of parameter, param-<paramName> will be set as the
+  // element's ID.
+  // labelTranslations: A dictionary with two optional keys; 'name' gives the
+  // label to display and 'help' gives HTML help text. 'help' has no effect
+  // unless 'name' is also present.
+  // values: An array of the IDs of the options in the selection.
+  // valueTranslations: A dictionary whose keys are the IDs of the options in the
+  // selection, the values are more dictionaries. These dictionaries have
+  // two optional keys; 'name' (giving the name to display for this option)
+  // and 'help' (giving tooltip HTML text).
+  // initial: ID of the option to start selecting (optional)
+  // callback: The (nullary) function to call when the value changes (optional)
+  function paramButton(paramName, labelTranslations, values, valueTranslations, initial, callback) {
     var select = document.createElement('table');
     select.style.display = 'inline-block';
     select.style.verticalAlign = 'top';
     select.style.borderCollapse = 'collapse';
     var options = {};
-    forEach(values, function(k,v) {
+    forEach(values, function(i,id) {
       var optr = document.createElement('tr');
+      optr.classList.add('param-option');
       var opt = document.createElement('td');
       opt.style.padding = '0px';
       var optDiv = document.createElement('div');
@@ -211,25 +220,26 @@ var toolkit = function() {
       downArrowDiv.textContent = '\u25bc';
       downArrow.className = 'option-down-arrow';
       optr.append(opt, downArrow);
-      optr.value = k;
-      options[k] = optr;
-      optDiv.textContent = v;
+      options[id] = optr;
+      var trs = valueTranslations[id];
+      optDiv.textContent = 'name' in trs? trs.name : id;
       if (!initial && !selectedOption) {
-        initial = k;
+        initial = id;
       }
-      if (k === initial) {
+      if (id === initial) {
         optr.classList.add('selected');
       }
       select.appendChild(optr);
-      var h = document.createElement('span')
-      h.className = "option-tooltip";
-      h.innerHTML = "some <i>" + k + "</i> help"
-      optr.classList.add('param-option');
-      optr.appendChild(h);
+      if ('help' in trs) {
+        var h = document.createElement('span')
+        h.className = "option-tooltip";
+        h.innerHTML = trs.help;
+        optr.appendChild(h);
+      }
       optr.onclick = function() {
         if (select.classList.contains('open')) {
           if (!optr.classList.contains('selected')) {
-            span.setSelectedParam(k);
+            span.setSelectedParam(id);
           }
           select.classList.remove('open');
         } else {
@@ -240,13 +250,19 @@ var toolkit = function() {
     var span = document.createElement('span');
     span.id = paramId(paramName);
     span.className = "param-button";
-    span.append(lab, select);
-    if (help) {
-      var h = document.createElement('span');
-      h.className = "tooltip";
-      h.innerHTML = help;
-      lab.appendChild(h);
+    if ('name' in labelTranslations) {
+      var lab = document.createElement('span');
+      lab.textContent = labelTranslations.name;
+      lab.className = 'param-label';
+      span.appendChild(lab);
+      if ('help' in labelTranslations) {
+        var h = document.createElement('span')
+        h.className = "tooltip";
+        h.innerHTML = labelTranslations.help;
+        lab.appendChild(h);
+      }
     }
+    span.appendChild(select);
     select.onblur = function() {
       select.classList.remove('open');
     }

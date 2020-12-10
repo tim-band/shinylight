@@ -312,12 +312,16 @@ function geoplotr() {
       }
     });
   }
+  // calls callback(paramKey, initial, values, typeKey) for each param,
+  // where paramKey is the ID of the type, initial[0] is the
+  // default value, values is an array of all possible values and
+  // typeKey is the ID of the type
   function forEachEnumParam(callback) {
     toolkit.forEach(schema.params, function(paramKey, p) {
       var d = schema.data[p.data[0]];
       var t = schema.types[p.type[0]];
       if (typeof(t) === 'object' && t.kind[0] === 'enum') {
-        callback(paramKey, d, t.values, paramKey);
+        callback(paramKey, d, t.values, p.type[0]);
       }
     });
   }
@@ -444,11 +448,10 @@ function geoplotr() {
   });
 
   function addFunctionSelectButton() {
-    var fns = localizeFunctions(Object.keys(schema.functions));
+    var fns = Object.keys(schema.functions);
     functionSelector = toolkit.paramButton('function',
-      translations(['framework','functions'], 'Function'),
-      fns, null, setParameters,
-      translations(['framework','functions-help'], null));
+      { name: translations(['framework','functions'], 'Function') },
+      fns, translations(['app','functions']), null, setParameters);
     top.textContent = '';
     top.appendChild(functionSelector);
   }
@@ -500,10 +503,12 @@ function geoplotr() {
 
   function addParamButtons() {
     allParameterSelectors = {};
-    forEachEnumParam(function(paramKey, initial, values, unit) {
-      var name = translations(['app', 'params', paramKey, 'name'], paramKey);
-      var button = toolkit.paramButton(paramKey, name,
-        localizeEnums(unit, values), initial[0], doplot, 'some <b>parameter</b> help');
+    forEachEnumParam(function(paramKey, initial, values, typeKey) {
+      var button = toolkit.paramButton(paramKey,
+        translations(['app', 'params', paramKey]),
+        values,
+        translations(['app', 'types', typeKey]),
+        initial[0], doplot);
       top.appendChild(button);
       allParameterSelectors[paramKey] = button;
     });
