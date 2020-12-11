@@ -216,7 +216,7 @@ function geoplotr() {
     });
     toolkit.forEach(shownParameters, function(paramKey, paramId) {
       var e = allParameterSelectors[paramKey];
-      params[paramId] = toolkit.getSelectedParam(e);
+      params[paramId] = e.getSelectedParam();
     });
     if (subheaderParam) {
       params[subheaderParam] = unitSettings();
@@ -250,7 +250,7 @@ function geoplotr() {
     if (nodes.length === 0) {
       return '';
     }
-    return toolkit.getSelectedParam(nodes[0]);
+    return nodes[0].getSelectedParam();
   }
   function getUnitValues(typeDescriptor) {
     if (!('unittype' in typeDescriptor)) {
@@ -373,7 +373,6 @@ function geoplotr() {
       if (s) {
         const paramKey = headerParams[c];
         var type = schema.types[paramKey];
-        console.log(headerParams[c], type);
         if (type.kind[0] === 'enum') {
           var select = toolkit.paramButton(null, {},
             type.values, translations(['app', 'types', paramKey], {}),
@@ -386,7 +385,7 @@ function geoplotr() {
 
   function setParameters() {
     toolkit.forEach(shownParameters, function(k,i) {
-      allParameterSelectors[k].style.display = 'none';
+      allParameterSelectors[k].hide();
     });
     shownParameters = {};
     var selected = selectedFunction();
@@ -401,8 +400,8 @@ function geoplotr() {
     forEachParam(fd, function(paramId, initialEnum, enumValues, paramKey) {
       shownParameters[paramKey] = paramId;
       var e = allParameterSelectors[paramKey];
-      e.style.display = 'inline';
-      toolkit.setSelectedParam(e, initialEnum[0]);
+      e.show();
+      e.setSelectedParam(initialEnum[0]);
     }, function(paramId, columnData, units, columnType) {
       headerParams[paramId] = headers.length;
       headers.push(paramId);
@@ -443,7 +442,7 @@ function geoplotr() {
   }
 
   function selectedFunction() {
-    return toolkit.getSelectedParam(functionSelector);
+    return functionSelector.getSelectedParam();
   }
 
   function setupScreen() {

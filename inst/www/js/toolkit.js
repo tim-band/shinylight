@@ -201,57 +201,76 @@ var toolkit = function() {
   // initial: ID of the option to start selecting (optional)
   // callback: The (nullary) function to call when the value changes (optional)
   function paramButton(paramName, labelTranslations, values, valueTranslations, initial, callback) {
-    var select = document.createElement('table');
-    select.style.display = 'inline-block';
-    select.style.verticalAlign = 'top';
-    select.style.borderCollapse = 'collapse';
+    var button = document.createElement('div');
+    button.className = 'param-box';
+    button.style.display = 'inline-block';
+    var buttonText = document.createElement('span');
+    button.appendChild(buttonText);
+    var downArrow = document.createElement('div');
+    downArrow.style.padding = '0px';
+    downArrow.style.float = 'right';
+    downArrow.textContent = '\u25bc';
+    downArrow.className = 'select-down-arrow';
+    button.appendChild(downArrow);
+    var dropDown = document.createElement('table');
+    var open = false;
+    var selectedOption = null;
     var options = {};
+    var optionNames = {};
     forEach(values, function(i,id) {
       var optr = document.createElement('tr');
       optr.classList.add('param-option');
       var opt = document.createElement('td');
       opt.style.padding = '0px';
-      var optDiv = document.createElement('div');
-      opt.appendChild(optDiv);
-      var downArrow = document.createElement('td');
-      downArrow.style.padding = '0px';
-      var downArrowDiv = document.createElement('div');
-      downArrow.appendChild(downArrowDiv);
-      downArrowDiv.textContent = '\u25bc';
-      downArrow.className = 'option-down-arrow';
-      optr.append(opt, downArrow);
-      options[id] = optr;
       var trs = id in valueTranslations? valueTranslations[id] : {};
-      optDiv.textContent = 'name' in trs? trs.name : id;
+      var name = 'name' in trs? trs.name : id;
+      opt.textContent = name;
+      optionNames[id] = name;
+      options[id] = optr;
       if (!initial && !selectedOption) {
         initial = id;
       }
-      if (id === initial) {
-        optr.classList.add('selected');
-      }
-      select.appendChild(optr);
+      optr.appendChild(opt);
+      dropDown.appendChild(optr);
       if ('help' in trs) {
         var h = document.createElement('span')
         h.className = "option-tooltip";
         h.innerHTML = trs.help;
         optr.appendChild(h);
       }
-      optr.onclick = function() {
-        if (select.classList.contains('open')) {
-          if (!optr.classList.contains('selected')) {
-            span.setSelectedParam(id);
-          }
-          select.classList.remove('open');
-        } else {
-          select.classList.add('open');
-        }
+      function preventdefault(ev) {
+        ev.preventDefault();
+      }
+      optr.onmousedown = preventdefault;
+      optr.onmousemove = preventdefault;
+      optr.onmouseenter = preventdefault;
+      optr.onmouseup = function(ev) {
+        dropDown.classList.remove('open');
+        open = false;
+        span.setSelectedParam(id);
+        ev.preventDefault();
       };
     });
     var span = document.createElement('span');
+    buttonText.onmousedown = downArrow.onmousedown = function(ev) {
+      if (open) {
+        dropDown.classList.remove('open');
+        open = false;
+      } else {
+        dropDown.classList.add('open');
+        span.focus();
+        open = true;
+      }
+      ev.preventDefault();
+    }
+    button.onmousemove = function(ev) {
+      ev.preventDefault();
+    }
     if (paramName) {
       span.id = paramId(paramName);
     }
-    span.className = "param-button";
+    span.className = 'param-button';
+    span.style.display = 'inline-block';
     if ('name' in labelTranslations) {
       var lab = document.createElement('span');
       lab.textContent = labelTranslations.name;
@@ -264,20 +283,14 @@ var toolkit = function() {
         lab.appendChild(h);
       }
     }
-    span.appendChild(select);
-    select.onblur = function() {
-      select.classList.remove('open');
-    }
-    var selectedOption = null;
+    dropDown.style.position = 'absolute';
+    button.appendChild(dropDown);
+    span.appendChild(button);
     function setSelected(value) {
-      if (selectedOption === value || !options[value]) {
-        return;
+      if (selectedOption !== value && value in options) {
+        selectedOption = value;
+        buttonText.textContent = optionNames[selectedOption];
       }
-      if (selectedOption) {
-        options[selectedOption].classList.remove('selected');
-      }
-      selectedOption = value;
-      options[selectedOption].classList.add('selected');
     };
     span.setSelectedParam = function(value) {
       setSelected(value);
@@ -286,37 +299,38 @@ var toolkit = function() {
     span.getSelectedParam = function() {
       return selectedOption;
     }
+    span.hide = function() {
+      span.style.display = 'none';
+    }
+    span.show = function() {
+      span.style.display = 'inline-block';
+    }
     setSelected(initial);
-    select.tabIndex = 0;
-    select.onkeydown = function(ev) {
+    span.tabIndex = 0;
+    span.onkeydown = function(ev) {
       var goTo = null;
       if (ev.key === 'ArrowDown') {
         goTo = findNext(options, selectedOption);
       } else if (ev.key === 'ArrowUp') {
         goTo = findPrevious(options, selectedOption);
-      } else if (ev.key === 'Enter') {
-        select.classList.remove('open');
-        return;
       } else {
         return;
       }
+      dropDown.classList.remove('open');
+      open = false;
       span.setSelectedParam(goTo);
     }
+    span.onblur = function() {
+      dropDown.classList.remove('open');
+      open = false;
+    }
     return span;
-  }
-  function getSelectedParam(paramButton) {
-    return paramButton.getSelectedParam();
-  }
-  function setSelectedParam(paramButton, value) {
-    return paramButton.setSelectedParam(value);
   }
   return {
     forEach: forEach,
     verticalDivide: vDivide,
     whenQuiet: whenQuiet,
-    paramButton: paramButton,
-    getSelectedParam: getSelectedParam,
-    setSelectedParam: setSelectedParam
+    paramButton: paramButton
   };
 }();
 
