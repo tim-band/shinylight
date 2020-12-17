@@ -1,6 +1,18 @@
 {
-  "output-page-plot": "Plot",
-  "output-page-table": "Table",
+  "pages": {
+    "plot": {
+      "name": "Plot",
+      "help": "See the graph output"
+    },
+    "table": {
+      "name": "Table",
+      "help": "See the raw data output"
+    },
+    "error": {
+      "name": "Error",
+      "help": "See any errors from the function"
+    }
+  },
   "updating...": "updating",
   "options": "Options",
   "functions": "Select function",

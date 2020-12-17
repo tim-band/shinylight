@@ -70,6 +70,11 @@
   transition: opacity 0.5s;
 }
 
+#bottom .param-label .tooltip {
+  margin-top: -10px;
+  transform: translate(0, -100%);
+}
+
 .param-label:hover .tooltip {
   visibility: visible;
   opacity: 1;
@@ -93,11 +98,11 @@
   transition: opacity 0.5s;
 }
 
-.param-button {
+.param-selector {
   cursor: pointer;
 }
 
-.param-button table {
+.param-selector table {
   background-color: #222;
   color: #eee;
   padding: 3px;
@@ -106,21 +111,21 @@
   visibility: hidden;
 }
 
-.param-button table.open {
+.param-selector table.open {
   visibility: visible;
 }
 
-.param-button .open .param-option:hover {
+.param-selector .open .param-option:hover {
   background-color: #248;
 }
 
-.param-button .open .param-option:hover .option-tooltip {
+.param-selector .open .param-option:hover .option-tooltip {
   visibility: visible;
   opacity: 1;
   transition: opacity 0.5s;
 }
 
-.param-button .param-box {
+.param-selector .param-box {
   border: 1px solid #222;
   background-color: #ccc;
   padding: 0px 4px;

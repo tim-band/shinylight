@@ -1,6 +1,15 @@
 {
-  "output-page-plot": "Grafico",
-  "output-page-table": "Tavolo",
+  "pages": {
+    "plot": {
+      "name": "Grafico"
+    },
+    "table": {
+      "name": "Tavolo"
+    },
+    "error": {
+      "name": "Errore"
+    }
+  },
   "updating": "in aggionamento...",
   "options": "Opzioni"
 }

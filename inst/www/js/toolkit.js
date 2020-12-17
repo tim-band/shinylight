@@ -6,6 +6,23 @@ var toolkit = function() {
       f(ki, a[ki]);
     }
   }
+
+  // deref(o, [a,b,c], d) is a safe way of doing o[a][b][c].
+  // If that path does not exist, d is returned. If d is not
+  // supplied, null is returned. Any undefined values in path are
+  // ignored.
+  function deref(object, path, defaultValue) {
+    for (var i = 0; i !== path.length; ++i) {
+      var p = path[i];
+      if (typeof(object) === 'object' && p in object) {
+        object = object[p];
+      } else if (typeof(p) !== 'undefined') {
+        return typeof(defaultValue) === 'undefined'? null : defaultValue;
+      }
+    }
+    return object;
+  }
+
   function findPrevious(a, k) {
     var prev = null;
     var ks = Object.keys(a), i = 0;
@@ -18,6 +35,7 @@ var toolkit = function() {
     }
     return null;
   }
+
   function findNext(a, k) {
     var seen = false;
     var ks = Object.keys(a), i = 0;
@@ -31,13 +49,16 @@ var toolkit = function() {
     }
     return null;
   }
+
   function setAll(target, vals, dels) {
     forEach(vals, function(k, v) { target[k] = v; });
     if (dels) { forEach(dels, function(i,v) { delete target[v] }); }
   }
+
   function setAttributes(el, vals) {
     forEach(vals, el.setAttribute.bind(el));
   }
+
   function throttle(delay, f) {
     var pending = false;
     var args;
@@ -49,6 +70,7 @@ var toolkit = function() {
       }
     }
   }
+
   function whenQuiet(ticks, f) {
     var ticksLeft = 0;
     var args;
@@ -69,6 +91,7 @@ var toolkit = function() {
       }
     }
   }
+
   function setDivideSize(container, left, right, divider, img, leftProportion, updateSize) {
     var gripWidth = 10;
     var gripHeight = 30;
@@ -153,6 +176,7 @@ var toolkit = function() {
     var x = Math.floor((container.offsetWidth - gripWidth) * leftProportion);
     setX(container.offsetLeft + x);
   }
+
   function vDivide(container, left, right, updateSize) {
     var divider = document.createElement('div');
     var img = document.createElement('img');
@@ -188,8 +212,63 @@ var toolkit = function() {
   function paramId(v) {
     return 'param-' + v;
   }
-  // paramName: ID of parameter, param-<paramName> will be set as the
-  // element's ID (optional).
+
+  function constTrue() {
+    return true;
+  }
+
+  function noop() {
+    return true;
+  }
+
+  function makeLabel(labelTranslations, container, id) {
+    var name = deref(labelTranslations, [id, 'name'], id);
+    var help = deref(labelTranslations, [id, 'help']);
+    var label = document.createElement('span');
+    label.textContent = name;
+    label.className = 'param-label';
+    if (container) {
+      container.appendChild(label);
+    }
+    if (help) {
+      var h = document.createElement('span')
+      h.className = "tooltip";
+      h.innerHTML = help;
+      label.appendChild(h);
+    }
+    return label;
+  }
+
+  function paramText(paramName, labelTranslations, initial, callback, validate) {
+    var span = document.createElement('span');
+    if (paramName) {
+      span.id = paramId(paramName);
+    }
+    span.className = 'param-text';
+    makeLabel(labelTranslations, span);
+    var box = document.createElement('input');
+    box.className = 'param-box';
+    if (initial) {
+      box.value = initial;
+    }
+    if (typeof(callback) !== 'function') {
+      callback = noop;
+    }
+    if (typeof(validate) !== 'function') {
+      validate = constTrue;
+    }
+    box.onchange = function() {
+      if (validate(box.value)) {
+        box.classList.remove('invalid');
+        callback();
+      } else {
+        box.classList.add('invalid');
+      }
+    }
+    span.appendChild(box);
+  }
+
+  // Creates a custom selection box
   // labelTranslations: A dictionary with two optional keys; 'name' gives the
   // label to display and 'help' gives HTML help text. 'help' has no effect
   // unless 'name' is also present.
@@ -200,7 +279,9 @@ var toolkit = function() {
   // and 'help' (giving tooltip HTML text).
   // initial: ID of the option to start selecting (optional)
   // callback: The (nullary) function to call when the value changes (optional)
-  function paramButton(paramName, labelTranslations, values, valueTranslations, initial, callback) {
+  // returns element you can add to the DOM
+  function paramSelector(labelTranslations, values, valueTranslations, initial, callback) {
+    // The button is the area that can be clicked to open up the drop-down
     var button = document.createElement('div');
     button.className = 'param-box';
     button.style.display = 'inline-block';
@@ -247,7 +328,7 @@ var toolkit = function() {
       optr.onmouseup = function(ev) {
         dropDown.classList.remove('open');
         open = false;
-        span.setSelectedParam(id);
+        span.setParam(id);
         ev.preventDefault();
       };
     });
@@ -266,23 +347,9 @@ var toolkit = function() {
     button.onmousemove = function(ev) {
       ev.preventDefault();
     }
-    if (paramName) {
-      span.id = paramId(paramName);
-    }
-    span.className = 'param-button';
+    span.className = 'param-selector';
     span.style.display = 'inline-block';
-    if ('name' in labelTranslations) {
-      var lab = document.createElement('span');
-      lab.textContent = labelTranslations.name;
-      lab.className = 'param-label';
-      span.appendChild(lab);
-      if ('help' in labelTranslations) {
-        var h = document.createElement('span')
-        h.className = "tooltip";
-        h.innerHTML = labelTranslations.help;
-        lab.appendChild(h);
-      }
-    }
+    makeLabel(labelTranslations, span);
     dropDown.style.position = 'absolute';
     button.appendChild(dropDown);
     span.appendChild(button);
@@ -292,19 +359,14 @@ var toolkit = function() {
         buttonText.textContent = optionNames[selectedOption];
       }
     };
-    span.setSelectedParam = function(value) {
+    span.setParam = function(value) {
       setSelected(value);
       callback();
     };
-    span.getSelectedParam = function() {
+    span.getParam = function() {
       return selectedOption;
-    }
-    span.hide = function() {
-      span.style.display = 'none';
-    }
-    span.show = function() {
-      span.style.display = 'inline-block';
-    }
+    };
+    setShowHide(span);
     setSelected(initial);
     span.tabIndex = 0;
     span.onkeydown = function(ev) {
@@ -318,19 +380,154 @@ var toolkit = function() {
       }
       dropDown.classList.remove('open');
       open = false;
-      span.setSelectedParam(goTo);
-    }
+      span.setParam(goTo);
+    };
     span.onblur = function() {
       dropDown.classList.remove('open');
       open = false;
-    }
+    };
     return span;
   }
+
+  function setShowHide(element) {
+    var display = element.style.display;
+    element.hide = function() {
+      var d = element.style.display;
+      if (d !== 'none') {
+        display = d;
+        element.style.display = 'none';
+      }
+    };
+    element.show = function() {
+      element.style.display = display;
+    };
+  }
+
+  function image() {
+    var img = document.createElement('img');
+    img.style.display = 'block';
+    img.setData = function(data) {
+      img.setAttribute('src', data);
+    };
+    setShowHide(img);
+    return img;
+  }
+
+  function staticText(labelTranslations) {
+    var div = document.createElement('div');
+    div.className = 'param-text';
+    makeLabel(labelTranslations, div);
+    var static = document.createElement('div');
+    div.appendChild(static);
+    setShowHide(div);
+    div.setData = function(data) {
+      static.textContent = data;
+    };
+    return div;
+  }
+
+  // elements is a dictionary of ids to elements,
+  // each of which must have a setData method.
+  function stack(elements) {
+    // copy of elements
+    var sub = {};
+    var div = document.createElement('div');
+    forEach(elements, function(id, el) {
+      sub[id] = el;
+      div.appendChild(el);
+    });
+    setShowHide(div);
+    div.setData = function(data) {
+      forEach(sub, function(id, el) {
+        el.setData(id in data? data[id] : null);
+      });
+    };
+    return div;
+  }
+
+  // pageElements: dictionary of pageIds to elements (that will not be
+  // added to the DOM by this function). These elements each need
+  // methods show, hide and setData (like the ones returned by
+  // image, dataTable, stack, staticText, optionsPage)
+  // groupId: the 'name' attribute for each button; anything that
+  // is different from any element id or other pages groupId.
+  // labelTranslations: dictionary of pageIds to objects with keys
+  // name (for the label text) and help (for tooltip help HTML)
+  // Returns an element that is the radio buttons that switch between the
+  // pages. It has the following extra methods:
+  // setData(data): data is a dictionary with keys matching the pageIds.
+  // The values are passed to the setData() functions of the corresponding
+  // elements. Pages without any data (and their corresponding radio
+  // buttons) are summarily disabled. Pages with data are enabled.
+  function pages(groupId, pageElements, labelTranslations) {
+    var radios = {};
+    var radioInputs = {};
+    // a deep copy of pageElements
+    var pages = {};
+    var active = null;
+    var returnPage = null;
+    var container = document.createElement('span');
+    container.className = 'param-page-switcher';
+    forEach(pageElements, function(pageId, page) {
+      var span = document.createElement('span');
+      span.className = 'param-page-switch';
+      makeLabel(labelTranslations, span, pageId);
+      var radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = groupId;
+      radio.onchange = function() {
+        pages[active].hide();
+        active = pageId;
+        pages[pageId].show();
+      };
+      if (!active) {
+        active = pageId;
+        radio.checked = true;
+        page.show();
+      } else {
+        page.hide();
+      }
+      span.appendChild(radio);
+      container.appendChild(span);
+      radioInputs[pageId] = radio;
+      radios[pageId] = span;
+      pages[pageId] = page;
+    });
+    returnPage = active;
+    container.setData = function(data) {
+      var first = null;
+      forEach(pages, function(pageId, page) {
+        if (pageId in data) {
+          if (!first) {
+            first = pageId;
+          }
+          page.setData(data[pageId]);
+          radioInputs[pageId].disabled = false;
+          radios[pageId].classList.remove('disabled');
+        } else {
+          radioInputs[pageId].disabled = true;
+          radios[pageId].classList.add('disabled');
+        }
+      });
+      var newActive = returnPage in data? returnPage : active in data? active : first;
+      if (newActive && newActive !== active) {
+        radioInputs[newActive].onchange();
+      }
+    };
+    return container;
+  }
+
   return {
     forEach: forEach,
+    deref: deref,
     verticalDivide: vDivide,
     whenQuiet: whenQuiet,
-    paramButton: paramButton
+    paramText: paramText,
+    paramSelector: paramSelector,
+    image: image,
+    staticText: staticText,
+    stack: stack,
+    pages: pages
   };
 }();
 
