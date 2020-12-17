@@ -4,6 +4,7 @@ function geoplotr() {
   var outputImg;
   var outputError;
   var outputTable;
+  var optionsPage;
   var pageSelector;
   var translationDict = {};
   var schema;
@@ -328,10 +329,11 @@ function geoplotr() {
         const paramKey = headerParams[c];
         var type = schema.types[paramKey];
         if (type.kind[0] === 'enum') {
-          var select = toolkit.paramSelector({},
+          toolkit.paramSelector(
+            inputGrid.getColumnSubheader(c),
+            {},
             type.values, translations(['app', 'types', paramKey], {}),
             units[c], doplot);
-          inputGrid.getColumnSubheader(c).appendChild(select);
         }
       }
     }
@@ -388,11 +390,10 @@ function geoplotr() {
 
   function addFunctionSelectButton() {
     var fns = Object.keys(schema.functions);
-    functionSelector = toolkit.paramSelector(
+    top.textContent = '';
+    functionSelector = toolkit.paramSelector(top,
       { name: translations(['framework','functions'], 'Function') },
       fns, translations(['app','functions']), null, setParameters);
-    top.textContent = '';
-    top.appendChild(functionSelector);
   }
 
   function selectedFunction() {
@@ -427,10 +428,15 @@ function geoplotr() {
     oTable.show = function() {
       oTable.style.display = 'table';
     };
-    output.append(outputImg, oTable, outputError);
+    optionsPage = toolkit.optionsPage();
+    toolkit.paramSelector(optionsPage, {name:"hello"},
+      ['a','b','c'], {a:{name:"Apple",help: "tasty <i>and</i> delicious"},b:{name:"Banana"},c:{name:"Clementine"}},
+      'b', function() {console.log('called back')});
+    output.append(outputImg, oTable, outputError, optionsPage);
     pageSelector = toolkit.pages('output-page', {
       plot: outputImg,
       table: outputTable.getTable(),
+      options: optionsPage,
       error: outputError
     }, translations(['framework', 'pages']));
     document.getElementById('bottom').append(pageSelector);
@@ -449,11 +455,11 @@ function geoplotr() {
     allParameterSelectors = {};
     forEachEnumParam(function(paramKey, initial, values, typeKey) {
       var button = toolkit.paramSelector(
+        top,
         translations(['app', 'params', paramKey]),
         values,
         translations(['app', 'types', typeKey]),
         initial[0], doplot);
-      top.appendChild(button);
       allParameterSelectors[paramKey] = button;
     });
   }

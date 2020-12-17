@@ -221,13 +221,16 @@ var toolkit = function() {
     return true;
   }
 
-  function makeLabel(labelTranslations, container, id) {
-    var name = deref(labelTranslations, [id, 'name'], id);
-    var help = deref(labelTranslations, [id, 'help']);
+  // Makes a label with text translations.id.name, translations.name or id
+  // and tooltip HTML help text translaitons.id.help or translations.help.
+  // The result is appended to container, if passed and not null.
+  function makeLabel(translations, container, id) {
+    var name = deref(translations, [id, 'name'], id);
+    var help = deref(translations, [id, 'help']);
     var label = document.createElement('span');
     label.textContent = name;
     label.className = 'param-label';
-    if (container) {
+    if (typeof(container) !== 'undefined' && container) {
       container.appendChild(label);
     }
     if (help) {
@@ -268,7 +271,45 @@ var toolkit = function() {
     span.appendChild(box);
   }
 
+  function span(container) {
+    var s = document.createElement('span');
+    s.addElement = function(el) {
+      s.appendChild(el);
+    }
+    setShowHide(s, 'inline-block');
+    if (typeof(container) !== 'undefined') {
+      container.appendChild(s);
+    }
+    return s;
+  }
+
+  function tableRow() {
+    var tr = document.createElement('tr');
+    tr.addElement = function(el) {
+      var td = document.createElement('td');
+      td.appendChild(el);
+      tr.appendChild(td);
+    }
+    setShowHide(tr, 'table-row');
+    return tr;
+  }
+
+  function optionsPage() {
+    var table = document.createElement('table');
+    var tbody = document.createElement('tbody');
+    table.appendChild(tbody);
+    table.makeSubElement = function() {
+      var tr = tableRow();
+      tbody.appendChild(tr);
+      return tr;
+    }
+    setShowHide(table, 'table');
+    return table;
+  }
+
   // Creates a custom selection box
+  // container: HTML element to add the box to. If the container came from
+  // optionsPage() the new selection box will be formatted as a table row.
   // labelTranslations: A dictionary with two optional keys; 'name' gives the
   // label to display and 'help' gives HTML help text. 'help' has no effect
   // unless 'name' is also present.
@@ -280,7 +321,9 @@ var toolkit = function() {
   // initial: ID of the option to start selecting (optional)
   // callback: The (nullary) function to call when the value changes (optional)
   // returns element you can add to the DOM
-  function paramSelector(labelTranslations, values, valueTranslations, initial, callback) {
+  function paramSelector(container, labelTranslations, values, valueTranslations, initial, callback) {
+    var box = typeof(container.makeSubElement) === 'function'?
+      container.makeSubElement() : span(container);
     // The button is the area that can be clicked to open up the drop-down
     var button = document.createElement('div');
     button.className = 'param-box';
@@ -328,18 +371,17 @@ var toolkit = function() {
       optr.onmouseup = function(ev) {
         dropDown.classList.remove('open');
         open = false;
-        span.setParam(id);
+        box.setParam(id);
         ev.preventDefault();
       };
     });
-    var span = document.createElement('span');
     buttonText.onmousedown = downArrow.onmousedown = function(ev) {
       if (open) {
         dropDown.classList.remove('open');
         open = false;
       } else {
         dropDown.classList.add('open');
-        span.focus();
+        box.focus();
         open = true;
       }
       ev.preventDefault();
@@ -347,29 +389,27 @@ var toolkit = function() {
     button.onmousemove = function(ev) {
       ev.preventDefault();
     }
-    span.className = 'param-selector';
-    span.style.display = 'inline-block';
-    makeLabel(labelTranslations, span);
+    box.className = 'param-selector';
+    box.addElement(makeLabel(labelTranslations));
     dropDown.style.position = 'absolute';
     button.appendChild(dropDown);
-    span.appendChild(button);
+    box.addElement(button);
     function setSelected(value) {
       if (selectedOption !== value && value in options) {
         selectedOption = value;
         buttonText.textContent = optionNames[selectedOption];
       }
     };
-    span.setParam = function(value) {
+    box.setParam = function(value) {
       setSelected(value);
       callback();
     };
-    span.getParam = function() {
+    box.getParam = function() {
       return selectedOption;
     };
-    setShowHide(span);
     setSelected(initial);
-    span.tabIndex = 0;
-    span.onkeydown = function(ev) {
+    box.tabIndex = 0;
+    box.onkeydown = function(ev) {
       var goTo = null;
       if (ev.key === 'ArrowDown') {
         goTo = findNext(options, selectedOption);
@@ -380,17 +420,17 @@ var toolkit = function() {
       }
       dropDown.classList.remove('open');
       open = false;
-      span.setParam(goTo);
+      box.setParam(goTo);
     };
-    span.onblur = function() {
+    box.onblur = function() {
       dropDown.classList.remove('open');
       open = false;
     };
-    return span;
+    return box;
   }
 
-  function setShowHide(element) {
-    var display = element.style.display;
+  function setShowHide(element, displayStyle) {
+    var display = typeof(displayStyle) === 'string'? displayStyle : element.style.display;
     element.hide = function() {
       var d = element.style.display;
       if (d !== 'none') {
@@ -448,7 +488,9 @@ var toolkit = function() {
   // pageElements: dictionary of pageIds to elements (that will not be
   // added to the DOM by this function). These elements each need
   // methods show, hide and setData (like the ones returned by
-  // image, dataTable, stack, staticText, optionsPage)
+  // image, dataTable, stack, staticText, optionsPage) if they are to
+  // be output pages. Only show and hide if they are to be available
+  // permanently and not be set through the setData call.
   // groupId: the 'name' attribute for each button; anything that
   // is different from any element id or other pages groupId.
   // labelTranslations: dictionary of pageIds to objects with keys
@@ -478,6 +520,7 @@ var toolkit = function() {
       radio.onchange = function() {
         pages[active].hide();
         active = pageId;
+        returnPage = pageId;
         pages[pageId].show();
       };
       if (!active) {
@@ -497,19 +540,25 @@ var toolkit = function() {
     container.setData = function(data) {
       var first = null;
       forEach(pages, function(pageId, page) {
-        if (pageId in data) {
-          if (!first) {
-            first = pageId;
+        if (typeof(page.setData) === 'function') {
+          if (pageId in data) {
+            if (!first) {
+              first = pageId;
+            }
+            page.setData(data[pageId]);
+            radioInputs[pageId].disabled = false;
+            radios[pageId].classList.remove('disabled');
+          } else {
+            radioInputs[pageId].disabled = true;
+            radios[pageId].classList.add('disabled');
           }
-          page.setData(data[pageId]);
-          radioInputs[pageId].disabled = false;
-          radios[pageId].classList.remove('disabled');
-        } else {
-          radioInputs[pageId].disabled = true;
-          radios[pageId].classList.add('disabled');
         }
       });
-      var newActive = returnPage in data? returnPage : active in data? active : first;
+      function enabledPage(id) {
+        return id in data || typeof(pages[id].setData) !== 'function';
+      }
+      var newActive = enabledPage(returnPage)? returnPage
+        : enabledPage(active)? active : first;
       if (newActive && newActive !== active) {
         radioInputs[newActive].onchange();
       }
@@ -524,6 +573,7 @@ var toolkit = function() {
     whenQuiet: whenQuiet,
     paramText: paramText,
     paramSelector: paramSelector,
+    optionsPage: optionsPage,
     image: image,
     staticText: staticText,
     stack: stack,
