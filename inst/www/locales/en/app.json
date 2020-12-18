@@ -44,25 +44,27 @@
     }
   },
   "optiongroups": {
-    "pch": {
-      "name": "Point symbol",
-      "help": "Plotting symbol to use. Between 0 and 25 for standard symbols or 32 and 127 for ASCII characters"
-    },
-    "col": {
-      "name": "Point colour",
-      "help": "Main colour of the points drawn"
-    },
-    "bg": {
-      "name": "Secondary point color",
-      "help": "Symbols between 21 and 25 have two colours; this is the second one."
-    },
-    "lwd": {
-      "name": "Point line width",
-      "help": "The line width the points are drawn with, default is 1. A floating point value."
-    },
-    "cex": {
-      "name": "Point size",
-      "help": "Magnification factor for the points"
+    "plot": {
+      "pch": {
+        "name": "Point symbol",
+        "help": "Plotting symbol to use. Between 0 and 25 for standard symbols or 32 and 127 for ASCII characters"
+      },
+      "col": {
+        "name": "Point colour",
+        "help": "Main colour of the points drawn"
+      },
+      "bg": {
+        "name": "Secondary point color",
+        "help": "Symbols between 21 and 25 have two colours; this is the second one."
+      },
+      "lwd": {
+        "name": "Point line width",
+        "help": "The line width the points are drawn with, default is 1. A floating point value."
+      },
+      "cex": {
+        "name": "Point size",
+        "help": "Magnification factor for the points"
+      }
     }
   },
   "types": {

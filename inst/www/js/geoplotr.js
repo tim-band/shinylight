@@ -1,5 +1,6 @@
 function geoplotr() {
   var inputGrid;
+  var optionGroups = {};
   var output;
   var outputImg;
   var outputError;
@@ -125,6 +126,7 @@ function geoplotr() {
     downloader.setAttribute("href", data);
 		downloader.click();
   }
+
   function downloadPlot() {
     doPlotNow({
       'rrpc.resultformat': {
@@ -136,6 +138,7 @@ function geoplotr() {
       download('geoplot.pdf', result.plot);
     });
   }
+
   function downloadCsv() {
     doPlotNow({}, function(result) {
       var t = makeTable(result.data);
@@ -146,6 +149,7 @@ function geoplotr() {
       download('geoplot.csv', 'data:text/csv;base64,' + btoa(rs.join('\n')));
     });
   }
+
   function displayPlotNow() {
     var br = output.getBoundingClientRect();
     doPlotNow({
@@ -164,8 +168,9 @@ function geoplotr() {
       } else {
         buttonCsv.disabled = true;
       }
-      if ('plot' in result && result.plot.length) {
-        data.plot = result.plot[0];
+      var plot = toolkit.deref(result, ['plot', 0]);
+      if (plot) {
+        data.plot = plot;
         buttonPdf.disabled = false;
       } else {
         buttonPdf.disabled = true;
@@ -173,6 +178,7 @@ function geoplotr() {
       pageSelector.setData(data);
     });
   }
+
   function doPlotNow(params, callback) {
     var fn = selectedFunction();
     toolkit.forEach(headerParams, function(paramId, columnIndex) {
@@ -181,6 +187,12 @@ function geoplotr() {
     toolkit.forEach(shownParameters, function(paramKey, paramId) {
       var e = allParameterSelectors[paramKey];
       params[paramId] = e.getParam();
+    });
+    var og = toolkit.deref(schema, ['optiongroups'], {});
+    toolkit.forEach(og, function(groupId, group) {
+      toolkit.forEach(group, function(optionId, option) {
+        params[optionId] = optionGroups[groupId][optionId].getParam();
+      });
     });
     if (subheaderParam) {
       params[subheaderParam] = unitSettings();
@@ -194,12 +206,15 @@ function geoplotr() {
       }
     });
   };
+
   var doplot2 = toolkit.whenQuiet(14, displayPlotNow);
+
   function doplot() {
     var message = translations(['framework', 'updating'], 'updating...');
     statusMessage.textContent = message;
     doplot2();
   }
+
   function getColumn(index) {
     var c = inputGrid.getColumn(index);
     var i;
@@ -208,6 +223,7 @@ function geoplotr() {
     }
     return c;
   }
+
   function getUnitSetting(index) {
     var nodes = inputGrid.getColumnSubheader(index).childNodes;
     if (nodes.length === 0) {
@@ -215,6 +231,7 @@ function geoplotr() {
     }
     return nodes[0].getParam();
   }
+
   function getUnitValues(typeDescriptor) {
     if (!('unittype' in typeDescriptor)) {
       return null;
@@ -231,7 +248,9 @@ function geoplotr() {
     }
     return ut.values;
   }
+
   function noop() {}
+
   function forEachParam(functionDescriptor, enumFn, columnFn, subheaderFn) {
     if (!enumFn) {
       enumFn = noop;
@@ -261,6 +280,7 @@ function geoplotr() {
       }
     });
   }
+
   // calls callback(paramKey, initial, values, typeKey) for each param,
   // where paramKey is the ID of the type, initial[0] is the
   // default value, values is an array of all possible values and
@@ -274,6 +294,7 @@ function geoplotr() {
       }
     });
   }
+
   // turn an array of ids into an object mapping
   // ids to localized strings (if available)
   function localizeArray(dictionary, array) {
@@ -283,10 +304,12 @@ function geoplotr() {
     });
     return vals;
   }
+
   function translations(path, defaultValue) {
     var dr = toolkit.deref(translationDict, path, defaultValue);
     return dr === null? {} : dr;
   }
+
   function localizeHeaders(array) {
     var trs = translations(['app', 'params']);
     if (!trs) {
@@ -298,6 +321,7 @@ function geoplotr() {
     });
     return h;
   }
+
   // transposes an array of arrays so that
   // result[i][j] === arrays[j][i] for each i and j
   function transpose(arrays) {
@@ -337,6 +361,50 @@ function geoplotr() {
         }
       }
     }
+  }
+
+  var standardTypes = {
+    u8: function(container, tr, initial, callback) {
+      return toolkit.paramInteger(container, tr, initial, callback, 0, 255);
+    },
+    f: function(container, tr, initial, callback) {
+      return toolkit.paramFloat(container, tr, initial, callback);
+    },
+    color: function(container, tr, initial, callback) {
+      return toolkit.paramColor(container, tr, initial, callback);
+    }
+  };
+
+  function setOptions() {
+    if (typeof(schema.optiongroups) != 'object') {
+      return;
+    }
+    toolkit.forEach(schema.optiongroups, function(groupId, group) {
+      if (!(groupId in optionGroups)) {
+        optionGroups[groupId] = {};
+      }
+      var options = optionGroups[groupId];
+      toolkit.forEach(group, function(optionId, option) {
+        var typeId = toolkit.deref(option, ['type', 0]);
+        var tr = translations(['app', 'optiongroups', groupId, optionId], { name: optionId });
+        var initial = toolkit.deref(option, ['initial', 0]);
+        var e = toolkit.deref(schema, ['types', typeId]);
+        if (e) {
+          var kindId = toolkit.deref(e, ['kind', 0]);
+          if (kindId === 'enum') {
+            const valuesTr = translations(['app', 'types', typeId], typeId);
+            options[optionId] = toolkit.paramSelector(optionsPage,
+              tr, e.values, valuesTr, initial, doplot);
+            return;
+          }
+        }
+        if (typeId in standardTypes) {
+          options[optionId] = standardTypes[typeId](optionsPage, tr, initial, doplot);
+        } else {
+          options[optionId] = toolkit.paramText(optionsPage, tr, initial, doplot);
+        }
+      });
+    });
   }
 
   function setParameters() {
@@ -384,6 +452,7 @@ function geoplotr() {
         addFunctionSelectButton();
         addparamSelectors();
         setParameters();
+        setOptions();
       });
     });
   });
@@ -429,9 +498,6 @@ function geoplotr() {
       oTable.style.display = 'table';
     };
     optionsPage = toolkit.optionsPage();
-    toolkit.paramSelector(optionsPage, {name:"hello"},
-      ['a','b','c'], {a:{name:"Apple",help: "tasty <i>and</i> delicious"},b:{name:"Banana"},c:{name:"Clementine"}},
-      'b', function() {console.log('called back')});
     output.append(outputImg, oTable, outputError, optionsPage);
     pageSelector = toolkit.pages('output-page', {
       plot: outputImg,

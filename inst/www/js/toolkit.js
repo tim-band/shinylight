@@ -209,9 +209,6 @@ var toolkit = function() {
     window.addEventListener('resize', setSize);
     setDivideSize(container, left, right, divider, img, 0.5, updateSize);
   }
-  function paramId(v) {
-    return 'param-' + v;
-  }
 
   function constTrue() {
     return true;
@@ -242,17 +239,42 @@ var toolkit = function() {
     return label;
   }
 
-  function paramText(paramName, labelTranslations, initial, callback, validate) {
-    var span = document.createElement('span');
-    if (paramName) {
-      span.id = paramId(paramName);
-    }
-    span.className = 'param-text';
-    makeLabel(labelTranslations, span);
-    var box = document.createElement('input');
-    box.className = 'param-box';
+  function paramColor(container, translations, initial, callback) {
+    var box = typeof(container.makeSubElement) === 'function'?
+      container.makeSubElement() : span(container);
+    box.className = 'param-color';
+    box.addElement(makeLabel(translations));
+    var input = document.createElement('input');
+    input.type = 'color';
+    input.className = 'param-box';
     if (initial) {
-      box.value = initial;
+      input.value = initial;
+    }
+    if (typeof(callback) !== 'function') {
+      callback = noop;
+    }
+    input.onchange = callback;
+    box.setParam = function(value) {
+      input.value = value;
+      callback();
+    };
+    box.getParam = function() {
+      return input.value;
+    };
+    box.appendChild(input);
+    container.appendChild(box);
+    return box;
+  }
+
+  function paramTyping(container, translations, initial, callback, validate, transform) {
+    var box = typeof(container.makeSubElement) === 'function'?
+      container.makeSubElement() : span(container);
+    box.className = 'param-text';
+    box.addElement(makeLabel(translations));
+    var input = document.createElement('input');
+    input.className = 'param-box';
+    if (initial) {
+      input.value = initial;
     }
     if (typeof(callback) !== 'function') {
       callback = noop;
@@ -260,15 +282,72 @@ var toolkit = function() {
     if (typeof(validate) !== 'function') {
       validate = constTrue;
     }
-    box.onchange = function() {
-      if (validate(box.value)) {
-        box.classList.remove('invalid');
+    input.onchange = function() {
+      if (validate(input.value)) {
+        input.classList.remove('invalid');
         callback();
       } else {
-        box.classList.add('invalid');
+        input.classList.add('invalid');
       }
+    };
+    box.setParam = function(value) {
+      input.value = value;
+      callback();
+    };
+    box.getParam = function() {
+      return transform(input.value);
+    };
+    box.appendChild(input);
+    return box;
+  }
+
+  function identity(v) {
+    return v;
+  }
+
+  function isAtLeastFn(min) {
+    if (min === null || typeof(min) === 'undefined') {
+      return function() { return true; };
     }
-    span.appendChild(box);
+    return function(v) { return min < v; }
+  }
+
+  function isAtMostFn(max) {
+    if (max === null || typeof(max) === 'undefined') {
+      return function() { return true; };
+    }
+    return function(v) { return v < max; }
+  }
+
+  function isInRangeFn(min, max) {
+    var minf = isAtLeastFn(min);
+    var maxf = isAtMostFn(max);
+    return function(v) { return minf(v) && maxf(v); };
+  }
+
+  function paramText(container, translations, initial, callback, validate) {
+    return paramTyping(container, translations, initial, callback, validate, identity);
+  }
+
+  function paramInteger(container, translations, initial, callback, min, max) {
+    var rangeFn = isInRangeFn(min, max);
+    return paramTyping(container, translations, initial, callback, function(v) {
+      if (/^ *[-+]?\d+ *$/.test(v)) {
+        var i = parseInt(v);
+        return rangeFn(i);
+      }
+      return false;
+    }, parseInt);
+  }
+
+  function paramFloat(container, translations, initial, callback, min, max) {
+    var rangeFn = isInRangeFn(min, max);
+    return paramTyping(container, translations, initial, callback, function(v) {
+      if (/^ *[-+]?\d+(\.\d+)?([eE]\d+)? *$/.test(v)) {
+        var f = parseFloat(v);
+        return rangeFn(f);
+      }
+    }, parseInt);
   }
 
   function span(container) {
@@ -296,6 +375,7 @@ var toolkit = function() {
 
   function optionsPage() {
     var table = document.createElement('table');
+    table.className = 'options-page';
     var tbody = document.createElement('tbody');
     table.appendChild(tbody);
     table.makeSubElement = function() {
@@ -572,6 +652,9 @@ var toolkit = function() {
     verticalDivide: vDivide,
     whenQuiet: whenQuiet,
     paramText: paramText,
+    paramInteger: paramInteger,
+    paramFloat: paramFloat,
+    paramColor: paramColor,
     paramSelector: paramSelector,
     optionsPage: optionsPage,
     image: image,

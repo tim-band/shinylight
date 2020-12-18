@@ -214,11 +214,11 @@ params <- list(
 
 optiongroups <- list(
   plot=list(
+#    col=list(type="color", initial='#000'),
+#    cex=list(type="f"),
     pch=list(type="u8"),
-    col=list(type="color"),
-    bg=list(type="color"),
-    lwd=list(type="u8"),
-    cex=list(type="f")
+    bg=list(type="color", initial='#666'),
+    lwd=list(type="u8")
   )
 )
 
