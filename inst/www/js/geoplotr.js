@@ -2,11 +2,7 @@ function geoplotr() {
   var inputGrid;
   var optionGroups = {};
   var output;
-  var outputImg;
-  var outputError;
-  var outputTable;
   var optionsPage;
-  var pageSelector;
   var translationDict = {};
   var schema;
   // The SELECT element that chooses the function to be called
@@ -175,7 +171,7 @@ function geoplotr() {
       } else {
         buttonPdf.disabled = true;
       }
-      pageSelector.setData(data);
+      output.setData(data);
     });
   }
 
@@ -200,7 +196,7 @@ function geoplotr() {
     rrpc.call(fn, params, function(result, err) {
       statusMessage.textContent = '';
       if (err) {
-        pageSelector.setData({ error: err });
+        output.setData({ error: err });
       } else if (result) {
         callback(result);
       }
@@ -479,11 +475,11 @@ function geoplotr() {
     left.appendChild(table);
     output = document.createElement('div');
     output.id = 'output';
-    outputImg = toolkit.image();
+    var outputImg = toolkit.image();
     outputImg.setAttribute('style', 'width: 100%; height: 100%;');
-    outputError = toolkit.staticText(translations(['framework', 'error']));
+    var outputError = toolkit.staticText(translations(['framework', 'error']));
     outputError.setAttribute('style', 'width: 100%; height: 100%;');
-    outputTable = createDataEntryGrid(null, 5, 5);
+    var outputTable = createDataEntryGrid(null, 5, 5);
     var oTable = outputTable.getTable();
     oTable.classList.add('data-entry-grid');
     oTable.setAttribute('style', 'width: 100%; height: 100%;');
@@ -498,14 +494,12 @@ function geoplotr() {
       oTable.style.display = 'table';
     };
     optionsPage = toolkit.optionsPage();
-    output.append(outputImg, oTable, outputError, optionsPage);
-    pageSelector = toolkit.pages('output-page', {
+    output = toolkit.pages({
       plot: outputImg,
       table: outputTable.getTable(),
       options: optionsPage,
       error: outputError
     }, translations(['framework', 'pages']));
-    document.getElementById('bottom').append(pageSelector);
     toolkit.verticalDivide(document.getElementById('middle'), left, output, doplot);
     inputGrid.addWatcher(doplot);
     doplot();

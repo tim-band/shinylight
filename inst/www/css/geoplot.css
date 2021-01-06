@@ -163,3 +163,35 @@
 .options-page td:first-child {
   text-align: right;
 }
+
+.tab-strip .param-label {
+  background-color: #999;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border-width: 1px;
+  border-bottom-color: #222;
+  border-top-color: #222;
+  border-left-color: #222;
+  border-right-color: #222;
+  border-top-style: solid;
+  border-left-style: solid;
+  border-right-style: solid;
+  border-bottom-style: solid;
+  padding-left: 12px;
+  padding-right: 12px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.tab-strip .param-label.active {
+  background-color: white;
+  border-bottom-style: none;
+  padding-bottom: 5px;
+}
+
+.tab-strip .param-label.disabled {
+  color: white;
+  border-bottom-color: #222;
+  background-color: #ddd;
+  border-color: #aaa;
+}

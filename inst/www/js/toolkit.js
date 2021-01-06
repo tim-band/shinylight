@@ -565,56 +565,70 @@ var toolkit = function() {
     return div;
   }
 
-  // pageElements: dictionary of pageIds to elements (that will not be
-  // added to the DOM by this function). These elements each need
+  // pageElements: dictionary of pageIds to elements (that will be
+  // added to the return value of this function). These elements each need
   // methods show, hide and setData (like the ones returned by
   // image, dataTable, stack, staticText, optionsPage) if they are to
   // be output pages. Only show and hide if they are to be available
   // permanently and not be set through the setData call.
-  // groupId: the 'name' attribute for each button; anything that
-  // is different from any element id or other pages groupId.
   // labelTranslations: dictionary of pageIds to objects with keys
   // name (for the label text) and help (for tooltip help HTML)
-  // Returns an element that is the radio buttons that switch between the
-  // pages. It has the following extra methods:
+  // Returns an element that has the tabs and the tabs that switch
+  // between them. The active tab has the "active" class.
+  // It has the following extra methods:
   // setData(data): data is a dictionary with keys matching the pageIds.
   // The values are passed to the setData() functions of the corresponding
   // elements. Pages without any data (and their corresponding radio
   // buttons) are summarily disabled. Pages with data are enabled.
-  function pages(groupId, pageElements, labelTranslations) {
-    var radios = {};
-    var radioInputs = {};
+  function pages(pageElements, labelTranslations) {
+    var tabs = {};
     // a deep copy of pageElements
     var pages = {};
     var active = null;
     var returnPage = null;
-    var container = document.createElement('span');
-    container.className = 'param-page-switcher';
+    var container = document.createElement('div');
+    var tabStrip = document.createElement('span');
+    tabStrip.className = 'tab-strip';
+    tabStrip.tabIndex = 0;
+    tabStrip.onkeydown = function(ev) {
+      var other = null;
+      if (ev.key === 'ArrowLeft') {
+        other = findPrevious(tabs, active)
+      } else if (ev.key === 'ArrowRight') {
+        other = findNext(tabs, active);
+      }
+      if (other) {
+        var otherTab = tabs[other];
+        otherTab.click();
+        otherTab.focus();
+      }
+    }
+    container.appendChild(tabStrip);
     forEach(pageElements, function(pageId, page) {
-      var span = document.createElement('span');
-      span.className = 'param-page-switch';
-      makeLabel(labelTranslations, span, pageId);
-      var radio = document.createElement('input');
-      radio.type = 'radio';
-      radio.name = groupId;
-      radio.onchange = function() {
+      tab = makeLabel(labelTranslations, tabStrip, pageId);
+      tab.onclick = function() {
+        var tab = tabs[pageId];
+        if (tab.classList.contains('disabled')) {
+          return;
+        }
         pages[active].hide();
+        tabs[active].classList.remove('active');
         active = pageId;
         returnPage = pageId;
         pages[pageId].show();
+        tab.classList.add('active');
       };
       if (!active) {
         active = pageId;
-        radio.checked = true;
+        tab.classList.add('active');
         page.show();
       } else {
         page.hide();
       }
-      span.appendChild(radio);
-      container.appendChild(span);
-      radioInputs[pageId] = radio;
-      radios[pageId] = span;
+      tabStrip.appendChild(tab);
+      container.appendChild(page);
       pages[pageId] = page;
+      tabs[pageId] = tab;
     });
     returnPage = active;
     container.setData = function(data) {
@@ -626,11 +640,9 @@ var toolkit = function() {
               first = pageId;
             }
             page.setData(data[pageId]);
-            radioInputs[pageId].disabled = false;
-            radios[pageId].classList.remove('disabled');
+            tabs[pageId].classList.remove('disabled');
           } else {
-            radioInputs[pageId].disabled = true;
-            radios[pageId].classList.add('disabled');
+            tabs[pageId].classList.add('disabled');
           }
         }
       });
@@ -640,7 +652,7 @@ var toolkit = function() {
       var newActive = enabledPage(returnPage)? returnPage
         : enabledPage(active)? active : first;
       if (newActive && newActive !== active) {
-        radioInputs[newActive].onchange();
+        tabs[newActive].click();
       }
     };
     return container;
@@ -663,4 +675,3 @@ var toolkit = function() {
     pages: pages
   };
 }();
-
