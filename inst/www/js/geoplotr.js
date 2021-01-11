@@ -1,7 +1,7 @@
 function geoplotr() {
   var inputGrid;
   var optionGroups = {};
-  var outputImg;
+  var outputImgWrapper;
   var output;
   var optionsPage;
   var translationDict = {};
@@ -148,7 +148,7 @@ function geoplotr() {
   }
 
   function displayPlotNow() {
-    var imgSize = outputImg.getSize();
+    var imgSize = outputImgWrapper.getSize();
     doPlotNow({
       'rrpc.resultformat': {
         type: 'png',
@@ -464,7 +464,7 @@ function geoplotr() {
     table.id = 'input-table';
     output = document.createElement('div');
     output.id = 'output';
-    outputImg = toolkit.image(doplot);
+    var outputImg = toolkit.image(doplot);
     outputImg.setAttribute('style', 'width: 100%; height: 100%;');
     var outputError = toolkit.staticText(translations(['framework', 'error']));
     outputError.setAttribute('style', 'width: 100%; height: 100%;');
@@ -485,10 +485,15 @@ function geoplotr() {
     var plotFooter = toolkit.banner({
       downloadPlot: toolkit.button('download-pdf',
           downloadPdf, translations(['framework', 'buttons']))
-    }, 'output-footer', '35px');
+    }, 'output-footer', 35);
+    var tableFooter = toolkit.banner({
+      downloadCsv: toolkit.button('download-csv',
+          downloadCsv, translations(['framework', 'buttons']))
+    }, 'output-footer', 35);
+    outputImgWrapper = toolkit.nonScrollingWrapper(outputImg);
     output = toolkit.pages({
-      plot: toolkit.footer(plotFooter, toolkit.nonScrollingWrapper(outputImg)),
-      table: outputTable.getTable(),
+      plot: toolkit.footer(plotFooter, outputImgWrapper),
+      table: toolkit.footer(tableFooter, toolkit.scrollingWrapper(oTable)),
       error: outputError
     }, translations(['framework', 'pages']));
     optionsPage = toolkit.optionsPage();
@@ -499,7 +504,7 @@ function geoplotr() {
     var doc = toolkit.verticalDivide(null,
       inputPane,
       output);
-    top = toolkit.banner({}, 'top', '50px');
+    top = toolkit.banner({}, 'top', 50);
     toolkit.setAsBody(toolkit.header(top, doc));
     inputGrid.addWatcher(doplot);
     doplot();
