@@ -485,11 +485,14 @@ function geoplotr() {
     output = toolkit.pages({
       plot: outputImg,
       table: outputTable.getTable(),
-      options: optionsPage,
       error: outputError
     }, translations(['framework', 'pages']));
+    var inputPane = toolkit.pages({
+      inputTable: toolkit.scrollingWrapper(table),
+      options: optionsPage
+    }, translations(['framework', 'pages']));
     var doc = toolkit.verticalDivide(null,
-      toolkit.scrollingWrapper(table),
+      inputPane,
       output);
     top = toolkit.banner({});
     top.classList.add('top');

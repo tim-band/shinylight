@@ -11,6 +11,10 @@
     "error": {
       "name": "Error",
       "help": "See any errors from the function"
+    },
+    "inputTable": {
+      "name": "Input table",
+      "help": "Enter your data here"
     }
   },
   "updating...": "updating",
