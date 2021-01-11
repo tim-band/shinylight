@@ -1,6 +1,7 @@
 function geoplotr() {
   var inputGrid;
   var optionGroups = {};
+  var outputImg;
   var output;
   var optionsPage;
   var translationDict = {};
@@ -123,7 +124,7 @@ function geoplotr() {
 		downloader.click();
   }
 
-  function downloadPlot() {
+  function downloadPdf() {
     doPlotNow({
       'rrpc.resultformat': {
         type: 'pdf',
@@ -147,12 +148,12 @@ function geoplotr() {
   }
 
   function displayPlotNow() {
-    var br = output.getBoundingClientRect();
+    var imgSize = outputImg.getSize();
     doPlotNow({
       'rrpc.resultformat': {
         type: 'png',
-        width: br.width,
-        height: br.height
+        width: imgSize.width,
+        height: imgSize.height
       }
     }, function(result) {
       var data = {};
@@ -463,7 +464,7 @@ function geoplotr() {
     table.id = 'input-table';
     output = document.createElement('div');
     output.id = 'output';
-    var outputImg = toolkit.image(doplot);
+    outputImg = toolkit.image(doplot);
     outputImg.setAttribute('style', 'width: 100%; height: 100%;');
     var outputError = toolkit.staticText(translations(['framework', 'error']));
     outputError.setAttribute('style', 'width: 100%; height: 100%;');
@@ -481,12 +482,16 @@ function geoplotr() {
     oTable.show = function() {
       oTable.style.display = 'table';
     };
-    optionsPage = toolkit.optionsPage();
+    var plotFooter = toolkit.banner({
+      downloadPlot: toolkit.button('download-pdf',
+          downloadPdf, translations(['framework', 'buttons']))
+    }, 'output-footer', '35px');
     output = toolkit.pages({
-      plot: outputImg,
+      plot: toolkit.footer(plotFooter, toolkit.nonScrollingWrapper(outputImg)),
       table: outputTable.getTable(),
       error: outputError
     }, translations(['framework', 'pages']));
+    optionsPage = toolkit.optionsPage();
     var inputPane = toolkit.pages({
       inputTable: toolkit.scrollingWrapper(table),
       options: optionsPage
@@ -494,8 +499,7 @@ function geoplotr() {
     var doc = toolkit.verticalDivide(null,
       inputPane,
       output);
-    top = toolkit.banner({});
-    top.classList.add('top');
+    top = toolkit.banner({}, 'top', '50px');
     toolkit.setAsBody(toolkit.header(top, doc));
     inputGrid.addWatcher(doplot);
     doplot();

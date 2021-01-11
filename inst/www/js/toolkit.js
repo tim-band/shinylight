@@ -107,13 +107,15 @@ var toolkit = function() {
   }
 
   function reposition(el, left, top, width, height) {
-    if (typeof(el.reposition) === 'function') {
+    if (el.style.position === 'fixed') {
       setAll(el.style, {
         left: left + 'px',
         top: top + 'px',
         width: width + 'px',
         height: height + 'px'
       });
+    }
+    if (typeof(el.reposition) === 'function') {
       el.reposition(left, top, width, height);
     }
   }
@@ -160,7 +162,7 @@ var toolkit = function() {
     var container = document.createElement('div');
     container.appendChild(main);
     container.appendChild(f);
-    container.style.position = fixed;
+    container.style.position = 'fixed';
     container.reposition = function(left, top, width, height) {
       var fh = f.offsetHeight;
       reposition(f, left, top + height - fh, width, fh);
@@ -631,18 +633,40 @@ var toolkit = function() {
     };
   }
 
+  // returned object has a getSize() method, returning an
+  // object with width and height members. This is the width
+  // and height set by reposition(), not the actual on-screen
+  // width and height, if that is different for some reason. In
+  // other words, it returns the width and height the image
+  // "should" have.
   function image(updateSizeFunction) {
+    var should = {
+      width: 100,
+      height: 100
+    };
     var img = document.createElement('img');
     img.style.display = 'block';
     img.setData = function(data) {
       img.setAttribute('src', data);
     };
-    if (typeof(updateSizeFunction) === 'function') {
-      img.reposition = function() {
-        updateSizeFunction();
-      };
+    if (typeof(updateSizeFunction) !== 'function') {
+      updateSizeFunction = noop;
     }
+    img.reposition = function(l, t, w, h) {
+      should.width = w;
+      should.height = h;
+      setAll(img, {
+        width: w, height: h
+      });
+      updateSizeFunction();
+    };
+    img.getSize = function() {
+      return should;
+    };
     setShowHide(img);
+    img.setData('data:image/png;base64,iVBORw0KGgoAAAANSUhEU'
+        + 'gAAAAEAAAABCAIAAACQd1PeAAAAD0lEQVQIHQEEAPv/AP///w'
+        + 'X+Av4DfRnGAAAAAElFTkSuQmCC');
     return img;
   }
 
@@ -703,18 +727,34 @@ var toolkit = function() {
     return collection(elements, 'div');
   }
 
-  function banner(elements) {
-    return collection(elements, 'span');
+  function banner(elements, className, height) {
+    var b = collection(elements, 'span');
+    b.className = className;
+    if (typeof(height) === 'string') {
+      b.style.height = height;
+    } else if (typeof(height) === 'number') {
+      b.style.height = height + 'px';
+    } else {
+      return b;
+    }
+    b.style.position = 'fixed';
+    return b;
   }
 
-  function scrollingWrapper(element) {
+  function button(id, fn, translations) {
+    var b = makeLabel(translations, null, id);
+    b.classList.add('button');
+    b.tabIndex = 0;
+    b.onclick = fn;
+    return b;
+  }
+
+  function wrapper(element, overflow) {
     var div = document.createElement('div');
     div.className = 'background';
     setAll(div.style, {
-      overflow: 'scroll',
-      display: 'block',
-      width: '100%',
-      height: '100%'
+      overflow: overflow,
+      display: 'block'
     });
     div.appendChild(element);
     setShowHide(div, 'block');
@@ -732,9 +772,19 @@ var toolkit = function() {
         width: w,
         height: h
       });
+      console.log('reposition', overflow, w, h);
       reposition(element, l, t, w, h);
     };
+    element.style.position = 'fixed';
     return div;
+  }
+
+  function scrollingWrapper(element) {
+    return wrapper(element, 'auto');
+  }
+
+  function nonScrollingWrapper(element) {
+    return wrapper(element, 'hidden');
   }
 
   // pageElements: dictionary of pageIds to elements (that will be
@@ -763,8 +813,15 @@ var toolkit = function() {
     var pageContainer = document.createElement('div');
     pageContainer.className = 'tab-body';
     var tabStrip = document.createElement('span');
-    tabStrip.className = 'tab-strip';
-    tabStrip.tabIndex = 0;
+    setAll(tabStrip.style, {
+      position: 'fixed',
+      height: '28px',
+      zIndex: 1
+    });
+    setAll(tabStrip, {
+      className: 'tab-strip',
+      tabIndex: 0
+    });
     tabStrip.onkeydown = function(ev) {
       var other = null;
       if (ev.key === 'ArrowLeft') {
@@ -859,6 +916,7 @@ var toolkit = function() {
     footer: footer,
     banner: banner,
     scrollingWrapper: scrollingWrapper,
+    nonScrollingWrapper: nonScrollingWrapper,
     paramText: paramText,
     paramInteger: paramInteger,
     paramFloat: paramFloat,
@@ -867,6 +925,7 @@ var toolkit = function() {
     optionsPage: optionsPage,
     image: image,
     staticText: staticText,
+    button: button,
     stack: stack,
     pages: pages
   };

@@ -15,6 +15,28 @@
     "inputTable": {
       "name": "Input table",
       "help": "Enter your data here"
+    },
+    "options": {
+      "name": "Options",
+      "help": "Calculation options and output control"
+    }
+  },
+  "buttons": {
+    "download-pdf": {
+      "name": "Download PDF",
+      "help": "Download a PDF of this plot"
+    },
+    "download-csv": {
+      "name": "Download CSV",
+      "help": "Download a comma-separated-values file of these data"
+    },
+    "download-json": {
+      "name": "Download debug",
+      "help": "Download this debugging data in JSON format"
+    },
+    "calculate": {
+      "name": "Calculate",
+      "help": "Calculate and display plot or table of results"
     }
   },
   "updating...": "updating",

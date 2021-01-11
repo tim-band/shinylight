@@ -14,34 +14,10 @@
   padding-right: 20px;
 }
 
-#bottom {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 50px;
-  line-height: 50px;
-  text-align: center;
-  background-color: #fdf5e4;
-}
-
-#middle {
-  position: fixed;
-  top: 50px;
-  bottom: 50px;
-  left: 0;
-  width: 100%;
-  overflow: scroll;
-}
-
-#output {
-  overflow: auto;
-}
-
 .subheader select {
   width: 100%;
   border: 1px solid #666;
-  border-radius: 5px;
+  border-radius: 3px;
   padding: 0 0 0 0;
   line-height: 1.2;
   background-color: #ffe;
@@ -98,7 +74,7 @@
   transition: opacity 0.5s;
 }
 
-#bottom .param-label .tooltip {
+.output-footer .param-label .tooltip {
   margin-top: -10px;
   transform: translate(0, -100%);
 }
@@ -196,10 +172,20 @@
   border-color: #aaa;
 }
 
-.tab-body .background {
-  margin-top: 10px;
-}
-
 .background {
   background-color: white;
+}
+
+.param-label.button {
+  border: 1px solid #222;
+  border-radius: 3px;
+  padding: 3px 12px;
+  margin: 4px 10px;
+  cursor: pointer;
+  background-color: #eee;
+  color: #236;
+}
+
+.output-footer {
+  background-color: #fdf5e4;
 }
