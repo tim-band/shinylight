@@ -1,10 +1,24 @@
 var toolkit = function() {
+
   function forEach(a, f) {
     var k = Object.keys(a), i = 0;
     for (; i !== k.length; ++i) {
       var ki = k[i];
       f(ki, a[ki]);
     }
+  }
+
+  function mergeObjects(a, b) {
+    if (!a) {
+      return b;
+    }
+    if (!b) {
+      return a;
+    }
+    forEach(b, function(k, v) {
+      a[k] = v;
+    });
+    return a;
   }
 
   // deref(o, [a,b,c], d) is a safe way of doing o[a][b][c].
@@ -92,32 +106,102 @@ var toolkit = function() {
     }
   }
 
-  function setDivideSize(container, left, right, divider, img, leftProportion, updateSize) {
-    var gripWidth = 10;
-    var gripHeight = 30;
-    var height = container.offsetHeight;
+  function reposition(el, left, top, width, height) {
+    if (typeof(el.reposition) === 'function') {
+      setAll(el.style, {
+        left: left + 'px',
+        top: top + 'px',
+        width: width + 'px',
+        height: height + 'px'
+      });
+      el.reposition(left, top, width, height);
+    }
+  }
+
+  function getData(el) {
+    return typeof(el.getData) === 'function'? el.getDara() : null;
+  }
+
+  function setData(el, v) {
+    if (typeof(el.setData) === 'function') {
+      el.setData(v)
+    }
+  }
+
+  // Creates a container for existing header and main section.
+  // When the container is resized, its reposition() method
+  // shoudl be called. This will set the main section to the same
+  // width as the container but its height to the new container
+  // height minus the height of the header.
+  // If the main section has a reposition() method it will be called
+  // after it is resized.
+  function header(h, main) {
+    var container = document.createElement('div');
+    container.appendChild(h);
+    container.appendChild(main);
+    container.style.position = 'fixed';
+    container.reposition = function(left, top, width, height) {
+      var hh = h.offsetHeight;
+      reposition(h, left, top, width, hh);
+      reposition(main, left, top + hh, width, height - hh);
+    }
+    container.getData = function() {
+      return mergeObjects(getData(h), getData(main));
+    }
+    container.setData = function(v) {
+      setData(h, v);
+      setData(main, v);
+    }
+    return container;
+  }
+
+  // Like header, but the footer goes below the main section
+  function footer(f, main) {
+    var container = document.createElement('div');
+    container.appendChild(main);
+    container.appendChild(f);
+    container.style.position = fixed;
+    container.reposition = function(left, top, width, height) {
+      var fh = f.offsetHeight;
+      reposition(f, left, top + height - fh, width, fh);
+      reposition(main, left, top, width, height - fh);
+    }
+    container.getData = function() {
+      return mergeObjects(getData(header), getData(main));
+    }
+    container.setData = function(v) {
+      setData(footer, v);
+      setData(main, v);
+    }
+    return container;
+  }
+
+  function setDivideSize(container, left, right, divider, img, dimensions) {
     setAll(img.style, {
       position: 'fixed',
-      top: container.offsetTop + (height - gripHeight) / 2 + 'px'
+      top: (dimensions.top
+        + (dimensions.height - dimensions.gripHeight) / 2)
+        + 'px'
     });
     function setXnow(x) {
-      divider.style.left = x + 'px',
-      img.style.left = x + 'px',
-      left.style.width = x - left.offsetLeft + 'px';
-      right.style.left = x + gripWidth + 'px';
-      right.style.width = container.offsetWidth - gripWidth - x + 'px';
-      if (updateSize) {
-        updateSize();
-      }
+      divider.style.left = (dimensions.left + x) + 'px',
+      reposition(left, dimensions.left, dimensions.top, x, dimensions.height);
+      var rightWidth = dimensions.width - dimensions.gripWidth - x;
+      reposition(right,
+        x + dimensions.gripWidth,
+        dimensions.top,
+        rightWidth,
+        dimensions.height);
+      dimensions.leftProportion = x / (x + rightWidth);
     }
     var setX = throttle(150, setXnow);
     setAll(divider.style, {
       position: 'fixed',
       'background-color': '#b0b0b0',
       cursor: 'col-resize',
-      width: gripWidth + 'px',
-      top: container.offsetTop + 'px',
-      height: height + 'px'
+      width: dimensions.gripWidth + 'px',
+      top: dimensions.top + 'px',
+      height: dimensions.height + 'px'
     });
     setAll(divider, {
       onmousedown: function(ev) {
@@ -162,22 +246,20 @@ var toolkit = function() {
     });
     setAll(left.style, {
       position: 'fixed',
-      left: container.offsetLeft + 'px',
-      top: container.offsetTop + 'px',
-      height: height + 'px',
       margin: '0 0 0 0'
     });
     setAll(right.style, {
       position: 'fixed',
-      top: container.offsetTop + 'px',
-      height: height + 'px',
       margin: '0 0 0 0'
     });
-    var x = Math.floor((container.offsetWidth - gripWidth) * leftProportion);
-    setX(container.offsetLeft + x);
+    var x = Math.floor((dimensions.width - dimensions.gripWidth) * dimensions.leftProportion);
+    setX(x);
   }
 
-  function vDivide(container, left, right, updateSize) {
+  function vDivide(container, left, right) {
+    if (!container) {
+      container = document.createElement('div');
+    }
     var divider = document.createElement('div');
     var img = document.createElement('img');
     setAttributes(img, {
@@ -198,16 +280,40 @@ var toolkit = function() {
     });
     divider.appendChild(img);
     container.append(left, divider, right);
+    setShowHide(container);
     setAll(container.style, {
       overflow: 'hidden'
     });
+    var dimensions = {
+      left: container.offsetLeft,
+      top: container.offsetTop,
+      width: container.offsetWidth,
+      height: container.offsetHeight,
+      gripWidth: 10,
+      gripHeight: 30,
+      leftProportion: 0.5
+    }
+    container.reposition = function(l, t, w, h) {
+      setAll(dimensions, {
+        left: l,
+        top: t,
+        width: w,
+        height: h
+      });
+      setDivideSize(container, left, right, divider, img, dimensions);
+    };
+    return container;
+  }
+
+  function setAsBody(el) {
+    var main = document.getElementsByTagName('main')[0];
+    main.textContent = '';
+    main.appendChild(el);
     function setSize() {
-      var lw = left.offsetWidth;
-      var w = lw + right.offsetWidth;
-      setDivideSize(container, left, right, divider, img, lw / w, updateSize);
+      reposition(el, 0, 0, window.innerWidth, innerHeight);
     }
     window.addEventListener('resize', setSize);
-    setDivideSize(container, left, right, divider, img, 0.5, updateSize);
+    setSize();
   }
 
   function constTrue() {
@@ -239,9 +345,9 @@ var toolkit = function() {
     return label;
   }
 
-  function paramColor(container, translations, initial, callback) {
+  function paramColor(id, container, translations, initial, callback) {
     var box = typeof(container.makeSubElement) === 'function'?
-      container.makeSubElement() : span(container);
+      container.makeSubElement(id) : span(container);
     box.className = 'param-color';
     box.addElement(makeLabel(translations));
     var input = document.createElement('input');
@@ -254,21 +360,21 @@ var toolkit = function() {
       callback = noop;
     }
     input.onchange = callback;
-    box.setParam = function(value) {
+    box.setData = function(value) {
       input.value = value;
       callback();
     };
-    box.getParam = function() {
+    box.getData = function() {
       return input.value;
     };
-    box.appendChild(input);
+    box.addElement(input);
     container.appendChild(box);
     return box;
   }
 
-  function paramTyping(container, translations, initial, callback, validate, transform) {
+  function paramTyping(id, container, translations, initial, callback, validate, transform) {
     var box = typeof(container.makeSubElement) === 'function'?
-      container.makeSubElement() : span(container);
+      container.makeSubElement(id) : span(container);
     box.className = 'param-text';
     box.addElement(makeLabel(translations));
     var input = document.createElement('input');
@@ -290,14 +396,14 @@ var toolkit = function() {
         input.classList.add('invalid');
       }
     };
-    box.setParam = function(value) {
+    box.setData = function(value) {
       input.value = value;
       callback();
     };
-    box.getParam = function() {
+    box.getData = function() {
       return transform(input.value);
     };
-    box.appendChild(input);
+    box.addElement(input);
     return box;
   }
 
@@ -325,13 +431,13 @@ var toolkit = function() {
     return function(v) { return minf(v) && maxf(v); };
   }
 
-  function paramText(container, translations, initial, callback, validate) {
-    return paramTyping(container, translations, initial, callback, validate, identity);
+  function paramText(id, container, translations, initial, callback, validate) {
+    return paramTyping(id, container, translations, initial, callback, validate, identity);
   }
 
-  function paramInteger(container, translations, initial, callback, min, max) {
+  function paramInteger(id, container, translations, initial, callback, min, max) {
     var rangeFn = isInRangeFn(min, max);
-    return paramTyping(container, translations, initial, callback, function(v) {
+    return paramTyping(id, container, translations, initial, callback, function(v) {
       if (/^ *[-+]?\d+ *$/.test(v)) {
         var i = parseInt(v);
         return rangeFn(i);
@@ -340,9 +446,9 @@ var toolkit = function() {
     }, parseInt);
   }
 
-  function paramFloat(container, translations, initial, callback, min, max) {
+  function paramFloat(id, container, translations, initial, callback, min, max) {
     var rangeFn = isInRangeFn(min, max);
-    return paramTyping(container, translations, initial, callback, function(v) {
+    return paramTyping(id, container, translations, initial, callback, function(v) {
       if (/^ *[-+]?\d+(\.\d+)?([eE]\d+)? *$/.test(v)) {
         var f = parseFloat(v);
         return rangeFn(f);
@@ -388,6 +494,8 @@ var toolkit = function() {
   }
 
   // Creates a custom selection box
+  // id: when getData or setData is called on the container, the value at
+  // key 'id' refers to this selector.
   // container: HTML element to add the box to. If the container came from
   // optionsPage() the new selection box will be formatted as a table row.
   // labelTranslations: A dictionary with two optional keys; 'name' gives the
@@ -401,9 +509,9 @@ var toolkit = function() {
   // initial: ID of the option to start selecting (optional)
   // callback: The (nullary) function to call when the value changes (optional)
   // returns element you can add to the DOM
-  function paramSelector(container, labelTranslations, values, valueTranslations, initial, callback) {
+  function paramSelector(id, container, labelTranslations, values, valueTranslations, initial, callback) {
     var box = typeof(container.makeSubElement) === 'function'?
-      container.makeSubElement() : span(container);
+      container.makeSubElement(id) : span(container);
     // The button is the area that can be clicked to open up the drop-down
     var button = document.createElement('div');
     button.className = 'param-box';
@@ -451,7 +559,7 @@ var toolkit = function() {
       optr.onmouseup = function(ev) {
         dropDown.classList.remove('open');
         open = false;
-        box.setParam(id);
+        box.setData(id);
         ev.preventDefault();
       };
     });
@@ -480,11 +588,11 @@ var toolkit = function() {
         buttonText.textContent = optionNames[selectedOption];
       }
     };
-    box.setParam = function(value) {
+    box.setData = function(value) {
       setSelected(value);
       callback();
     };
-    box.getParam = function() {
+    box.getData = function() {
       return selectedOption;
     };
     setSelected(initial);
@@ -500,7 +608,7 @@ var toolkit = function() {
       }
       dropDown.classList.remove('open');
       open = false;
-      box.setParam(goTo);
+      box.setData(goTo);
     };
     box.onblur = function() {
       dropDown.classList.remove('open');
@@ -523,12 +631,17 @@ var toolkit = function() {
     };
   }
 
-  function image() {
+  function image(updateSizeFunction) {
     var img = document.createElement('img');
     img.style.display = 'block';
     img.setData = function(data) {
       img.setAttribute('src', data);
     };
+    if (typeof(updateSizeFunction) === 'function') {
+      img.reposition = function() {
+        updateSizeFunction();
+      };
+    }
     setShowHide(img);
     return img;
   }
@@ -546,12 +659,11 @@ var toolkit = function() {
     return div;
   }
 
-  // elements is a dictionary of ids to elements,
-  // each of which must have a setData method.
-  function stack(elements) {
+  // elements is a dictionary of ids to elements
+  function collection(elements, type) {
     // copy of elements
     var sub = {};
-    var div = document.createElement('div');
+    var div = document.createElement(type);
     forEach(elements, function(id, el) {
       sub[id] = el;
       div.appendChild(el);
@@ -559,8 +671,68 @@ var toolkit = function() {
     setShowHide(div);
     div.setData = function(data) {
       forEach(sub, function(id, el) {
-        el.setData(id in data? data[id] : null);
+        setData(el, id in data? data[id] : null);
       });
+    };
+    div.getData = function() {
+      results = {};
+      forEach(sub, function(id, el) {
+        var r = getData(el);
+        if (r) {
+          results[id] = r;
+        }
+      });
+      return results;
+    };
+    div.makeSubElement = function(id) {
+      var s = span(div);
+      if (id) {
+        sub[id] = s;
+      }
+      return s;
+    }
+    div.deleteAll = function() {
+      sub = {};
+      div.textContent = '';
+    }
+    div.style.zIndex = 1;
+    return div;
+  }
+
+  function stack(elements) {
+    return collection(elements, 'div');
+  }
+
+  function banner(elements) {
+    return collection(elements, 'span');
+  }
+
+  function scrollingWrapper(element) {
+    var div = document.createElement('div');
+    div.className = 'background';
+    setAll(div.style, {
+      overflow: 'scroll',
+      display: 'block',
+      width: '100%',
+      height: '100%'
+    });
+    div.appendChild(element);
+    setShowHide(div, 'block');
+    if (typeof(element.setData) === 'function') {
+      div.setData = element.setData;
+    }
+    if (typeof(element.getData) === 'function') {
+      div.getData = element.getData;
+    };
+    div.reposition = function(l, t, w, h) {
+      setAll(div.style, {
+        position: 'fixed',
+        left: l,
+        top: t,
+        width: w,
+        height: h
+      });
+      reposition(element, l, t, w, h);
     };
     return div;
   }
@@ -580,13 +752,16 @@ var toolkit = function() {
   // The values are passed to the setData() functions of the corresponding
   // elements. Pages without any data (and their corresponding radio
   // buttons) are summarily disabled. Pages with data are enabled.
+  // reposition(): sets each page to the same dimensions as the container
+  // and calls each page's reposition() method (if it exists)
   function pages(pageElements, labelTranslations) {
     var tabs = {};
     // a deep copy of pageElements
     var pages = {};
     var active = null;
     var returnPage = null;
-    var container = document.createElement('div');
+    var pageContainer = document.createElement('div');
+    pageContainer.className = 'tab-body';
     var tabStrip = document.createElement('span');
     tabStrip.className = 'tab-strip';
     tabStrip.tabIndex = 0;
@@ -603,7 +778,6 @@ var toolkit = function() {
         otherTab.focus();
       }
     }
-    container.appendChild(tabStrip);
     forEach(pageElements, function(pageId, page) {
       tab = makeLabel(labelTranslations, tabStrip, pageId);
       tab.onclick = function() {
@@ -618,19 +792,30 @@ var toolkit = function() {
         pages[pageId].show();
         tab.classList.add('active');
       };
+      var wpage = scrollingWrapper(page);
       if (!active) {
         active = pageId;
         tab.classList.add('active');
-        page.show();
+        wpage.show();
       } else {
-        page.hide();
+        wpage.hide();
       }
       tabStrip.appendChild(tab);
-      container.appendChild(page);
-      pages[pageId] = page;
+      pageContainer.appendChild(wpage);
+      pages[pageId] = wpage;
       tabs[pageId] = tab;
     });
     returnPage = active;
+    var container = header(tabStrip, pageContainer);
+    container.getData = function() {
+      var result = {};
+      forEach(pages, function(pageId, page) {
+        var r = getData(page);
+        if (r) {
+          result[pageId] = r;
+        }
+      });
+    }
     container.setData = function(data) {
       var first = null;
       forEach(pages, function(pageId, page) {
@@ -655,14 +840,25 @@ var toolkit = function() {
         tabs[newActive].click();
       }
     };
+    pageContainer.reposition = function(left, top, width, height) {
+      forEach(pages, function(pageId, page) {
+        page.style.position = 'fixed';
+        reposition(page, left, top, width, height);
+      });
+    }
     return container;
   }
 
   return {
     forEach: forEach,
     deref: deref,
-    verticalDivide: vDivide,
     whenQuiet: whenQuiet,
+    setAsBody: setAsBody,
+    verticalDivide: vDivide,
+    header: header,
+    footer: footer,
+    banner: banner,
+    scrollingWrapper: scrollingWrapper,
     paramText: paramText,
     paramInteger: paramInteger,
     paramFloat: paramFloat,

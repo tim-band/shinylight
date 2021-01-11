@@ -20,8 +20,8 @@ function geoplotr() {
   var subheaderParam;
   // type names of subheaders in each column
   var subheaderChoices = [];
-  var top = document.getElementById('top');
-  var statusMessage = document.getElementById('status-message');
+  var top;
+  var statusMessage = document.createElement('p'); //...
 
   function getHttp(url, callback, errorCallback) {
     var xhr = new XMLHttpRequest();
@@ -155,21 +155,13 @@ function geoplotr() {
         height: br.height
       }
     }, function(result) {
-      var buttonPdf = document.getElementById('download-pdf');
-      var buttonCsv = document.getElementById('download-csv');
       var data = {};
       if ('data' in result) {
         data.table = result.data;
-        buttonCsv.disabled = false;
-      } else {
-        buttonCsv.disabled = true;
       }
       var plot = toolkit.deref(result, ['plot', 0]);
       if (plot) {
         data.plot = plot;
-        buttonPdf.disabled = false;
-      } else {
-        buttonPdf.disabled = true;
       }
       output.setData(data);
     });
@@ -182,12 +174,12 @@ function geoplotr() {
     });
     toolkit.forEach(shownParameters, function(paramKey, paramId) {
       var e = allParameterSelectors[paramKey];
-      params[paramId] = e.getParam();
+      params[paramId] = e.getData();
     });
     var og = toolkit.deref(schema, ['optiongroups'], {});
     toolkit.forEach(og, function(groupId, group) {
       toolkit.forEach(group, function(optionId, option) {
-        params[optionId] = optionGroups[groupId][optionId].getParam();
+        params[optionId] = optionGroups[groupId][optionId].getData();
       });
     });
     if (subheaderParam) {
@@ -225,7 +217,7 @@ function geoplotr() {
     if (nodes.length === 0) {
       return '';
     }
-    return nodes[0].getParam();
+    return nodes[0].getData();
   }
 
   function getUnitValues(typeDescriptor) {
@@ -349,7 +341,7 @@ function geoplotr() {
         const paramKey = headerParams[c];
         var type = schema.types[paramKey];
         if (type.kind[0] === 'enum') {
-          toolkit.paramSelector(
+          toolkit.paramSelector(paramKey,
             inputGrid.getColumnSubheader(c),
             {},
             type.values, translations(['app', 'types', paramKey], {}),
@@ -360,14 +352,14 @@ function geoplotr() {
   }
 
   var standardTypes = {
-    u8: function(container, tr, initial, callback) {
-      return toolkit.paramInteger(container, tr, initial, callback, 0, 255);
+    u8: function(id, container, tr, initial, callback) {
+      return toolkit.paramInteger(id, container, tr, initial, callback, 0, 255);
     },
-    f: function(container, tr, initial, callback) {
-      return toolkit.paramFloat(container, tr, initial, callback);
+    f: function(id, container, tr, initial, callback) {
+      return toolkit.paramFloat(id, container, tr, initial, callback);
     },
-    color: function(container, tr, initial, callback) {
-      return toolkit.paramColor(container, tr, initial, callback);
+    color: function(id, container, tr, initial, callback) {
+      return toolkit.paramColor(id, container, tr, initial, callback);
     }
   };
 
@@ -389,15 +381,15 @@ function geoplotr() {
           var kindId = toolkit.deref(e, ['kind', 0]);
           if (kindId === 'enum') {
             const valuesTr = translations(['app', 'types', typeId], typeId);
-            options[optionId] = toolkit.paramSelector(optionsPage,
+            options[optionId] = toolkit.paramSelector(optionId, optionsPage,
               tr, e.values, valuesTr, initial, doplot);
             return;
           }
         }
         if (typeId in standardTypes) {
-          options[optionId] = standardTypes[typeId](optionsPage, tr, initial, doplot);
+          options[optionId] = standardTypes[typeId](optionId, optionsPage, tr, initial, doplot);
         } else {
-          options[optionId] = toolkit.paramText(optionsPage, tr, initial, doplot);
+          options[optionId] = toolkit.paramText(optionId, optionsPage, tr, initial, doplot);
         }
       });
     });
@@ -421,7 +413,7 @@ function geoplotr() {
       shownParameters[paramKey] = paramId;
       var e = allParameterSelectors[paramKey];
       e.show();
-      e.setParam(initialEnum[0]);
+      e.setData(initialEnum[0]);
     }, function(paramId, columnData, units, columnType) {
       headerParams[paramId] = headers.length;
       headers.push(paramId);
@@ -455,27 +447,23 @@ function geoplotr() {
 
   function addFunctionSelectButton() {
     var fns = Object.keys(schema.functions);
-    top.textContent = '';
-    functionSelector = toolkit.paramSelector(top,
+    top.deleteAll();
+    functionSelector = toolkit.paramSelector('', top,
       { name: translations(['framework','functions'], 'Function') },
       fns, translations(['app','functions']), null, setParameters);
   }
 
   function selectedFunction() {
-    return functionSelector.getParam();
+    return functionSelector.getData();
   }
 
   function setupScreen() {
     inputGrid = createDataEntryGrid(null, 5, 5);
     var table = inputGrid.getTable();
     table.id = 'input-table';
-    // vertical dividing line
-    var left = document.createElement('div');
-    left.style.overflow = 'auto';
-    left.appendChild(table);
     output = document.createElement('div');
     output.id = 'output';
-    var outputImg = toolkit.image();
+    var outputImg = toolkit.image(doplot);
     outputImg.setAttribute('style', 'width: 100%; height: 100%;');
     var outputError = toolkit.staticText(translations(['framework', 'error']));
     outputError.setAttribute('style', 'width: 100%; height: 100%;');
@@ -500,21 +488,29 @@ function geoplotr() {
       options: optionsPage,
       error: outputError
     }, translations(['framework', 'pages']));
-    toolkit.verticalDivide(document.getElementById('middle'), left, output, doplot);
+    var doc = toolkit.verticalDivide(null,
+      toolkit.scrollingWrapper(table),
+      output);
+    top = toolkit.banner({});
+    top.classList.add('top');
+    toolkit.setAsBody(toolkit.header(top, doc));
     inputGrid.addWatcher(doplot);
     doplot();
     addDownloadButtons();
   }
 
   function addDownloadButtons() {
-    document.getElementById('download-pdf').onclick = downloadPlot;
-    document.getElementById('download-csv').onclick = downloadCsv;
+    //document.getElementById('download-pdf').onclick = downloadPlot;
+    //document.getElementById('download-csv').onclick = downloadCsv;
+    // Add these buttons to banners in their appropriate pages?
+    //...
   }
 
   function addparamSelectors() {
     allParameterSelectors = {};
     forEachEnumParam(function(paramKey, initial, values, typeKey) {
       var button = toolkit.paramSelector(
+        paramKey,
         top,
         translations(['app', 'params', paramKey]),
         values,
