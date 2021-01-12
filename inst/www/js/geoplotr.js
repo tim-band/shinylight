@@ -21,8 +21,8 @@ function geoplotr() {
   var subheaderParam;
   // type names of subheaders in each column
   var subheaderChoices = [];
+  var calculateButtons = [];
   var top;
-  var statusMessage = document.createElement('p'); //...
 
   function getHttp(url, callback, errorCallback) {
     var xhr = new XMLHttpRequest();
@@ -150,7 +150,8 @@ function geoplotr() {
     return JSON.stringify(j, null, 2);
   }
 
-  function displayPlotNow() {
+  function displayPlotNow(done) {
+    console.log('plotting');
     var imgSize = outputImgWrapper.getSize();
     doPlotNow({
       'rrpc.resultformat': {
@@ -172,6 +173,9 @@ function geoplotr() {
         output: result
       });
       output.setData(data);
+      if (typeof(done) === 'function') {
+        done();
+      }
     });
   }
 
@@ -194,7 +198,6 @@ function geoplotr() {
       params[subheaderParam] = unitSettings();
     }
     rrpc.call(fn, params, function(result, err) {
-      statusMessage.textContent = '';
       if (err) {
         output.setData({
           error: err,
@@ -206,12 +209,15 @@ function geoplotr() {
     });
   };
 
-  var doplot2 = toolkit.whenQuiet(14, displayPlotNow);
+  var doPlot2 = noop;
+  var dirtyPlot = noop;
 
-  function doplot() {
-    var message = translations(['framework', 'updating'], 'updating...');
-    statusMessage.textContent = message;
-    doplot2();
+  function doPlot() {
+    doPlot2();
+  }
+
+  function markPlotDirty() {
+    dirtyPlot();
   }
 
   function getColumn(index) {
@@ -294,16 +300,6 @@ function geoplotr() {
     });
   }
 
-  // turn an array of ids into an object mapping
-  // ids to localized strings (if available)
-  function localizeArray(dictionary, array) {
-    var vals = {};
-    toolkit.forEach(array, function(i, v) {
-      vals[v] = v in dictionary && 'name' in dictionary[v]? dictionary[v].name : v;
-    });
-    return vals;
-  }
-
   function translations(path, defaultValue) {
     var dr = toolkit.deref(translationDict, path, defaultValue);
     return dr === null? {} : dr;
@@ -358,7 +354,7 @@ function geoplotr() {
             inputGrid.getColumnSubheader(c),
             {},
             type.values, translations(['app', 'types', paramKey], {}),
-            units[c], doplot);
+            units[c], markPlotDirty);
         }
       }
     }
@@ -395,14 +391,14 @@ function geoplotr() {
           if (kindId === 'enum') {
             const valuesTr = translations(['app', 'types', typeId], typeId);
             options[optionId] = toolkit.paramSelector(optionId, optionsPage,
-              tr, e.values, valuesTr, initial, doplot);
+              tr, e.values, valuesTr, initial, markPlotDirty);
             return;
           }
         }
         if (typeId in standardTypes) {
-          options[optionId] = standardTypes[typeId](optionId, optionsPage, tr, initial, doplot);
+          options[optionId] = standardTypes[typeId](optionId, optionsPage, tr, initial, markPlotDirty);
         } else {
-          options[optionId] = toolkit.paramText(optionId, optionsPage, tr, initial, doplot);
+          options[optionId] = toolkit.paramText(optionId, optionsPage, tr, initial, markPlotDirty);
         }
       });
     });
@@ -442,7 +438,23 @@ function geoplotr() {
       subheaderParam? subheaderChoices : null,
       subheaderInitials,
       data);
-    }
+  }
+
+  function setAutomaticCalculate() {
+    doPlot2 = toolkit.whenQuiet(14, displayPlotNow);
+    dirtyPlot = doPlot;
+    toolkit.forEach(calculateButtons, function(i, c) {
+      c.hide();
+    });
+  }
+
+  function setManualCalculate() {
+    doPlot2 = displayPlotNow;
+    dirtyPlot = noop;
+    toolkit.forEach(calculateButtons, function(i, c) {
+      c.show();
+    });
+  }
 
   loadTranslations(function(tr) {
     translationDict = tr;
@@ -454,6 +466,8 @@ function geoplotr() {
         addparamSelectors();
         setParameters();
         setOptions();
+        //displayPlotNow(setAutomaticCalculate);
+        displayPlotNow(setManualCalculate);
       });
     });
   });
@@ -476,7 +490,7 @@ function geoplotr() {
     table.id = 'input-table';
     output = document.createElement('div');
     output.id = 'output';
-    var outputImg = toolkit.image(doplot);
+    var outputImg = toolkit.image(markPlotDirty);
     outputImg.setAttribute('style', 'width: 100%; height: 100%;');
     var outputError = toolkit.staticText(translations(['framework', 'error']));
     outputError.setAttribute('style', 'width: 100%; height: 100%;');
@@ -496,9 +510,15 @@ function geoplotr() {
     oTable.show = function() {
       oTable.style.display = 'table';
     };
+    var calculate1 = toolkit.button('calculate',
+      doPlot, translations(['framework', 'buttons']));
+    var calculate2 = toolkit.button('calculate',
+      doPlot, translations(['framework', 'buttons']));
+    calculateButtons.push(calculate1, calculate2);
     var plotFooter = toolkit.banner({
       downloadPlot: toolkit.button('download-pdf',
-          downloadPdf, translations(['framework', 'buttons']))
+        downloadPdf, translations(['framework', 'buttons'])),
+      calculate: calculate1
     }, 'output-footer', 35);
     var tableFooter = toolkit.banner({
       downloadCsv: toolkit.button(
@@ -507,7 +527,8 @@ function geoplotr() {
           downloadCsv(outputTable)
         },
         translations(['framework', 'buttons'])
-      )
+      ),
+      calculate: calculate2
     }, 'output-footer', 35);
     var outputDebug = toolkit.preformattedText(
       translations(['framework', 'labels', 'debug-text']));
@@ -541,8 +562,7 @@ function geoplotr() {
       output);
     top = toolkit.banner({}, 'top', 50);
     toolkit.setAsBody(toolkit.header(top, doc));
-    inputGrid.addWatcher(doplot);
-    doplot();
+    inputGrid.addWatcher(markPlotDirty);
   }
 
   function addparamSelectors() {
@@ -554,7 +574,7 @@ function geoplotr() {
         translations(['app', 'params', paramKey]),
         values,
         translations(['app', 'types', typeKey]),
-        initial[0], doplot);
+        initial[0], markPlotDirty);
       allParameterSelectors[paramKey] = button;
     });
   }

@@ -276,7 +276,7 @@ var toolkit = function() {
       margin: '0 0 0 0'
     });
     var x = Math.floor((dimensions.width - dimensions.gripWidth) * dimensions.leftProportion);
-    setX(x);
+    setXnow(x);
   }
 
   function vDivide(container, left, right) {
@@ -797,6 +797,7 @@ var toolkit = function() {
     b.classList.add('button');
     b.tabIndex = 0;
     b.onclick = fn;
+    setShowHide(b, 'inline');
     return b;
   }
 
