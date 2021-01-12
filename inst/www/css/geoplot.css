@@ -52,6 +52,20 @@
   line-height: normal;
 }
 
+.static-text {
+  padding-left: 50px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-right: 50px;
+  background-color: #dee;
+}
+
+.static-text pre {
+  border: 1px #222 solid;
+  border-radius: 3px;
+  background-color: #eee;
+}
+
 .param-label {
   display: inline-block;
   vertical-align: middle;

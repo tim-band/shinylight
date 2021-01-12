@@ -41,12 +41,12 @@
     "calculate": {
       "name": "Calculate",
       "help": "Calculate and display plot or table of results"
-    },
-    "labels": {
-      "debug-text": {
-        "name": "Debug",
-        "help": "Raw input and output"
-      }
+    }
+  },
+  "labels": {
+    "debug-text": {
+      "name": "Debug",
+      "help": "Raw input and output"
     }
   },
   "updating...": "updating",

@@ -136,15 +136,14 @@ function geoplotr() {
     });
   }
 
-  function downloadCsv() {
-    doPlotNow({}, function(result) {
-      var t = makeTable(result.data);
-      var rs = [t.headers.join(',')];
-      toolkit.forEach(t.rows, function(i,r) {
-        rs.push(r.join(','));
-      });
-      download('geoplot.csv', 'data:text/csv;base64,' + btoa(rs.join('\n')));
+  function downloadCsv(table) {
+    var h = table.getColumnHeaders();
+    var rows = table.getCells();
+    var rs = [h.join(',')];
+    toolkit.forEach(rows, function(i,r) {
+      rs.push(r.join(','));
     });
+    download('geoplot.csv', 'data:text/csv;base64,' + btoa(rs.join('\n')));
   }
 
   function prettyJson(j) {
@@ -345,7 +344,9 @@ function geoplotr() {
 
   function setInputGrid(headers, headerParams, subheaders, units, data) {
     var rows = transpose(data);
-    inputGrid.init(localizeHeaders(headers), rows);
+    var headers = localizeHeaders(headers);
+    headers.push('');
+    inputGrid.init(headers, rows);
     if (!subheaders) return;
     for (c = 0; c !== subheaders.length; ++c) {
       var s = subheaders[c];
@@ -485,7 +486,9 @@ function geoplotr() {
     oTable.setAttribute('style', 'width: 100%; height: 100%;');
     oTable.setData = function(data) {
       var t = makeTable(data);
-      outputTable.init(t.headers, t.rows);
+      var h = t.headers;
+      h.push('');
+      outputTable.init(h, t.rows);
     };
     oTable.hide = function() {
       oTable.style.display = 'none';
@@ -498,11 +501,16 @@ function geoplotr() {
           downloadPdf, translations(['framework', 'buttons']))
     }, 'output-footer', 35);
     var tableFooter = toolkit.banner({
-      downloadCsv: toolkit.button('download-csv',
-          downloadCsv, translations(['framework', 'buttons']))
+      downloadCsv: toolkit.button(
+        'download-csv',
+        function() {
+          downloadCsv(outputTable)
+        },
+        translations(['framework', 'buttons'])
+      )
     }, 'output-footer', 35);
     var outputDebug = toolkit.preformattedText(
-      translations(['framework', 'pages', 'labels', 'debug-text']));
+      translations(['framework', 'labels', 'debug-text']));
     var debugJson = '';
     var debugFooter = toolkit.banner({
       downloadDebug: toolkit.button(
@@ -521,7 +529,7 @@ function geoplotr() {
       plot: toolkit.footer(plotFooter, outputImgWrapper),
       table: toolkit.footer(tableFooter, toolkit.scrollingWrapper(oTable)),
       error: outputError,
-      debug: toolkit.footer(debugFooter, outputDebug)
+      debug: toolkit.footer(debugFooter, toolkit.scrollingWrapper(outputDebug))
     }, translations(['framework', 'pages']));
     optionsPage = toolkit.optionsPage();
     var inputPane = toolkit.pages({

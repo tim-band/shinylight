@@ -697,7 +697,7 @@ var toolkit = function() {
 
   function staticContent(labelTranslations, type) {
     var div = document.createElement('div');
-    div.className = 'param-text';
+    div.className = 'static-text';
     makeLabel(labelTranslations, div);
     var static = document.createElement(type);
     div.appendChild(static);
@@ -821,8 +821,6 @@ var toolkit = function() {
   }
 
   function scrollingWrapper(element) {
-    element.style.width = '100%';
-    element.style.height = '100%';
     var div = wrapper(element, 'auto');
     var should = {};
     div.getSize = function() {
