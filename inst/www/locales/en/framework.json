@@ -12,6 +12,10 @@
       "name": "Error",
       "help": "See any errors from the function"
     },
+    "debug": {
+      "name": "Debugging",
+      "help": "Information to help debugging problems"
+    },
     "inputTable": {
       "name": "Input table",
       "help": "Enter your data here"
@@ -37,6 +41,12 @@
     "calculate": {
       "name": "Calculate",
       "help": "Calculate and display plot or table of results"
+    },
+    "labels": {
+      "debug-text": {
+        "name": "Debug",
+        "help": "Raw input and output"
+      }
     }
   },
   "updating...": "updating",

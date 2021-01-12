@@ -147,6 +147,10 @@ function geoplotr() {
     });
   }
 
+  function prettyJson(j) {
+    return JSON.stringify(j, null, 2);
+  }
+
   function displayPlotNow() {
     var imgSize = outputImgWrapper.getSize();
     doPlotNow({
@@ -155,7 +159,7 @@ function geoplotr() {
         width: imgSize.width,
         height: imgSize.height
       }
-    }, function(result) {
+    }, function(result, params) {
       var data = {};
       if ('data' in result) {
         data.table = result.data;
@@ -164,6 +168,10 @@ function geoplotr() {
       if (plot) {
         data.plot = plot;
       }
+      data.debug = prettyJson({
+        input: params,
+        output: result
+      });
       output.setData(data);
     });
   }
@@ -189,9 +197,12 @@ function geoplotr() {
     rrpc.call(fn, params, function(result, err) {
       statusMessage.textContent = '';
       if (err) {
-        output.setData({ error: err });
+        output.setData({
+          error: err,
+          debug: prettyJson({ input: params })
+        });
       } else if (result) {
-        callback(result);
+        callback(result, params);
       }
     });
   };
@@ -490,11 +501,27 @@ function geoplotr() {
       downloadCsv: toolkit.button('download-csv',
           downloadCsv, translations(['framework', 'buttons']))
     }, 'output-footer', 35);
+    var outputDebug = toolkit.preformattedText(
+      translations(['framework', 'pages', 'labels', 'debug-text']));
+    var debugJson = '';
+    var debugFooter = toolkit.banner({
+      downloadDebug: toolkit.button(
+        'download-json',
+        function() {
+          download('geoplotr.json', 'data:text/json;base64,' + btoa(debugJson));
+        },
+        translations(['framework', 'buttons'])
+      )
+    }, 'output-footer', 35);
+    debugFooter.setData = function(json) {
+      debugJson = json;
+    };
     outputImgWrapper = toolkit.nonScrollingWrapper(outputImg);
     output = toolkit.pages({
       plot: toolkit.footer(plotFooter, outputImgWrapper),
       table: toolkit.footer(tableFooter, toolkit.scrollingWrapper(oTable)),
-      error: outputError
+      error: outputError,
+      debug: toolkit.footer(debugFooter, outputDebug)
     }, translations(['framework', 'pages']));
     optionsPage = toolkit.optionsPage();
     var inputPane = toolkit.pages({
@@ -508,14 +535,6 @@ function geoplotr() {
     toolkit.setAsBody(toolkit.header(top, doc));
     inputGrid.addWatcher(doplot);
     doplot();
-    addDownloadButtons();
-  }
-
-  function addDownloadButtons() {
-    //document.getElementById('download-pdf').onclick = downloadPlot;
-    //document.getElementById('download-csv').onclick = downloadCsv;
-    // Add these buttons to banners in their appropriate pages?
-    //...
   }
 
   function addparamSelectors() {

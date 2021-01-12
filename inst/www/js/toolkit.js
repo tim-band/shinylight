@@ -193,7 +193,7 @@ var toolkit = function() {
       return mergeObjects(getData(header), getData(main));
     }
     container.setData = function(v) {
-      setData(footer, v);
+      setData(f, v);
       setData(main, v);
     }
     return container;
@@ -694,17 +694,32 @@ var toolkit = function() {
     return img;
   }
 
-  function staticText(labelTranslations) {
+  function staticContent(labelTranslations, type) {
     var div = document.createElement('div');
     div.className = 'param-text';
     makeLabel(labelTranslations, div);
-    var static = document.createElement('div');
+    var static = document.createElement(type);
     div.appendChild(static);
     setShowHide(div);
     div.setData = function(data) {
       static.textContent = data;
     };
     return div;
+  }
+
+  function staticText(labelTranslations) {
+    return staticContent(labelTranslations, 'div')
+  }
+
+  function preformattedText(labelTranslations) {
+    var p = staticContent(labelTranslations, 'pre');
+    var setData = p.setData;
+    p.setData = function(d) {
+      if (typeof(d) === "string") {
+        setData(d.replaceAll('&', '&amp;').replaceAll('<', '&lt;'));
+      }
+    };
+    return p;
   }
 
   // elements is a dictionary of ids to elements
@@ -718,9 +733,15 @@ var toolkit = function() {
     });
     setShowHide(div);
     div.setData = function(data) {
-      forEach(sub, function(id, el) {
-        setData(el, id in data? data[id] : null);
-      });
+      if (typeof(data) === 'object') {
+        forEach(sub, function(id, el) {
+          setData(el, id in data? data[id] : null);
+        });
+      } else {
+        forEach(sub, function(id, el) {
+          setData(el, data);
+        });
+      }
     };
     div.getData = function() {
       results = {};
@@ -981,6 +1002,7 @@ var toolkit = function() {
     optionsPage: optionsPage,
     image: image,
     staticText: staticText,
+    preformattedText: preformattedText,
     button: button,
     stack: stack,
     pages: pages
