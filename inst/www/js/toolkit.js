@@ -158,6 +158,7 @@ var toolkit = function() {
       should.width = width;
       should.height = height;
       var hh = getSize(h).height;
+      console.log('header reposition', left, top, width, height, hh);
       reposition(h, left, top, width, hh);
       reposition(main, left, top + hh, width, height - hh);
     };
@@ -805,7 +806,8 @@ var toolkit = function() {
     div.className = 'background';
     setAll(div.style, {
       overflow: overflow,
-      display: 'block'
+      display: 'block',
+      position: 'fixed'
     });
     div.appendChild(element);
     setShowHide(div, 'block');
@@ -829,6 +831,13 @@ var toolkit = function() {
     div.reposition = function(l, t, w, h) {
       should.width = w;
       should.height = h;
+      setAll(div.style, {
+        position: 'fixed',
+        left: l,
+        top: t,
+        width: w,
+        height: h
+      });
     };
     return div;
   }
@@ -881,9 +890,19 @@ var toolkit = function() {
     var pageContainer = document.createElement('div');
     pageContainer.className = 'tab-body';
     var tabStrip = document.createElement('span');
+    var tabStripHeight = 28;
+    tabSize = { height: tabStripHeight };
+    tabStrip.getSize = function() {
+      console.log('getSize', tabSize);
+      return tabSize;
+    };
+    tabStrip.reposition = function (l, t, w, h) {
+      console.log('reposition', w, h);
+      tabSize.width = w;
+    };
     setAll(tabStrip.style, {
       position: 'fixed',
-      height: '28px',
+      height: tabStripHeight + 'px',
       zIndex: 1
     });
     setAll(tabStrip, {
