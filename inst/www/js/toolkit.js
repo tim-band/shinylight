@@ -158,7 +158,6 @@ var toolkit = function() {
       should.width = width;
       should.height = height;
       var hh = getSize(h).height;
-      console.log('header reposition', left, top, width, height, hh);
       reposition(h, left, top, width, hh);
       reposition(main, left, top + hh, width, height - hh);
     };
@@ -891,11 +890,9 @@ var toolkit = function() {
     var tabStripHeight = 28;
     tabSize = { height: tabStripHeight };
     tabStrip.getSize = function() {
-      console.log('getSize', tabSize);
       return tabSize;
     };
     tabStrip.reposition = function (l, t, w, h) {
-      console.log('reposition', w, h);
       tabSize.width = w;
     };
     setAll(tabStrip.style, {

@@ -64,6 +64,7 @@
   border: 1px #222 solid;
   border-radius: 3px;
   background-color: #eee;
+  overflow-x: hidden;
 }
 
 .param-label {
