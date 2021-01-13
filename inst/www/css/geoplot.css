@@ -79,7 +79,7 @@
 .param-label {
   display: inline-block;
   vertical-align: middle;
-  font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
 }
 
 .group-title .param-label {
@@ -101,6 +101,7 @@
   overflow: visible;
   opacity: 0;
   transition: opacity 0.5s;
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 }
 
 .output-footer .param-label .tooltip {
@@ -129,6 +130,7 @@
   overflow: visible;
   opacity: 0;
   transition: opacity 0.5s;
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 }
 
 .param-selector {

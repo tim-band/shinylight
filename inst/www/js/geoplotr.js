@@ -394,13 +394,19 @@ function geoplotr() {
       toolkit.forEach(group, function(optionId, option) {
         var typeId = toolkit.deref(option, ['type', 0]);
         var tr = translations(['app', 'optiongroups', groupId, optionId], { name: optionId });
+        if (groupId === 'framework') {
+          tr = translations(['framework', 'framework-options', optionId], tr);
+        }
         var initial = toolkit.deref(option, ['initial', 0]);
         var callback = toolkit.deref(optionCallbacks, [groupId, optionId], markPlotDirty);
         var e = toolkit.deref(schema, ['types', typeId]);
         if (e) {
           var kindId = toolkit.deref(e, ['kind', 0]);
           if (kindId === 'enum') {
-            const valuesTr = translations(['app', 'types', typeId], {});
+            var valuesTr = translations(['app', 'types', typeId], {});
+            if (groupId === 'framework') {
+              valuesTr = translations(['framework', 'framework-types', typeId], valuesTr);
+            }
             options[optionId] = toolkit.paramSelector(optionId, optionsPage,
               tr, e.values, valuesTr, initial, callback);
             return;

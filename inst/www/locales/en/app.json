@@ -70,12 +70,6 @@
         "name": "Point size",
         "help": "Magnification factor for the points"
       }
-    },
-    "framework": {
-      "@title": {
-        "name": "Preferences",
-        "help": "Various options for controlling this app"
-        }
     }
   },
   "types": {
