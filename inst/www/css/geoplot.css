@@ -7,6 +7,9 @@
   line-height: 50px;
   text-align: center;
   background-color: #fdf5e4;
+  background-image: linear-gradient(
+    to bottom, #fdf0c2, #ffffff
+  );
 }
 
 .top span {
@@ -58,18 +61,25 @@
   padding-bottom: 5px;
   padding-right: 50px;
   background-color: #dee;
+  background-image: linear-gradient(
+    to bottom right, #bee, #eff
+  );
 }
 
 .static-text pre {
   border: 1px #222 solid;
   border-radius: 3px;
   background-color: #eee;
+  background-image: linear-gradient(
+    to bottom right, #ccc, #f8f8f8
+  );
   overflow-x: hidden;
 }
 
 .param-label {
   display: inline-block;
   vertical-align: middle;
+  font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
 }
 
 .group-title .param-label {
@@ -203,13 +213,22 @@
   margin: 4px 10px;
   cursor: pointer;
   background-color: #eee;
+  background-image: linear-gradient(
+    to bottom, #ddd, #fff
+  );
   color: #236;
 }
 
 .param-label.button.pressed {
   background-color: #999;
+  background-image: linear-gradient(
+    to bottom, #888, #aaa
+  );
 }
 
 .output-footer {
   background-color: #fdf5e4;
+  background-image: linear-gradient(
+    to bottom, #fdf0c2, #ffffff
+  );
 }
