@@ -124,7 +124,7 @@ function geoplotr() {
 		downloader.click();
   }
 
-  function downloadPdf() {
+  function downloadPdf(callback) {
     doPlotNow({
       'rrpc.resultformat': {
         type: 'pdf',
@@ -132,6 +132,7 @@ function geoplotr() {
         height: 7
       }
     }, function(result) {
+      callback();
       download('geoplot.pdf', result.plot);
     });
   }
@@ -213,8 +214,8 @@ function geoplotr() {
   var doPlot2 = noop;
   var dirtyPlot = noop;
 
-  function doPlot() {
-    doPlot2();
+  function doPlot(callback) {
+    doPlot2(callback);
   }
 
   function markPlotDirty() {
@@ -551,8 +552,9 @@ function geoplotr() {
     var tableFooter = toolkit.banner({
       downloadCsv: toolkit.button(
         'download-csv',
-        function() {
+        function(callback) {
           downloadCsv(outputTable)
+          setTimeout(callback, 200);
         },
         translations(['framework', 'buttons'])
       ),

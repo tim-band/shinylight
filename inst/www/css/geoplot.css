@@ -206,6 +206,10 @@
   color: #236;
 }
 
+.param-label.button.pressed {
+  background-color: #999;
+}
+
 .output-footer {
   background-color: #fdf5e4;
 }

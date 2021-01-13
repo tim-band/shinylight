@@ -825,11 +825,29 @@ var toolkit = function() {
     return b;
   }
 
+  // returns a function that calls fn immediately, then calls the callback
+  // function after 200ms
+  function withTimeout(fn) {
+    return function(callback) {
+      fn();
+      setTimeout(callback, 200);
+    };
+  }
+
+  // fn should take a single parameter of a function to call on completion
+  // of the work. If the function you want does not take much time
+  // (less than 100ms, say) or you do not have a convenient callback
+  // to piggyback off, please wrap your fn in a call to withTimeout
   function button(id, fn, translations) {
     var b = makeLabel(translations, null, id);
     b.classList.add('button');
     b.tabIndex = 0;
-    b.onclick = fn;
+    b.onclick = function() {
+      b.classList.add('pressed');
+      fn(function() {
+        b.classList.remove('pressed');
+      });
+    };
     setShowHide(b, 'inline');
     return b;
   }
@@ -1077,6 +1095,7 @@ var toolkit = function() {
     staticText: staticText,
     preformattedText: preformattedText,
     button: button,
+    withTimeout: withTimeout,
     stack: stack,
     pages: pages
   };
