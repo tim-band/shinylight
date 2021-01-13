@@ -146,11 +146,14 @@ var toolkit = function() {
   // after it is resized.
   function header(h, main) {
     var container = document.createElement('div');
-    container.appendChild(h);
-    container.appendChild(main);
+    container.appendChild(ensureStructural(h));
+    container.appendChild(ensureStructural(main));
     container.style.position = 'fixed';
     container.style.overflow = 'auto';
-    var should = {};
+    var should = {
+      height: 100,
+      width: 100
+    };
     container.getSize = function() {
       return should;
     };
@@ -174,11 +177,14 @@ var toolkit = function() {
   // Like header, but the footer goes below the main section
   function footer(f, main) {
     var container = document.createElement('div');
-    container.appendChild(main);
-    container.appendChild(f);
+    container.appendChild(ensureStructural(main));
+    container.appendChild(ensureStructural(f));
     container.style.position = 'fixed';
     container.style.overflow = 'auto';
-    var should = {};
+    var should = {
+      height: 100,
+      width: 100
+    };
     container.getSize = function() {
       return should;
     };
@@ -316,7 +322,10 @@ var toolkit = function() {
       gripHeight: 30,
       leftProportion: 0.5
     }
-    var should = {};
+    var should = {
+      height: 100,
+      width: 100
+    };
     container.getSize = function() {
       return should;
     }
@@ -675,7 +684,10 @@ var toolkit = function() {
     if (typeof(updateSizeFunction) !== 'function') {
       updateSizeFunction = noop;
     }
-    var should = {};
+    var should = {
+      height: 100,
+      width: 100
+    };
     img.getSize = function() {
       return should;
     };
@@ -780,7 +792,7 @@ var toolkit = function() {
         height: height + 'px',
         position: 'fixed'
       });
-      var should = { width: 1, height: height };
+      var should = { width: 100, height: height };
       b.getSize = function() {
         return should;
       };
@@ -822,7 +834,10 @@ var toolkit = function() {
 
   function scrollingWrapper(element) {
     var div = wrapper(element, 'auto');
-    var should = {};
+    var should = {
+      height: 100,
+      width: 100
+    };
     div.getSize = function() {
       return should;
     }
@@ -843,7 +858,10 @@ var toolkit = function() {
   function nonScrollingWrapper(element) {
     element.style.position = 'fixed';
     var div = wrapper(element, 'hidden');
-    var should = {};
+    var should = {
+      height: 100,
+      width: 100
+    };
     div.getSize = function() {
       return should;
     }
@@ -860,6 +878,16 @@ var toolkit = function() {
       reposition(element, l, t, w, h);
     };
     return div;
+  }
+
+  // Wraps the argument in scrollingWrapper if it has no reposition() method.
+  // Also ensures that hide() and show() methods exist.
+  function ensureStructural(el) {
+    var we = typeof(el.reposition) === 'function'? el : scrollingWrapper(el);
+    if (typeof(we.show) !== 'function' || typeof(we.hide) !== 'function') {
+      setShowHide(we);
+    }
+    return we;
   }
 
   // pageElements: dictionary of pageIds to elements (that will be
@@ -932,11 +960,7 @@ var toolkit = function() {
         pages[pageId].show();
         tab.classList.add('active');
       };
-      var wpage = page;
-      if (typeof(page.show) !== 'function' || typeof(page.hide) !== 'function') {
-        // this is not a toolkit object, so it must be wrapped
-        wpage = nonScrollingWrapper(page);
-      }
+      var wpage = ensureStructural(page);
       if (!active) {
         active = pageId;
         tab.classList.add('active');
@@ -984,7 +1008,10 @@ var toolkit = function() {
         tabs[newActive].click();
       }
     };
-    var should = {};
+    var should = {
+      height: 100,
+      width: 100
+    };
     pageContainer.getSize = function() {
       return should;
     }

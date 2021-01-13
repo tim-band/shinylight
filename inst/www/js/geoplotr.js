@@ -151,7 +151,6 @@ function geoplotr() {
   }
 
   function displayPlotNow(done) {
-    console.log('plotting');
     var imgSize = outputImgWrapper.getSize();
     doPlotNow({
       'rrpc.resultformat': {
@@ -554,7 +553,7 @@ function geoplotr() {
     }, translations(['framework', 'pages']));
     optionsPage = toolkit.optionsPage();
     var inputPane = toolkit.pages({
-      inputTable: toolkit.scrollingWrapper(table),
+      inputTable: table,
       options: optionsPage
     }, translations(['framework', 'pages']));
     var doc = toolkit.verticalDivide(null,
