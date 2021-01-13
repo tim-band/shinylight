@@ -933,12 +933,21 @@ var toolkit = function() {
       className: 'tab-strip',
       tabIndex: 0
     });
+    function tabIsDisabled(id) {
+      return tabs[id].classList.contains('disabled');
+    }
     tabStrip.onkeydown = function(ev) {
       var other = null;
       if (ev.key === 'ArrowLeft') {
-        other = findPrevious(tabs, active)
+        other = findPrevious(tabs, active);
+        while (other && tabIsDisabled(other)) {
+          other = findPrevious(tabs, other);
+        }
       } else if (ev.key === 'ArrowRight') {
         other = findNext(tabs, active);
+        while (other && tabIsDisabled(other)) {
+          other = findNext(tabs, other);
+        }
       }
       if (other) {
         var otherTab = tabs[other];
