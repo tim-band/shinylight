@@ -187,10 +187,12 @@ function geoplotr() {
       var e = allParameterSelectors[paramKey];
       params[paramId] = e.getData();
     });
-    var og = toolkit.deref(schema, ['optiongroups'], {});
-    toolkit.forEach(og, function(groupId, group) {
-      toolkit.forEach(group, function(optionId, option) {
-        params[optionId] = optionGroups[groupId][optionId].getData();
+    var og = toolkit.deref(schema.functions[fn], ['optiongroups'], {});
+    toolkit.forEach(og, function(i, groupId) {
+      // maybe use optionPage.getData() and pick out the relevant ones?
+      //...
+      toolkit.forEach(optionGroups[groupId], function(optionId, option) {
+        params[optionId] = option.getData();
       });
     });
     if (subheaderParam) {
@@ -371,8 +373,14 @@ function geoplotr() {
     }
   };
 
+  var optionCallbacks = {
+    framework: {
+      calculate: setCalculateMode
+    }
+  };
+
   function setOptions() {
-    if (typeof(schema.optiongroups) != 'object') {
+    if (typeof(schema.optiongroups) !== 'object') {
       return;
     }
     toolkit.forEach(schema.optiongroups, function(groupId, group) {
@@ -380,24 +388,27 @@ function geoplotr() {
         optionGroups[groupId] = {};
       }
       var options = optionGroups[groupId];
+      var groupTr = translations(['app', 'optiongroups', groupId, '@title'], { name: groupId });
+      toolkit.groupTitle(optionsPage, groupTr);
       toolkit.forEach(group, function(optionId, option) {
         var typeId = toolkit.deref(option, ['type', 0]);
         var tr = translations(['app', 'optiongroups', groupId, optionId], { name: optionId });
         var initial = toolkit.deref(option, ['initial', 0]);
+        var callback = toolkit.deref(optionCallbacks, [groupId, optionId], markPlotDirty);
         var e = toolkit.deref(schema, ['types', typeId]);
         if (e) {
           var kindId = toolkit.deref(e, ['kind', 0]);
           if (kindId === 'enum') {
-            const valuesTr = translations(['app', 'types', typeId], typeId);
+            const valuesTr = translations(['app', 'types', typeId], {});
             options[optionId] = toolkit.paramSelector(optionId, optionsPage,
-              tr, e.values, valuesTr, initial, markPlotDirty);
+              tr, e.values, valuesTr, initial, callback);
             return;
           }
         }
         if (typeId in standardTypes) {
-          options[optionId] = standardTypes[typeId](optionId, optionsPage, tr, initial, markPlotDirty);
+          options[optionId] = standardTypes[typeId](optionId, optionsPage, tr, initial, callback);
         } else {
-          options[optionId] = toolkit.paramText(optionId, optionsPage, tr, initial, markPlotDirty);
+          options[optionId] = toolkit.paramText(optionId, optionsPage, tr, initial, callback);
         }
       });
     });
@@ -455,6 +466,22 @@ function geoplotr() {
     });
   }
 
+  function setCalculateMode(value) {
+    if (value === 'manual') {
+      setManualCalculate();
+    } else {
+      setAutomaticCalculate();
+    }
+  }
+
+  function calculateMode() {
+    return toolkit.deref(
+      schema,
+      [ 'optiongroups', 'framework', 'calculate', 'initial', 0 ],
+      'automatic'
+    );
+  }
+
   loadTranslations(function(tr) {
     translationDict = tr;
     rrpc.initialize(function() {
@@ -465,8 +492,10 @@ function geoplotr() {
         addparamSelectors();
         setParameters();
         setOptions();
-        //displayPlotNow(setAutomaticCalculate);
-        displayPlotNow(setManualCalculate);
+        displayPlotNow(function() {
+          setCalculateMode(calculateMode());
+        });
+        document.title = translations(['app', 'title'], 'R');
       });
     });
   });

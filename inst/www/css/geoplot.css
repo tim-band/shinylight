@@ -72,6 +72,10 @@
   vertical-align: middle;
 }
 
+.group-title .param-label {
+  font-weight: bold;
+}
+
 .param-label .tooltip {
   visibility: hidden;
   position: absolute;

@@ -400,13 +400,12 @@ var toolkit = function() {
     input.onchange = callback;
     box.setData = function(value) {
       input.value = value;
-      callback();
+      callback(value);
     };
     box.getData = function() {
       return input.value;
     };
     box.addElement(input);
-    container.appendChild(box);
     return box;
   }
 
@@ -429,14 +428,14 @@ var toolkit = function() {
     input.onchange = function() {
       if (validate(input.value)) {
         input.classList.remove('invalid');
-        callback();
+        callback(input.value);
       } else {
         input.classList.add('invalid');
       }
     };
     box.setData = function(value) {
       input.value = value;
-      callback();
+      callback(value);
     };
     box.getData = function() {
       return transform(input.value);
@@ -518,16 +517,29 @@ var toolkit = function() {
   }
 
   function optionsPage() {
+    var sub = {};
     var table = document.createElement('table');
     table.className = 'options-page';
     var tbody = document.createElement('tbody');
     table.appendChild(tbody);
-    table.makeSubElement = function() {
+    table.makeSubElement = function(id) {
       var tr = tableRow();
       tbody.appendChild(tr);
+      if (typeof(id) !== 'undefined') {
+        sub[id] = tr;
+      }
       return tr;
     }
     setShowHide(table, 'table');
+    table.getData = function() {
+      var r = {};
+      forEach(sub, function(id, el) {
+        if (typeof(el.getData) === 'function') {
+          r[id] = el.getData();
+        }
+      });
+      return r;
+    };
     return table;
   }
 
@@ -547,7 +559,8 @@ var toolkit = function() {
   // initial: ID of the option to start selecting (optional)
   // callback: The (nullary) function to call when the value changes (optional)
   // returns element you can add to the DOM
-  function paramSelector(id, container, labelTranslations, values, valueTranslations, initial, callback) {
+  function paramSelector(id, container, labelTranslations, values,
+      valueTranslations, initial, callback) {
     var box = typeof(container.makeSubElement) === 'function'?
       container.makeSubElement(id) : span(container);
     // The button is the area that can be clicked to open up the drop-down
@@ -628,7 +641,7 @@ var toolkit = function() {
     };
     box.setData = function(value) {
       setSelected(value);
-      callback();
+      callback(value);
     };
     box.getData = function() {
       return selectedOption;
@@ -652,6 +665,14 @@ var toolkit = function() {
       dropDown.classList.remove('open');
       open = false;
     };
+    return box;
+  }
+
+  function groupTitle(container, labelTranslations) {
+    var box = typeof(container.makeSubElement) === 'function'?
+      container.makeSubElement() : span(container);
+    box.className = 'group-title';
+    box.addElement(makeLabel(labelTranslations));
     return box;
   }
 
@@ -1050,6 +1071,7 @@ var toolkit = function() {
     paramFloat: paramFloat,
     paramColor: paramColor,
     paramSelector: paramSelector,
+    groupTitle: groupTitle,
     optionsPage: optionsPage,
     image: image,
     staticText: staticText,
