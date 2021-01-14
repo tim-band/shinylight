@@ -30,7 +30,7 @@ var toolkit = function() {
       var p = path[i];
       if (typeof(object) === 'object' && p in object) {
         object = object[p];
-      } else if (typeof(p) !== 'undefined') {
+      } else if (typeof(p) !== 'undefined' && p !== null) {
         return typeof(defaultValue) === 'undefined'? null : defaultValue;
       }
     }
@@ -104,6 +104,14 @@ var toolkit = function() {
         tick();
       }
     }
+  }
+
+  var generatedId = 0;
+
+  function genId(pref) {
+    var p = typeof(pref) === 'string'? 'generated-id-' + pref + '-' : 'generated-id-';
+    ++generatedId;
+    return p + generatedId;
   }
 
   function reposition(el, left, top, width, height) {
@@ -364,13 +372,17 @@ var toolkit = function() {
 
   // Makes a label with text translations.id.name, translations.name or id
   // and tooltip HTML help text translaitons.id.help or translations.help.
+  // if idFor is passed it will be set as the 'for' 
   // The result is appended to container, if passed and not null.
-  function makeLabel(translations, container, id) {
+  function makeLabel(translations, container, id, idFor) {
     var name = deref(translations, [id, 'name'], id);
     var help = deref(translations, [id, 'help']);
-    var label = document.createElement('span');
+    var label = document.createElement('label');
     label.textContent = name;
     label.className = 'param-label';
+    if (typeof(idFor) === 'string') {
+      label.setAttribute('for', idFor);
+    }
     if (typeof(container) !== 'undefined' && container) {
       container.appendChild(label);
     }
@@ -397,13 +409,54 @@ var toolkit = function() {
     if (typeof(callback) !== 'function') {
       callback = noop;
     }
-    input.onchange = callback;
+    input.onchange = function() {
+      callback(input.value);
+    };
     box.setData = function(value) {
       input.value = value;
       callback(value);
     };
     box.getData = function() {
       return input.value;
+    };
+    box.addElement(input);
+    return box;
+  }
+
+  function toBoolean(v) {
+    if (typeof(v) === 'boolean') {
+      return v;
+    } else if (typeof(v) === 'string') {
+      return v !== '' && v[0] !== 'f' && v[0] !== 'F';
+    }
+    return v !== 0;
+  }
+
+  function paramBoolean(id, container, translations, initial, callback) {
+    var box = typeof(container.makeSubElement) === 'function'?
+      container.makeSubElement(id) : span(container);
+    box.className = 'param-boolean';
+    var idFor = genId(id);
+    box.addElement(makeLabel(translations, null, null, idFor));
+    var input = document.createElement('input');
+    input.type = 'checkbox';
+    input.className = 'param-checkbox';
+    input.id = idFor;
+    if (initial) {
+      input.checked = toBoolean(initial);
+    }
+    if (typeof(callback) !== 'function') {
+      callback = noop;
+    }
+    input.onchange = function() {
+      callback(input.checked);
+    };
+    box.setData = function(value) {
+      input.checked = toBoolean(initial);
+      callback(input.checked);
+    };
+    box.getData = function() {
+      return input.checked;
     };
     box.addElement(input);
     return box;
@@ -1088,6 +1141,7 @@ var toolkit = function() {
     paramInteger: paramInteger,
     paramFloat: paramFloat,
     paramColor: paramColor,
+    paramBoolean: paramBoolean,
     paramSelector: paramSelector,
     groupTitle: groupTitle,
     optionsPage: optionsPage,

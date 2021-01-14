@@ -221,7 +221,7 @@ optiongroups <- list(
     lwd=list(type="u8")
   ),
   framework=list(
-    calculate=list(type="autoManual", initial="manual")
+    autorefresh=list(type="b", initial=FALSE)
   )
 )
 
@@ -246,10 +246,6 @@ types <- list(
   weightCol=list(
     kind="column",
     subtype="float"
-  ),
-  autoManual=list(
-    kind="enum",
-    values=c("automatic", "manual")
   )
 )
 

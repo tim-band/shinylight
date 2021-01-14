@@ -54,21 +54,9 @@
       "name": "Preferences",
       "help": "Various options for controlling this app"
     },
-    "calculate": {
-      "name": "Calculation mode",
-      "help": "Should the app redraw the plot and table automatically, or wait for a button press?"
-    }
-  },
-  "framework-types": {
-    "autoManual": {
-      "automatic" : {
-        "name": "Automatic",
-        "help": "Automatically refresh the output plot and table"
-      },
-      "manual" : {
-        "name": "Manual",
-        "help": "Refresh the output plot and table only once the 'Calculate' button is pressed"
-      }
+    "autorefresh": {
+      "name": "Automatic refresh",
+      "help": "Recalculate the plot and table automatically whenever the input or options change"
     }
   },
   "updating...": "updating",

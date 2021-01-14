@@ -363,6 +363,9 @@ function geoplotr() {
   }
 
   var standardTypes = {
+    b: function(id, container, tr, initial, callback) {
+      return toolkit.paramBoolean(id, container, tr, initial, callback);
+    },
     u8: function(id, container, tr, initial, callback) {
       return toolkit.paramInteger(id, container, tr, initial, callback, 0, 255);
     },
@@ -376,7 +379,7 @@ function geoplotr() {
 
   var optionCallbacks = {
     framework: {
-      calculate: setCalculateMode
+      autorefresh: setCalculateMode
     }
   };
 
@@ -389,8 +392,11 @@ function geoplotr() {
         optionGroups[groupId] = {};
       }
       var options = optionGroups[groupId];
-      var groupTr = translations(['app', 'optiongroups', groupId, '@title'], { name: groupId });
-      toolkit.groupTitle(optionsPage, groupTr);
+      var groupTr = translations(['framework', 'framework-options', '@title'], { name: groupId });
+      if (groupId === 'framework') {
+        groupTr = translations(['app', 'optiongroups', groupId, '@title'], groupTr);
+      }
+    toolkit.groupTitle(optionsPage, groupTr);
       toolkit.forEach(group, function(optionId, option) {
         var typeId = toolkit.deref(option, ['type', 0]);
         var tr = translations(['app', 'optiongroups', groupId, optionId], { name: optionId });
@@ -474,18 +480,19 @@ function geoplotr() {
   }
 
   function setCalculateMode(value) {
-    if (value === 'manual') {
-      setManualCalculate();
-    } else {
+    if (value) {
       setAutomaticCalculate();
+    } else {
+      setManualCalculate();
     }
+    console.log("se calculate mode", value);
   }
 
   function calculateMode() {
     return toolkit.deref(
       schema,
-      [ 'optiongroups', 'framework', 'calculate', 'initial', 0 ],
-      'automatic'
+      [ 'optiongroups', 'framework', 'autorefresh', 'initial', 0 ],
+      true
     );
   }
 
