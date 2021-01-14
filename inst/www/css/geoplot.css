@@ -228,9 +228,9 @@
   );
 }
 
-.output-footer {
+.output-footer, .input-footer {
   background-color: #fdf5e4;
   background-image: linear-gradient(
-    to bottom, #fdf0c2, #ffffff
+    to bottom, #ffffff, #fdf0c2
   );
 }

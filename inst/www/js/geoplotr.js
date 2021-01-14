@@ -547,13 +547,10 @@ function geoplotr() {
     };
     var calculate1 = toolkit.button('calculate',
       doPlot, translations(['framework', 'buttons']));
-    var calculate2 = toolkit.button('calculate',
-      doPlot, translations(['framework', 'buttons']));
-    calculateButtons.push(calculate1, calculate2);
+    calculateButtons.push(calculate1);
     var plotFooter = toolkit.banner({
       downloadPlot: toolkit.button('download-pdf',
-        downloadPdf, translations(['framework', 'buttons'])),
-      calculate: calculate1
+        downloadPdf, translations(['framework', 'buttons']))
     }, 'output-footer', 35);
     var tableFooter = toolkit.banner({
       downloadCsv: toolkit.button(
@@ -563,8 +560,7 @@ function geoplotr() {
           setTimeout(callback, 200);
         },
         translations(['framework', 'buttons'])
-      ),
-      calculate: calculate2
+      )
     }, 'output-footer', 35);
     var outputDebug = toolkit.preformattedText(
       translations(['framework', 'labels', 'debug-text']));
@@ -593,8 +589,12 @@ function geoplotr() {
       inputTable: table,
       options: optionsPage
     }, translations(['framework', 'pages']));
+    var leftFooter = toolkit.banner({
+      calculate: calculate1
+    }, 'input-footer', 35)
+    var leftPane = toolkit.footer(leftFooter, inputPane);
     var doc = toolkit.verticalDivide(null,
-      inputPane,
+      leftPane,
       output);
     top = toolkit.banner({}, 'top', 50);
     toolkit.setAsBody(toolkit.header(top, doc));

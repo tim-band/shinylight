@@ -848,7 +848,7 @@ var toolkit = function() {
         b.classList.remove('pressed');
       });
     };
-    setShowHide(b, 'inline');
+    setShowHide(b, 'inline-block');
     return b;
   }
 
