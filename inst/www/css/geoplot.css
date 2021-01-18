@@ -171,6 +171,10 @@
   text-align: right;
 }
 
+.tab-strip {
+  padding-bottom: 10px;
+}
+
 .tab-strip .param-label {
   background-color: #999;
   border-top-left-radius: 10px;

@@ -463,29 +463,29 @@ function geoplotr() {
       data);
   }
 
-  function setAutomaticCalculate() {
-    doPlot2 = toolkit.whenQuiet(14, displayPlotNow);
-    dirtyPlot = doPlot;
-    toolkit.forEach(calculateButtons, function(i, c) {
-      c.hide();
-    });
-  }
-
-  function setManualCalculate() {
-    doPlot2 = displayPlotNow;
-    dirtyPlot = noop;
-    toolkit.forEach(calculateButtons, function(i, c) {
-      c.show();
-    });
-  }
-
   function setCalculateMode(value) {
+    var dirty = false;
     if (value) {
-      setAutomaticCalculate();
+      doPlot2 = toolkit.whenQuiet(14, displayPlotNow);
+      dirtyPlot = doPlot;
+      toolkit.forEach(calculateButtons, function(i, c) {
+        c.hide();
+      });
+      if (dirty) {
+        dirty = false;
+        doPlot2();
+      }
     } else {
-      setManualCalculate();
+      dirty = false;
+      doPlot2 = function() {
+        dirty = false;
+        displayPlotNow();
+      };
+      dirtyPlot = function () { dirty = true; };
+      toolkit.forEach(calculateButtons, function(i, c) {
+        c.show();
+      });
     }
-    console.log("se calculate mode", value);
   }
 
   function calculateMode() {
@@ -558,7 +558,7 @@ function geoplotr() {
     var plotFooter = toolkit.banner({
       downloadPlot: toolkit.button('download-pdf',
         downloadPdf, translations(['framework', 'buttons']))
-    }, 'output-footer', 35);
+    }, 'output-footer');
     var tableFooter = toolkit.banner({
       downloadCsv: toolkit.button(
         'download-csv',
@@ -568,7 +568,7 @@ function geoplotr() {
         },
         translations(['framework', 'buttons'])
       )
-    }, 'output-footer', 35);
+    }, 'output-footer');
     var outputDebug = toolkit.preformattedText(
       translations(['framework', 'labels', 'debug-text']));
     var debugJson = '';
@@ -580,7 +580,7 @@ function geoplotr() {
         },
         translations(['framework', 'buttons'])
       )
-    }, 'output-footer', 35);
+    }, 'output-footer');
     debugFooter.setData = function(json) {
       debugJson = json;
     };
@@ -603,7 +603,7 @@ function geoplotr() {
     var doc = toolkit.verticalDivide(null,
       leftPane,
       output);
-    top = toolkit.banner({}, 'top', 50);
+    top = toolkit.banner({}, 'top');
     toolkit.setAsBody(toolkit.header(top, doc));
     inputGrid.addWatcher(markPlotDirty);
   }

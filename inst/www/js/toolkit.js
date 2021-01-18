@@ -142,12 +142,12 @@ var toolkit = function() {
     if (typeof(el.getSize) === 'function') {
       return el.getSize();
     }
-    return { width: el.offsetWidth, height: el.offsetHeight };
+    return { left: el.offsetTop, top: el.offsetTop, width: el.offsetWidth, height: el.offsetHeight };
   }
 
   // Creates a container for existing header and main section.
   // When the container is resized, its reposition() method
-  // shoudl be called. This will set the main section to the same
+  // should be called. This will set the main section to the same
   // width as the container but its height to the new container
   // height minus the height of the header.
   // If the main section has a reposition() method it will be called
@@ -158,20 +158,11 @@ var toolkit = function() {
     container.appendChild(ensureStructural(main));
     container.style.position = 'fixed';
     container.style.overflow = 'auto';
-    var should = {
-      height: 100,
-      width: 100
-    };
-    container.getSize = function() {
-      return should;
-    };
-    container.reposition = function(left, top, width, height) {
-      should.width = width;
-      should.height = height;
+    setReposition(container, function(left, top, width, height) {
       var hh = getSize(h).height;
       reposition(h, left, top, width, hh);
       reposition(main, left, top + hh, width, height - hh);
-    };
+    });
     container.getData = function() {
       return mergeObjects(getData(h), getData(main));
     };
@@ -189,20 +180,11 @@ var toolkit = function() {
     container.appendChild(ensureStructural(f));
     container.style.position = 'fixed';
     container.style.overflow = 'auto';
-    var should = {
-      height: 100,
-      width: 100
-    };
-    container.getSize = function() {
-      return should;
-    };
-    container.reposition = function(left, top, width, height) {
-      should.width = width;
-      should.height = height;
+    setReposition(container, function(left, top, width, height) {
       var fh = getSize(f).height;
       reposition(f, left, top + height - fh, width, fh);
       reposition(main, left, top, width, height - fh);
-    }
+    });
     container.getData = function() {
       return mergeObjects(getData(header), getData(main));
     }
@@ -330,16 +312,7 @@ var toolkit = function() {
       gripHeight: 30,
       leftProportion: 0.5
     }
-    var should = {
-      height: 100,
-      width: 100
-    };
-    container.getSize = function() {
-      return should;
-    }
-    container.reposition = function(l, t, w, h) {
-      should.width = w;
-      should.height = h;
+    setReposition(container, function(l, t, w, h) {
       setAll(dimensions, {
         left: l,
         top: t,
@@ -347,7 +320,7 @@ var toolkit = function() {
         height: h
       });
       setDivideSize(container, left, right, divider, img, dimensions);
-    };
+    });
     return container;
   }
 
@@ -406,9 +379,7 @@ var toolkit = function() {
     if (initial) {
       input.value = initial;
     }
-    if (typeof(callback) !== 'function') {
-      callback = noop;
-    }
+    callback = ensureFunction(callback);
     input.onchange = function() {
       callback(input.value);
     };
@@ -445,9 +416,7 @@ var toolkit = function() {
     if (initial) {
       input.checked = toBoolean(initial);
     }
-    if (typeof(callback) !== 'function') {
-      callback = noop;
-    }
+    callback = ensureFunction(callback);
     input.onchange = function() {
       callback(input.checked);
     };
@@ -472,12 +441,8 @@ var toolkit = function() {
     if (initial) {
       input.value = initial;
     }
-    if (typeof(callback) !== 'function') {
-      callback = noop;
-    }
-    if (typeof(validate) !== 'function') {
-      validate = constTrue;
-    }
+    callback = ensureFunction(callback);
+    validate = ensureFunction(validate, constTrue);
     input.onchange = function() {
       if (validate(input.value)) {
         input.classList.remove('invalid');
@@ -743,6 +708,34 @@ var toolkit = function() {
     };
   }
 
+  // sets el to have two methods:
+  // getSize() and reposition().
+  // getSize() is not accurate if el is not visible.
+  // reposition will set the size and position; if the position has changed
+  // callback will be called with the new (left, top, width, height)
+  function setReposition(el, callback) {
+    callback = ensureFunction(callback);
+    var size = { left: 0, top: 0, width: 100, height: 100 };
+    el.getSize = function() {
+      if (0 !== el.offsetHeight || 0 !== el.offsetWidth) {
+        setAll(size, {
+          left: el.offsetLeft,
+          top: el.offsetTop,
+          width: el.offsetWidth,
+          height: el.offsetHeight
+        });
+      }
+      return size;
+    };
+    el.reposition = function (l, t, w, h) {
+      if (l === size.left && t === size.top && w === size.width && h === size.height) {
+        return;
+      }
+      setAll(size, { left: l, top: t, width: w, height: h });
+      callback(l, t, w, h);
+    };
+  }
+
   // returned object has a getSize() method, returning an
   // object with width and height members. This is the width
   // and height set by reposition(), not the actual on-screen
@@ -755,24 +748,11 @@ var toolkit = function() {
     img.setData = function(data) {
       img.setAttribute('src', data);
     };
-    if (typeof(updateSizeFunction) !== 'function') {
-      updateSizeFunction = noop;
-    }
-    var should = {
-      height: 100,
-      width: 100
-    };
-    img.getSize = function() {
-      return should;
-    };
-    img.reposition = function(l, t, w, h) {
-      should.width = w;
-      should.height = h;
-      setAll(img, {
-        width: w, height: h
-      });
+    updateSizeFunction = ensureFunction(updateSizeFunction);
+    setReposition(img, function(l, t, w, h) {
+      setAll(img, { width: w, height: h });
       updateSizeFunction();
-    };
+    });
     setShowHide(img);
     img.setData('data:image/png;base64,iVBORw0KGgoAAAANSUhEU'
         + 'gAAAAEAAAABCAIAAACQd1PeAAAAD0lEQVQIHQEEAPv/AP///w'
@@ -858,23 +838,11 @@ var toolkit = function() {
     return collection(elements, 'div');
   }
 
-  function banner(elements, className, height) {
+  function banner(elements, className) {
     var b = collection(elements, 'span');
     b.className = className;
-    if (typeof(height) === 'number') {
-      setAll(b.style, {
-        height: height + 'px',
-        position: 'fixed'
-      });
-      var should = { width: 100, height: height };
-      b.getSize = function() {
-        return should;
-      };
-      b.reposition = function(l, t, w, h) {
-        should.width = w;
-        should.height = h;
-      };
-    }
+    b.style.position = 'fixed';
+    setReposition(b);
     return b;
   }
 
@@ -926,16 +894,7 @@ var toolkit = function() {
 
   function scrollingWrapper(element) {
     var div = wrapper(element, 'auto');
-    var should = {
-      height: 100,
-      width: 100
-    };
-    div.getSize = function() {
-      return should;
-    }
-    div.reposition = function(l, t, w, h) {
-      should.width = w;
-      should.height = h;
+    setReposition(div, function(l, t, w, h) {
       setAll(div.style, {
         position: 'fixed',
         left: l,
@@ -943,23 +902,14 @@ var toolkit = function() {
         width: w,
         height: h
       });
-    };
+    });
     return div;
   }
 
   function nonScrollingWrapper(element) {
     element.style.position = 'fixed';
     var div = wrapper(element, 'hidden');
-    var should = {
-      height: 100,
-      width: 100
-    };
-    div.getSize = function() {
-      return should;
-    }
-    div.reposition = function(l, t, w, h) {
-      should.width = w;
-      should.height = h;
+    setReposition(div, function(l, t, w, h) {
       setAll(div.style, {
         position: 'fixed',
         left: l,
@@ -968,7 +918,7 @@ var toolkit = function() {
         height: h
       });
       reposition(element, l, t, w, h);
-    };
+    });
     return div;
   }
 
@@ -980,6 +930,11 @@ var toolkit = function() {
       setShowHide(we);
     }
     return we;
+  }
+
+  function ensureFunction(fn, defaultFn) {
+    return typeof(fn) === 'function'? fn
+      : typeof(defaultFn) === 'function'? defaultFn : noop;
   }
 
   // pageElements: dictionary of pageIds to elements (that will be
@@ -1008,17 +963,9 @@ var toolkit = function() {
     var pageContainer = document.createElement('div');
     pageContainer.className = 'tab-body';
     var tabStrip = document.createElement('span');
-    var tabStripHeight = 28;
-    tabSize = { height: tabStripHeight };
-    tabStrip.getSize = function() {
-      return tabSize;
-    };
-    tabStrip.reposition = function (l, t, w, h) {
-      tabSize.width = w;
-    };
+    setReposition(tabStrip);
     setAll(tabStrip.style, {
-      position: 'fixed',
-      height: tabStripHeight + 'px',
+      position: 'block',
       zIndex: 1
     });
     setAll(tabStrip, {
@@ -1054,12 +1001,14 @@ var toolkit = function() {
         if (tab.classList.contains('disabled')) {
           return;
         }
+        var s = pages[active].getSize();
         pages[active].hide();
         tabs[active].classList.remove('active');
         active = pageId;
         returnPage = pageId;
         pages[pageId].show();
         tab.classList.add('active');
+        reposition(pages[pageId], s.left, s.top, s.width, s.height);
       };
       var wpage = ensureStructural(page);
       if (!active) {
@@ -1109,20 +1058,9 @@ var toolkit = function() {
         tabs[newActive].click();
       }
     };
-    var should = {
-      height: 100,
-      width: 100
-    };
-    pageContainer.getSize = function() {
-      return should;
-    }
-    pageContainer.reposition = function(left, top, width, height) {
-      should.width = width;
-      should.height = height;
-      forEach(pages, function(pageId, page) {
-        reposition(page, left, top, width, height);
-      });
-    }
+    setReposition(pageContainer, function(left, top, width, height) {
+      reposition(pages[active], left, top, width, height);
+    });
     return container;
   }
 
