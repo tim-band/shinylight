@@ -8,19 +8,6 @@ var toolkit = function() {
     }
   }
 
-  function mergeObjects(a, b) {
-    if (!a) {
-      return b;
-    }
-    if (!b) {
-      return a;
-    }
-    forEach(b, function(k, v) {
-      a[k] = v;
-    });
-    return a;
-  }
-
   // deref(o, [a,b,c], d) is a safe way of doing o[a][b][c].
   // If that path does not exist, d is returned. If d is not
   // supplied, null is returned. Any undefined values in path are
@@ -65,8 +52,12 @@ var toolkit = function() {
   }
 
   function setAll(target, vals, dels) {
-    forEach(vals, function(k, v) { target[k] = v; });
-    if (dels) { forEach(dels, function(i,v) { delete target[v] }); }
+    if (vals) {
+      forEach(vals, function(k, v) { target[k] = v; });
+    }
+    if (dels) {
+      forEach(dels, function(i,v) { delete target[v] });
+    }
   }
 
   function setAttributes(el, vals) {
@@ -115,14 +106,6 @@ var toolkit = function() {
   }
 
   function reposition(el, left, top, width, height) {
-    if (el.style.position === 'fixed') {
-      setAll(el.style, {
-        left: left + 'px',
-        top: top + 'px',
-        width: width + 'px',
-        height: height + 'px'
-      });
-    }
     if (typeof(el.reposition) === 'function') {
       el.reposition(left, top, width, height);
     }
@@ -145,54 +128,107 @@ var toolkit = function() {
     return { left: el.offsetTop, top: el.offsetTop, width: el.offsetWidth, height: el.offsetHeight };
   }
 
-  // Creates a container for existing header and main section.
+  // Creates a container for existing header/footer/sideBar and main section.
   // When the container is resized, its reposition() method
   // should be called. This will set the main section to the same
   // width as the container but its height to the new container
   // height minus the height of the header.
   // If the main section has a reposition() method it will be called
   // after it is resized.
-  function header(h, main) {
+  // ahead is true for left or header, false for right or footer.
+  function sideBarGeneric(s, main, ahead, reposit) {
     var container = document.createElement('div');
-    container.appendChild(ensureStructural(h));
-    container.appendChild(ensureStructural(main));
-    container.style.position = 'fixed';
-    container.style.overflow = 'auto';
-    setReposition(container, function(left, top, width, height) {
-      var hh = getSize(h).height;
-      reposition(h, left, top, width, hh);
-      reposition(main, left, top + hh, width, height - hh);
-    });
+    container.appendChild(ensureStructural(ahead? s : main));
+    container.appendChild(ensureStructural(ahead? main : s));
+    setReposition(container, reposit);
     container.getData = function() {
-      return mergeObjects(getData(h), getData(main));
+      var r = {};
+      setAll(r, getData(s));
+      setAll(r, getData(main));
     };
     container.setData = function(v) {
-      setData(h, v);
+      setData(s, v);
       setData(main, v);
     };
     return container;
   }
 
-  // Like header, but the footer goes below the main section
-  function footer(f, main) {
-    var container = document.createElement('div');
-    container.appendChild(ensureStructural(main));
-    container.appendChild(ensureStructural(f));
-    container.style.position = 'fixed';
-    container.style.overflow = 'auto';
-    setReposition(container, function(left, top, width, height) {
-      var fh = getSize(f).height;
-      reposition(f, left, top + height - fh, width, fh);
-      reposition(main, left, top, width, height - fh);
+  // side bar thing at the top
+  function header(hdr, main) {
+    return sideBarGeneric(hdr, main, true, function(l, t, w, h) {
+      setAll(hdr.style, {
+        position: 'fixed',
+        left: l + 'px',
+        width: w + 'px',
+        top: t + 'px'
+      });
+      hdr.style.removeProperty('height');
+      reposition(hdr, l, t, w, h);
+      var hh = getSize(hdr).height;
+      hdr.style.height = hh + 'px';
+      reposition(main, l, t + hh, w, h - hh);
+      reposition(hdr, l, t, w, hh);
     });
-    container.getData = function() {
-      return mergeObjects(getData(header), getData(main));
-    }
-    container.setData = function(v) {
-      setData(f, v);
-      setData(main, v);
-    }
-    return container;
+  }
+
+  // Like header, but the footer goes below the main section
+  function footer(ftr, main) {
+    return sideBarGeneric(ftr, main, false, function(l, t, w, h) {
+      setAll(ftr.style, {
+        position: 'fixed',
+        left: l + 'px',
+        width: w + 'px',
+      });
+      ftr.style.removeProperty('top');
+      ftr.style.removeProperty('height');
+      reposition(ftr, l, t, w, h);
+      var fh = getSize(ftr).height;
+      setAll(ftr.style, {
+        top: t + h - fh + 'px',
+        height: fh + 'px'
+      });
+      reposition(main, l, t, w, h - fh);
+      reposition(ftr, l, t + h + fh, w, fh);
+    });
+  }
+
+  // Like header, but on the left
+  function leftSideBar(bar, main) {
+    return sideBarGeneric(bar, main, true, function(l, t, w, h) {
+      setAll(bar.style, {
+        position: 'fixed',
+        left: l + 'px',
+        top: t + 'px',
+        height: h + 'px'
+      });
+      bar.style.removeProperty('width');
+      reposition(bar, l, t, w, h);
+      var bw = getSize(bar).width;
+      bar.style.width = bw;
+      reposition(main, l + bw, t, w - bw, h);
+      reposition(bar, l, t, bw, h);
+    });
+  }
+
+  // Like header, but on the right
+  function rightSideBar(bar, main) {
+    return sideBarGeneric(bar, main, function(l, t, w, h) {
+      setAll(bar.style, {
+        position: 'fixed',
+        top: t + 'px',
+        height: h + 'px'
+      });
+      bar.style.removeProperty('left');
+      bar.style.removeProperty('width');
+      reposition(bar, l, t, w, h);
+      var bw = getSize(bar).width;
+      setAll(bar.style, {
+        left: l + w - bw + 'px',
+        width: bw + 'px'
+      });
+      reposition(main, l, t, w - bw, h);
+      reposition(bar, l + w + bw, t, bw, h);
+    });
   }
 
   function setDivideSize(container, left, right, divider, img, dimensions) {
@@ -713,24 +749,28 @@ var toolkit = function() {
   // getSize() is not accurate if el is not visible.
   // reposition will set the size and position; if the position has changed
   // callback will be called with the new (left, top, width, height)
-  function setReposition(el, callback) {
+  function setReposition(el, callback, getSizeFn) {
     callback = ensureFunction(callback);
     var size = { left: 0, top: 0, width: 100, height: 100 };
-    el.getSize = function() {
-      if (0 !== el.offsetHeight || 0 !== el.offsetWidth) {
-        setAll(size, {
-          left: el.offsetLeft,
-          top: el.offsetTop,
-          width: el.offsetWidth,
-          height: el.offsetHeight
-        });
-      }
-      return size;
-    };
+    if (typeof(getSizeFn) === 'function') {
+      el.getSize = function() {
+        var s = getSizeFn();
+        return s? s : size;
+      };
+    } else {
+      el.getSize = function() {
+        if (0 !== el.clientHeight || 0 !== el.clientWidth) {
+          setAll(size, {
+            left: el.clientLeft,
+            top: el.clientTop,
+            width: el.clientWidth,
+            height: el.clientHeight
+          });
+        }
+        return size;
+      };
+    }
     el.reposition = function (l, t, w, h) {
-      if (l === size.left && t === size.top && w === size.width && h === size.height) {
-        return;
-      }
       setAll(size, { left: l, top: t, width: w, height: h });
       callback(l, t, w, h);
     };
@@ -840,8 +880,7 @@ var toolkit = function() {
 
   function banner(elements, className) {
     var b = collection(elements, 'span');
-    b.className = className;
-    b.style.position = 'fixed';
+    b.classList.add(className);
     setReposition(b);
     return b;
   }
@@ -875,7 +914,6 @@ var toolkit = function() {
 
   function wrapper(element, overflow) {
     var div = document.createElement('div');
-    div.className = 'background';
     setAll(div.style, {
       overflow: overflow,
       display: 'block',
@@ -892,16 +930,21 @@ var toolkit = function() {
     return div;
   }
 
-  function scrollingWrapper(element) {
+  function scrollingWrapper(element, verticalPadding, horizontalPadding) {
+    var vp = typeof(verticalPadding) === 'undefined'? 0 : verticalPadding;
+    var hp = typeof(horizontalPadding) === 'undefined'? 0 : horizontalPadding;
     var div = wrapper(element, 'auto');
+    div.classList.add('scrolling-wrapper');
     setReposition(div, function(l, t, w, h) {
       setAll(div.style, {
         position: 'fixed',
-        left: l,
-        top: t,
-        width: w,
-        height: h
+        left: l + 'px',
+        top: t + 'px',
+        width: w + hp + 'px',
+        height: h + vp + 'px'
       });
+    }, function() {
+      return getSize(element);
     });
     return div;
   }
@@ -909,13 +952,14 @@ var toolkit = function() {
   function nonScrollingWrapper(element) {
     element.style.position = 'fixed';
     var div = wrapper(element, 'hidden');
+    div.classList.add('nonscrolling-wrapper');
     setReposition(div, function(l, t, w, h) {
       setAll(div.style, {
         position: 'fixed',
-        left: l,
-        top: t,
-        width: w,
-        height: h
+        left: l + 'px',
+        top: t + 'px',
+        width: w + 'px',
+        height: h + 'px'
       });
       reposition(element, l, t, w, h);
     });
@@ -960,6 +1004,7 @@ var toolkit = function() {
     var pages = {};
     var active = null; // ID of page user is looking at
     var returnPage = null; // ID of last page user was looking at
+    var container = null;
     var pageContainer = document.createElement('div');
     pageContainer.className = 'tab-body';
     var tabStrip = document.createElement('span');
@@ -995,20 +1040,19 @@ var toolkit = function() {
       }
     }
     forEach(pageElements, function(pageId, page) {
-      tab = makeLabel(labelTranslations, tabStrip, pageId);
+      var tab = makeLabel(labelTranslations, tabStrip, pageId);
       tab.onclick = function() {
-        var tab = tabs[pageId];
-        if (tab.classList.contains('disabled')) {
+        if (tabs[pageId].classList.contains('disabled')) {
           return;
         }
-        var s = pages[active].getSize();
+        var s = getSize(container);
         pages[active].hide();
         tabs[active].classList.remove('active');
         active = pageId;
         returnPage = pageId;
-        pages[pageId].show();
-        tab.classList.add('active');
-        reposition(pages[pageId], s.left, s.top, s.width, s.height);
+        pages[active].show();
+        tabs[active].classList.add('active');
+        reposition(container, s.left, s.top, s.width, s.height);
       };
       var wpage = ensureStructural(page);
       if (!active) {
@@ -1024,7 +1068,7 @@ var toolkit = function() {
       tabs[pageId] = tab;
     });
     returnPage = active;
-    var container = header(tabStrip, pageContainer);
+    container = header(tabStrip, pageContainer);
     container.getData = function() {
       var result = {};
       forEach(pages, function(pageId, page) {
@@ -1073,6 +1117,8 @@ var toolkit = function() {
     header: header,
     footer: footer,
     banner: banner,
+    leftSideBar: leftSideBar,
+    rightSideBar: rightSideBar,
     scrollingWrapper: scrollingWrapper,
     nonScrollingWrapper: nonScrollingWrapper,
     paramText: paramText,

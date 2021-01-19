@@ -463,9 +463,9 @@ function geoplotr() {
       data);
   }
 
-  function setCalculateMode(value) {
+  function setCalculateMode(automatic) {
     var dirty = false;
-    if (value) {
+    if (automatic) {
       doPlot2 = toolkit.whenQuiet(14, displayPlotNow);
       dirtyPlot = doPlot;
       toolkit.forEach(calculateButtons, function(i, c) {
@@ -477,9 +477,9 @@ function geoplotr() {
       }
     } else {
       dirty = false;
-      doPlot2 = function() {
+      doPlot2 = function(callback) {
         dirty = false;
-        displayPlotNow();
+        displayPlotNow(callback);
       };
       dirtyPlot = function () { dirty = true; };
       toolkit.forEach(calculateButtons, function(i, c) {
@@ -501,15 +501,15 @@ function geoplotr() {
     rrpc.initialize(function() {
       rrpc.call('getSchema', {}, function(result, err) {
         schema = result.data;
-        setupScreen();
+        var body = setupScreen();
         addFunctionSelectButton();
         addparamSelectors();
         setParameters();
         setOptions();
+        toolkit.setAsBody(body);
         displayPlotNow(function() {
           setCalculateMode(calculateMode());
         });
-        document.title = translations(['app', 'title'], 'R');
       });
     });
   });
@@ -533,9 +533,7 @@ function geoplotr() {
     output = document.createElement('div');
     output.id = 'output';
     var outputImg = toolkit.image(markPlotDirty);
-    outputImg.setAttribute('style', 'width: 100%; height: 100%;');
     var outputError = toolkit.staticText(translations(['framework', 'error']));
-    outputError.setAttribute('style', 'width: 100%; height: 100%;');
     var outputTable = createDataEntryGrid(null, 5, 5);
     var oTable = outputTable.getTable();
     oTable.classList.add('data-entry-grid');
@@ -604,8 +602,14 @@ function geoplotr() {
       leftPane,
       output);
     top = toolkit.banner({}, 'top');
-    toolkit.setAsBody(toolkit.header(top, doc));
+    var logo = document.createElement('span');
+    logo.className = 'logo';
+    document.title = translations(['app', 'title'], 'R');
+    logo.textContent = document.title;
+    var header = toolkit.leftSideBar(toolkit.scrollingWrapper(logo, 10, 30), top);
+    header.classList.add('top-header');
     inputGrid.addWatcher(markPlotDirty);
+    return toolkit.header(header, doc);
   }
 
   function addparamSelectors() {
