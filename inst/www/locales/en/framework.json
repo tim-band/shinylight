@@ -59,6 +59,16 @@
       "help": "Recalculate the plot and table automatically whenever the input or options change"
     }
   },
+  "gridmenu": {
+    "cut": "Cut",
+    "copy": "Copy",
+    "deleteRow": "Delete row",
+    "addRowBefore": "Add row before",
+    "addRowAfter": "Add row after",
+     "deleteColumn": "Delete column",
+     "addColumnBefore": "Add column before",
+     "addColumnAfter": "Add column after"
+  },
   "updating...": "updating",
   "options": "Options",
   "functions": "Select function",

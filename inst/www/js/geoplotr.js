@@ -526,8 +526,13 @@ function geoplotr() {
     return functionSelector.getData();
   }
 
+  function translateGrid(grid) {
+    grid.setText(translations(['framework', 'gridmenu'], {}));
+  }
+
   function setupScreen() {
     inputGrid = createDataEntryGrid(null, 5, 5);
+    translateGrid(inputGrid);
     var table = inputGrid.getTable();
     table.id = 'input-table';
     output = document.createElement('div');
@@ -535,6 +540,7 @@ function geoplotr() {
     var outputImg = toolkit.image(markPlotDirty);
     var outputError = toolkit.staticText(translations(['framework', 'error']));
     var outputTable = createDataEntryGrid(null, 5, 5);
+    translateGrid(outputTable);
     var oTable = outputTable.getTable();
     oTable.classList.add('data-entry-grid');
     oTable.setAttribute('style', 'width: 100%; height: 100%;');
@@ -598,9 +604,7 @@ function geoplotr() {
       calculate: calculate1
     }, 'input-footer', 35)
     var leftPane = toolkit.footer(leftFooter, inputPane);
-    var doc = toolkit.verticalDivide(null,
-      leftPane,
-      output);
+    var doc = toolkit.verticalDivide(null, leftPane, output);
     top = toolkit.banner({}, 'top');
     var homelink = translations(['app', 'homelink']);
     var logo;
