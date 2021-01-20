@@ -602,9 +602,16 @@ function geoplotr() {
       leftPane,
       output);
     top = toolkit.banner({}, 'top');
-    var logo = document.createElement('span');
-    logo.className = 'logo';
+    var homelink = translations(['app', 'homelink']);
+    var logo;
+    if (homelink) {
+      logo = document.createElement('a');
+      logo.setAttribute('href', homelink);
+    } else {
+      logo = document.createElement('span');
+    }
     document.title = translations(['app', 'title'], 'R');
+    logo.className = 'logo';
     logo.textContent = document.title;
     var header = toolkit.leftSideBar(toolkit.scrollingWrapper(logo, 10, 30), top);
     header.classList.add('top-header');
