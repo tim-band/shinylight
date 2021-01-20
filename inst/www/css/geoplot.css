@@ -1,6 +1,7 @@
 .top-header {
   position: fixed;
   text-align: center;
+  z-index: 1;
   background-color: #fdf5e4;
   background-image: linear-gradient(
     to bottom, #fdf0c2, #ffffff
@@ -114,6 +115,11 @@
 .output-footer .param-label .tooltip {
   margin-top: -10px;
   transform: translate(0, -100%);
+}
+
+.input-footer .param-label .tooltip {
+  margin-top: -10px;
+  transform: translate(60px, -100%);
 }
 
 .param-label:hover .tooltip {

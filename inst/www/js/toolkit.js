@@ -881,6 +881,7 @@ var toolkit = function() {
   function banner(elements, className) {
     var b = collection(elements, 'span');
     b.classList.add(className);
+    b.style.zIndex = 1;
     setReposition(b);
     return b;
   }
@@ -909,6 +910,26 @@ var toolkit = function() {
       });
     };
     setShowHide(b, 'inline-block');
+    return b;
+  }
+
+  // fn takes two parameters, the File object uploaded and
+  // a callback function to be called when the operation completes
+  function loadFileButton(id, fn, translations) {
+    var b = makeLabel(translations, null, id);
+    b.classList.add('button');
+    b.tabIndex = 0;
+    setShowHide(b, 'inline-block');
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.style.display = 'none';
+    input.onchange = function(ev) {
+      b.classList.add('pressed');
+      fn(input.files[0], function() {
+        b.classList.remove('pressed');
+      });
+    };
+    b.appendChild(input);
     return b;
   }
 
@@ -1133,6 +1154,7 @@ var toolkit = function() {
     staticText: staticText,
     preformattedText: preformattedText,
     button: button,
+    loadFileButton: loadFileButton,
     withTimeout: withTimeout,
     stack: stack,
     pages: pages

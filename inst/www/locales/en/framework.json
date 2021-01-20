@@ -41,6 +41,14 @@
     "calculate": {
       "name": "Calculate",
       "help": "Calculate and display plot or table of results"
+    },
+    "savedata": {
+      "name": "Save Data",
+      "help": "Download the currently set parameters"
+    },
+    "loaddata": {
+      "name": "Load Data",
+      "help": "Set parameters from a file"
     }
   },
   "labels": {

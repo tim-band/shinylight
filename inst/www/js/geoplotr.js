@@ -22,6 +22,8 @@ function geoplotr() {
   // type names of subheaders in each column
   var subheaderChoices = [];
   var calculateButtons = [];
+  var subheaderInitials = [];
+  var subheaderTypes = [];
   var top;
 
   function getHttp(url, callback, errorCallback) {
@@ -124,6 +126,10 @@ function geoplotr() {
 		downloader.click();
   }
 
+  function downloadJsonText(filename, text) {
+    download(filename, 'data:text/json;base64,' + btoa(text));
+  }
+
   function downloadPdf(callback) {
     doPlotNow({
       'rrpc.resultformat': {
@@ -179,27 +185,74 @@ function geoplotr() {
     });
   }
 
-  function doPlotNow(params, callback) {
-    var fn = selectedFunction();
-    toolkit.forEach(headerParams, function(paramId, columnIndex) {
-      params[paramId] = getColumn(columnIndex);
+  function setParams(data) {
+    if (!('fn' in data && 'parameters' in data)) {
+      console.error('did not understand parameter file format');
+      return;
+    }
+    // the function itself
+    if (data.fn in schema.functions) {
+      functionSelector.setData(data.fn);
+    } else {
+      console.error('no such function', data.fn);
+    }
+    var p = data.parameters;
+    // parameters from the main screen
+    toolkit.forEach(shownParameters, function(k, id) {
+      var e = allParameterSelectors[k];
+      e.setData(p[id]);
     });
-    toolkit.forEach(shownParameters, function(paramKey, paramId) {
-      var e = allParameterSelectors[paramKey];
-      params[paramId] = e.getData();
-    });
-    var og = toolkit.deref(schema.functions[fn], ['optiongroups'], {});
-    toolkit.forEach(og, function(i, groupId) {
-      // maybe use optionPage.getData() and pick out the relevant ones?
-      //...
-      toolkit.forEach(optionGroups[groupId], function(optionId, option) {
-        params[optionId] = option.getData();
+    // options
+    var optionGroup = toolkit.deref(schema.functions[data.fn], ['optiongroups'], {});
+    toolkit.forEach(optionGroup, function(i, groupId) {
+      toolkit.forEach(optionGroups[groupId], function(id, e) {
+        e.setData(p[id]);
       });
     });
+    // construct data to set into the input table
+    var data = [];
+    toolkit.forEach(headerParams, function(id, columnIndex) {
+      data[columnIndex] = p[id];
+    });
+    setInputGrid(inputGrid.getColumnHeaders(),
+      subheaderTypes,
+      subheaderParam? subheaderChoices : null,
+      subheaderParam && subheaderParam in p? p[subheaderParam] : null,
+      data);
+  }
+
+  function getParams() {
+    var p = {};
+    var fn = selectedFunction();
+    // data from columns
+    toolkit.forEach(headerParams, function(id, columnIndex) {
+      p[id] = getColumn(columnIndex);
+    });
+    // subheaders (units)
     if (subheaderParam) {
-      params[subheaderParam] = unitSettings();
+      p[subheaderParam] = unitSettings();
     }
-    rrpc.call(fn, params, function(result, err) {
+    // parameters from the main screen
+    toolkit.forEach(shownParameters, function(k, id) {
+      var e = allParameterSelectors[k];
+      p[id] = e.getData();
+    });
+    // relevant options
+    var optionGroup = toolkit.deref(schema.functions[fn], ['optiongroups'], {});
+    toolkit.forEach(optionGroup, function(i, groupId) {
+      // maybe use optionPage.getData() and pick out the relevant ones?
+      //...
+      toolkit.forEach(optionGroups[groupId], function(id, e) {
+        p[id] = e.getData();
+      });
+    });
+    return { fn: fn, parameters: p };
+  }
+
+  function doPlotNow(params, callback) {
+    var p = getParams();
+    toolkit.forEach(p.parameters, function(k,v) { params[k] = v; });
+    rrpc.call(p.fn, params, function(result, err) {
       if (err) {
         output.setData({
           error: err,
@@ -231,12 +284,17 @@ function geoplotr() {
     return c;
   }
 
-  function getUnitSetting(index) {
+  function getUnitElement(index) {
     var nodes = inputGrid.getColumnSubheader(index).childNodes;
     if (nodes.length === 0) {
       return '';
     }
-    return nodes[0].getData();
+    return nodes[0];
+  }
+
+  function getUnitSetting(index) {
+    var node = getUnitElement(index);
+    return node.getData();
   }
 
   function getUnitValues(typeDescriptor) {
@@ -343,7 +401,6 @@ function geoplotr() {
   function setInputGrid(headers, headerParams, subheaders, units, data) {
     var rows = transpose(data);
     var headers = localizeHeaders(headers);
-    headers.push('');
     inputGrid.init(headers, rows);
     if (!subheaders) return;
     for (c = 0; c !== subheaders.length; ++c) {
@@ -438,8 +495,8 @@ function geoplotr() {
     var headers = [];
     var data = [];
     subheaderChoices = [];
-    var subheaderInitials = [];
-    var subheaderTypes = [];
+    subheaderInitials = [];
+    subheaderTypes = [];
     headerParams = {};
     forEachParam(fd, function(paramId, initialEnum, enumValues, paramKey) {
       shownParameters[paramKey] = paramId;
@@ -456,6 +513,7 @@ function geoplotr() {
       subheaderParam = paramId;
       subheaderInitials = dataUnits;
     });
+    headers.push('');
     setInputGrid(headers,
       subheaderTypes,
       subheaderParam? subheaderChoices : null,
@@ -503,7 +561,7 @@ function geoplotr() {
         schema = result.data;
         var body = setupScreen();
         addFunctionSelectButton();
-        addparamSelectors();
+        addParamSelectors();
         setParameters();
         setOptions();
         toolkit.setAsBody(body);
@@ -556,9 +614,31 @@ function geoplotr() {
     oTable.show = function() {
       oTable.style.display = 'table';
     };
+    var buttonTranslations = translations(['framework', 'buttons']);
     var calculate1 = toolkit.button('calculate',
-      doPlot, translations(['framework', 'buttons']));
+      doPlot, buttonTranslations);
     calculateButtons.push(calculate1);
+    var saveData = toolkit.button('savedata', toolkit.withTimeout(function() {
+      downloadJsonText('geoplotr-params.json', JSON.stringify(getParams()));
+    }), buttonTranslations);
+    var loadData = toolkit.loadFileButton('loaddata', function(file, done) {
+      if (20000 < file.size) {
+        console.error('file too large!', file.size);
+        done();
+        return;
+      }
+      var reader = new FileReader();
+      reader.onloadend = function() {
+        if (reader.error) {
+          console.error(reader.error);
+          done();
+        } else {
+          setParams(JSON.parse(reader.result));
+          done();
+        }
+      };
+      reader.readAsText(file);
+    }, buttonTranslations);
     var plotFooter = toolkit.banner({
       downloadPlot: toolkit.button('download-pdf',
         downloadPdf, translations(['framework', 'buttons']))
@@ -580,7 +660,7 @@ function geoplotr() {
       downloadDebug: toolkit.button(
         'download-json',
         function() {
-          download('geoplotr.json', 'data:text/json;base64,' + btoa(debugJson));
+          downloadJsonText('geoplotr.json', debugJson);
         },
         translations(['framework', 'buttons'])
       )
@@ -601,8 +681,10 @@ function geoplotr() {
       options: optionsPage
     }, translations(['framework', 'pages']));
     var leftFooter = toolkit.banner({
+      savedata: saveData,
+      loaddata: loadData,
       calculate: calculate1
-    }, 'input-footer', 35)
+    }, 'input-footer')
     var leftPane = toolkit.footer(leftFooter, inputPane);
     var doc = toolkit.verticalDivide(null, leftPane, output);
     top = toolkit.banner({}, 'top');
@@ -623,7 +705,7 @@ function geoplotr() {
     return toolkit.header(header, doc);
   }
 
-  function addparamSelectors() {
+  function addParamSelectors() {
     allParameterSelectors = {};
     forEachEnumParam(function(paramKey, initial, values, typeKey) {
       var button = toolkit.paramSelector(
