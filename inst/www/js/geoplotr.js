@@ -374,21 +374,42 @@ function geoplotr() {
     var rows = transpose(data);
     var headers = localizeHeaders(headers);
     inputGrid.init(headers, rows);
-    for (c = 0; c !== headerParams.length; ++c) {
-      var paramKey = headerParams[c];
+    var c = 0;
+    toolkit.forEach(headerParams, function(k, paramKey) {
       if (paramKey in schema.types) {
         var type = schema.types[paramKey];
         if (type.kind[0] === 'enum') {
+          var index = c;
+          var currentValue = units[c];
           toolkit.paramSelector(paramKey,
             inputGrid.getColumnSubheader(c),
             {},
-            type.values, translations(['app', 'types', paramKey], {}),
-            units[c], markPlotDirty);
+            type.values,
+            translations(['app', 'types', paramKey], {}),
+            currentValue,
+            function(newValue) {
+              if ('factors' in type) {
+                  var was = type.values.indexOf(currentValue);
+                  var is = type.values.indexOf(newValue);
+                  var num = type.factors[is];
+                  var den = type.factors[was];
+                  var col = inputGrid.getColumn(index);
+                  var newRs = [];
+                  toolkit.forEach(col, function(i, v) {
+                    newRs.push([ num * v / den ]);
+                  });
+                  inputGrid.putCells(0, col.length, index, index+1, newRs);
+              }
+              currentValue = newValue;
+              markPlotDirty();
+            }
+          );
         }
       } else {
         console.warn("no such type", paramKey);
       }
-    }
+      ++c;
+    });
   }
 
   var standardTypes = {
