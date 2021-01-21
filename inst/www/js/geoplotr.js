@@ -19,8 +19,6 @@ function geoplotr() {
   // The name of the parameter (if required) that takes the list
   // of column subheaders
   var subheaderParam;
-  // type names of subheaders in each column
-  var subheaderChoices = [];
   var calculateButtons = [];
   var subheaderInitials = [];
   var subheaderTypes = [];
@@ -111,11 +109,14 @@ function geoplotr() {
 
   function unitSettings() {
     var results = [];
-    for (var i = 0; i != subheaderChoices.length; ++i) {
-      if (subheaderChoices[i]) {
-        results.push(getUnitSetting(i));
+    var index = 0;
+    toolkit.forEach(headerParams, function() {
+      var node = getUnitElement(index);
+      if (node) {
+        results.push(node.getData());
       }
-    }
+      ++index;
+    });
     return results;
   }
 
@@ -216,7 +217,6 @@ function geoplotr() {
     });
     setInputGrid(inputGrid.getColumnHeaders(),
       subheaderTypes,
-      subheaderParam? subheaderChoices : null,
       subheaderParam && subheaderParam in p? p[subheaderParam] : null,
       data);
   }
@@ -285,47 +285,14 @@ function geoplotr() {
   }
 
   function getUnitElement(index) {
-    var nodes = inputGrid.getColumnSubheader(index).childNodes;
-    if (nodes.length === 0) {
-      return '';
-    }
-    return nodes[0];
-  }
-
-  function getUnitSetting(index) {
-    var node = getUnitElement(index);
-    return node.getData();
-  }
-
-  function getUnitValues(typeDescriptor) {
-    if (!('unittype' in typeDescriptor)) {
-      return null;
-    }
-    var t = typeDescriptor.unittype[0];
-    if (!(t in schema.types)) {
-      console.error('no such type:', t);
-      return null;
-    }
-    var ut = schema.types[t];
-    if (ut.kind[0] !== 'enum') {
-      console.error('unittype must be enum:', t);
-      return null;
-    }
-    return ut.values;
+    const subheader = inputGrid.getColumnSubheader(index);
+    var nodes = subheader? subheader.childNodes : [];
+    return nodes.length === 0? null : nodes[0];
   }
 
   function noop() {}
 
   function forEachParam(functionDescriptor, enumFn, columnFn, subheaderFn) {
-    if (!enumFn) {
-      enumFn = noop;
-    }
-    if (!columnFn) {
-      columnFn = noop;
-    }
-    if (!subheaderFn) {
-      subheaderFn = noop;
-    }
     toolkit.forEach(functionDescriptor.params, function(paramId, paramKey) {
       var p = schema.params[paramKey[0]];
       var d = schema.data[p.data[0]];
@@ -339,7 +306,12 @@ function geoplotr() {
       } else if (t.kind[0] === 'enum') {
         enumFn(paramId, d, t.values, paramKey);
       } else if (t.kind[0] === 'column') {
-        columnFn(paramId, d, getUnitValues(t), t.unittype? t.unittype[0] : null);
+        try {
+          var unitTypeName = t.unittype[0];
+          columnFn(paramId, d, unitTypeName);
+        } catch (e) {
+          console.error("error:", e);
+        }
       } else {
         console.warn('Did not understand type kind', t.kind[0]);
       }
@@ -398,15 +370,13 @@ function geoplotr() {
     return result;
   }
 
-  function setInputGrid(headers, headerParams, subheaders, units, data) {
+  function setInputGrid(headers, headerParams, units, data) {
     var rows = transpose(data);
     var headers = localizeHeaders(headers);
     inputGrid.init(headers, rows);
-    if (!subheaders) return;
-    for (c = 0; c !== subheaders.length; ++c) {
-      var s = subheaders[c];
-      if (s) {
-        const paramKey = headerParams[c];
+    for (c = 0; c !== headerParams.length; ++c) {
+      var paramKey = headerParams[c];
+      if (paramKey in schema.types) {
         var type = schema.types[paramKey];
         if (type.kind[0] === 'enum') {
           toolkit.paramSelector(paramKey,
@@ -415,6 +385,8 @@ function geoplotr() {
             type.values, translations(['app', 'types', paramKey], {}),
             units[c], markPlotDirty);
         }
+      } else {
+        console.warn("no such type", paramKey);
       }
     }
   }
@@ -494,7 +466,6 @@ function geoplotr() {
     var fd = schema.functions[selected];
     var headers = [];
     var data = [];
-    subheaderChoices = [];
     subheaderInitials = [];
     subheaderTypes = [];
     headerParams = {};
@@ -503,12 +474,11 @@ function geoplotr() {
       var e = allParameterSelectors[paramKey];
       e.show();
       e.setData(initialEnum[0]);
-    }, function(paramId, columnData, units, columnType) {
+    }, function(paramId, columnData, unitTypeName) {
       headerParams[paramId] = headers.length;
       headers.push(paramId);
       data.push(columnData);
-      subheaderChoices.push(units);
-      subheaderTypes.push(columnType);
+      subheaderTypes.push(unitTypeName);
     }, function(paramId, dataUnits) {
       subheaderParam = paramId;
       subheaderInitials = dataUnits;
@@ -516,7 +486,6 @@ function geoplotr() {
     headers.push('');
     setInputGrid(headers,
       subheaderTypes,
-      subheaderParam? subheaderChoices : null,
       subheaderInitials,
       data);
   }

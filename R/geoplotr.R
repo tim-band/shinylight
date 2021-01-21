@@ -204,7 +204,7 @@ params <- list(
   Na2O=list(type="weightCol", data="Na2O"),
   K2O=list(type="weightCol", data="K2O"),
   SiO2=list(type="weightCol", data="SiO2"),
-  Ti=list(type="proportionCol", data="Ti"),
+  Ti=list(type="proportionCol_TiO2", data="Ti"),
   Zr=list(type="proportionCol", data="Zr"),
   Y=list(type="proportionCol", data="Y"),
   tizry_units=list(type="subheader", data="tizry_units"),
@@ -239,9 +239,19 @@ types <- list(
     subtype="float",
     unittype="proportion"
   ),
+  proportionCol_TiO2=list(
+    kind="column",
+    subtype="float",
+    unittype="proportion_TiO2"
+  ),
   proportion=list(
     kind="enum",
     values=c("wt%", "ppm")
+  ),
+  proportion_TiO2=list(
+    kind="enum",
+    values=c("wt%", "ppm"),
+    factors=c(1, GeoplotR::wtpct2ppm(1, 'TiO2'))
   ),
   weightCol=list(
     kind="column",

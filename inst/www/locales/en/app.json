@@ -111,6 +111,16 @@
         "name": "ppm",
         "help": "Parts per million"
       }
+    },
+    "proportion_TiO2": {
+      "wt%": {
+        "name": "weight %",
+        "help": "percentage by weight"
+      },
+      "ppm": {
+        "name": "ppm",
+        "help": "Parts per million"
+      }
     }
   }
 }
