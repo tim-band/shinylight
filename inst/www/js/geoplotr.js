@@ -389,16 +389,18 @@ function geoplotr() {
             currentValue,
             function(newValue) {
               if ('factors' in type) {
-                  var was = type.values.indexOf(currentValue);
-                  var is = type.values.indexOf(newValue);
-                  var num = type.factors[is];
-                  var den = type.factors[was];
-                  var col = inputGrid.getColumn(index);
-                  var newRs = [];
-                  toolkit.forEach(col, function(i, v) {
-                    newRs.push([ num * v / den ]);
-                  });
-                  inputGrid.putCells(0, col.length, index, index+1, newRs);
+                var was = type.values.indexOf(currentValue);
+                var is = type.values.indexOf(newValue);
+                var num = type.factors[is];
+                var den = type.factors[was];
+                var col = inputGrid.getColumn(index);
+                var newRs = [];
+                toolkit.forEach(col, function(i, v) {
+                  newRs.push([ num * v / den ]);
+                });
+                var sel = inputGrid.getSelection();
+                inputGrid.putCells(0, col.length, index, index+1, newRs);
+                inputGrid.setSelection(sel.anchorRow, sel.anchorColumn, sel.selectionRow, sel.selectionColumn);
               }
               currentValue = newValue;
               markPlotDirty();
