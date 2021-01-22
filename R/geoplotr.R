@@ -205,8 +205,8 @@ params <- list(
   K2O=list(type="weightCol", data="K2O"),
   SiO2=list(type="weightCol", data="SiO2"),
   Ti=list(type="proportionCol_TiO2", data="Ti"),
-  Zr=list(type="proportionCol", data="Zr"),
-  Y=list(type="proportionCol", data="Y"),
+  Zr=list(type="proportionCol_ZrO2", data="Zr"),
+  Y=list(type="proportionCol_Y2O3", data="Y"),
   tizry_units=list(type="subheader", data="tizry_units"),
   tizry_type=list(type="tizry_type", data="tizry_type"),
   tizry_plot=list(type="tizry_plot", data="tizry_plot")
@@ -234,24 +234,35 @@ types <- list(
     kind="enum",
     values=c("LDA", "QDA", "Pearce")
   ),
-  proportionCol=list(
-    kind="column",
-    subtype="float",
-    unittype="proportion"
-  ),
   proportionCol_TiO2=list(
     kind="column",
     subtype="float",
     unittype="proportion_TiO2"
   ),
-  proportion=list(
-    kind="enum",
-    values=c("wt%", "ppm")
+  proportionCol_ZrO2=list(
+    kind="column",
+    subtype="float",
+    unittype="proportion_ZrO2"
+  ),
+  proportionCol_Y2O3=list(
+    kind="column",
+    subtype="float",
+    unittype="proportion_Y2O3"
   ),
   proportion_TiO2=list(
     kind="enum",
     values=c("wt%", "ppm"),
     factors=c(1, GeoplotR::wtpct2ppm(1, 'TiO2'))
+  ),
+  proportion_ZrO2=list(
+    kind="enum",
+    values=c("wt%", "ppm"),
+    factors=c(1, GeoplotR::wtpct2ppm(1, 'ZrO2'))
+  ),
+  proportion_Y2O3=list(
+    kind="enum",
+    values=c("wt%", "ppm"),
+    factors=c(1, GeoplotR::wtpct2ppm(1, 'Y2O3'))
   ),
   weightCol=list(
     kind="column",
