@@ -108,16 +108,7 @@ function geoplotr() {
   }
 
   function unitSettings() {
-    var results = [];
-    var index = 0;
-    toolkit.forEach(headerParams, function() {
-      var node = getUnitElement(index);
-      if (node) {
-        results.push(node.getData());
-      }
-      ++index;
-    });
-    return results;
+    return inputGrid.getSubheaders();
   }
 
   function download(filename, data) {
@@ -284,12 +275,6 @@ function geoplotr() {
     return c;
   }
 
-  function getUnitElement(index) {
-    const subheader = inputGrid.getColumnSubheader(index);
-    var nodes = subheader? subheader.childNodes : [];
-    return nodes.length === 0? null : nodes[0];
-  }
-
   function noop() {}
 
   function forEachParam(functionDescriptor, enumFn, columnFn, subheaderFn) {
@@ -307,7 +292,7 @@ function geoplotr() {
         enumFn(paramId, d, t.values, paramKey);
       } else if (t.kind[0] === 'column') {
         try {
-          var unitTypeName = t.unittype[0];
+          var unitTypeName = 'unittype' in t? t.unittype[0] : null;
           columnFn(paramId, d, unitTypeName);
         } catch (e) {
           console.error("error:", e);
@@ -371,46 +356,60 @@ function geoplotr() {
   }
 
   function setInputGrid(headers, headerParams, units, data) {
-    var rows = transpose(data);
-    var headers = localizeHeaders(headers);
-    inputGrid.init(headers, rows);
     var c = 0;
+    var subheaderSpecs = [];
+    var subheaderDefaults = [];
+    var hasSubheaders = false;
     toolkit.forEach(headerParams, function(k, paramKey) {
       if (paramKey in schema.types) {
         var type = schema.types[paramKey];
         if (type.kind[0] === 'enum') {
-          var index = c;
-          var currentValue = units[c];
-          toolkit.paramSelector(paramKey,
-            inputGrid.getColumnSubheader(c),
-            {},
-            type.values,
-            translations(['app', 'types', paramKey], {}),
-            currentValue,
-            function(newValue) {
-              if ('factors' in type) {
-                var was = type.values.indexOf(currentValue);
-                var is = type.values.indexOf(newValue);
-                var num = type.factors[is];
-                var den = type.factors[was];
-                var col = inputGrid.getColumn(index);
-                var newRs = [];
-                toolkit.forEach(col, function(i, v) {
-                  newRs.push([ num * v / den ]);
-                });
-                var sel = inputGrid.getSelection();
-                inputGrid.putCells(0, col.length, index, index+1, newRs);
-                inputGrid.setSelection(sel.anchorRow, sel.anchorColumn, sel.selectionRow, sel.selectionColumn);
+          hasSubheaders = true;
+          subheaderDefaults.push(units[c]);
+          var spec = {};
+          var ts = translations(['app', 'types', paramKey], {});
+          toolkit.forEach(type.values, function(i, value) {
+            spec[value] = toolkit.deref(ts, [value, 'name'], value);
+          });
+          subheaderSpecs.push(spec);
+        } else {
+          subheaderSpecs.push(null);
+          subheaderDefaults.push(null);
+        }
+      } else {
+        console.warn("no such type", paramKey);
+        subheaderSpecs.push(null);
+        subheaderDefaults.push(null);
+      }
+      ++c;
+    });
+    var headers = localizeHeaders(headers);
+    var rows = transpose(data);
+    const trailingZeroes = /\.?0*$/;
+    inputGrid.init(headers, rows, hasSubheaders? subheaderSpecs : null, subheaderDefaults);
+    inputGrid.setReunittingFunction(function(index, currentValue, newValue, col) {
+      paramKey = headerParams[index];
+      if (paramKey in schema.types) {
+        var type = schema.types[paramKey];
+        if (type.kind[0] === 'enum') {
+          if ('factors' in type) {
+            var was = type.values.indexOf(currentValue);
+            var is = type.values.indexOf(newValue);
+            var num = type.factors[is];
+            var den = type.factors[was];
+            var prec = newValue === units[index]? 8:9;
+            return col.map(function(v) {
+              const r = num * v / den;
+              if (Number.isNaN(r)) {
+                return v;
               }
-              currentValue = newValue;
-              markPlotDirty();
-            }
-          );
+              return r.toPrecision(prec).replace(trailingZeroes, '');
+            });
+          }
         }
       } else {
         console.warn("no such type", paramKey);
       }
-      ++c;
     });
   }
 
