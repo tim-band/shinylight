@@ -66,7 +66,7 @@ rrpcServer <- function(interface, host='0.0.0.0', port=NULL, appDir=NULL, root="
     path <- sub("^/lang/", paste0("/locales/", lang, "/"), req$PATH_INFO)
     list(
       status=307L,
-      headers=list("Location"=paste0(req$rook.url_scheme, "://", host, path)),
+      headers=list("Location"=paste0(req$rook.url_scheme, "://", host, req$HTTP_SCRIPT_NAME, path)),
       body=""
     )
   }

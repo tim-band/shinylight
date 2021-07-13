@@ -6,7 +6,7 @@ RUN Rscript --vanilla -e \
     "install.packages(c('remotes','later','jsonlite','httpuv'), \
     repos='https://cloud.r-project.org')"
 RUN Rscript --vanilla -e \
-    "remotes::install_github('pvermees/geoplotr')"
+    "remotes::install_github('pvermees/geoplotr@beta')"
 
 COPY DESCRIPTION /app/DESCRIPTION
 COPY NAMESPACE /app/NAMESPACE
