@@ -368,6 +368,7 @@ var toolkit = function() {
       reposition(el, 0, 0, window.innerWidth, innerHeight);
     }
     window.addEventListener('resize', setSize);
+    el.resize = setSize;
     setSize();
   }
 
@@ -407,11 +408,11 @@ var toolkit = function() {
   function paramColor(id, container, translations, initial, callback) {
     var box = typeof(container.makeSubElement) === 'function'?
       container.makeSubElement(id) : span(container);
-    box.className = 'param-color';
+    box.className = 'param-box';
     box.addElement(makeLabel(translations));
     var input = document.createElement('input');
     input.type = 'color';
-    input.className = 'param-box';
+    input.className = 'param-color';
     if (initial) {
       input.value = initial;
     }
@@ -442,12 +443,12 @@ var toolkit = function() {
   function paramBoolean(id, container, translations, initial, callback) {
     var box = typeof(container.makeSubElement) === 'function'?
       container.makeSubElement(id) : span(container);
-    box.className = 'param-boolean';
+    box.className = 'param-box';
     var idFor = genId(id);
     box.addElement(makeLabel(translations, null, null, idFor));
     var input = document.createElement('input');
     input.type = 'checkbox';
-    input.className = 'param-checkbox';
+    input.className = 'param-boolean';
     input.id = idFor;
     if (initial) {
       input.checked = toBoolean(initial);
@@ -470,10 +471,10 @@ var toolkit = function() {
   function paramTyping(id, container, translations, initial, callback, validate, transform) {
     var box = typeof(container.makeSubElement) === 'function'?
       container.makeSubElement(id) : span(container);
-    box.className = 'param-text';
+    box.className = 'param-box';
     box.addElement(makeLabel(translations));
     var input = document.createElement('input');
-    input.className = 'param-box';
+    input.className = 'param-text';
     if (initial) {
       input.value = initial;
     }
@@ -619,7 +620,7 @@ var toolkit = function() {
       container.makeSubElement(id) : span(container);
     // The button is the area that can be clicked to open up the drop-down
     var button = document.createElement('div');
-    button.className = 'param-box';
+    button.className = 'param-selector';
     button.style.display = 'inline-block';
     var buttonText = document.createElement('span');
     button.appendChild(buttonText);
@@ -682,7 +683,7 @@ var toolkit = function() {
     button.onmousemove = function(ev) {
       ev.preventDefault();
     }
-    box.className = 'param-selector';
+    box.className = 'param-box';
     box.addElement(makeLabel(labelTranslations));
     dropDown.style.position = 'absolute';
     button.appendChild(dropDown);
@@ -865,10 +866,6 @@ var toolkit = function() {
         sub[id] = s;
       }
       return s;
-    }
-    div.deleteAll = function() {
-      sub = {};
-      div.textContent = '';
     }
     div.style.zIndex = 1;
     return div;

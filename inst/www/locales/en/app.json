@@ -43,33 +43,80 @@
     "SiO2": {
       "name": "SiO₂",
       "help":"concentrations of SiO₂"
+    },
+    "volcanic": {
+      "name": "Volcanic",
+      "help": "Volcanic (not plutonic) sample"
+    },
+    "ternaryLogratio": {
+      "name": "Ternary",
+      "help": "Ternary or logratio plot"
+    },
+    "radial": {
+      "name": "Radial",
+      "help": "Add Bowen-Fenner indices (only for Logratio plot)"
+    },
+    "boxType": {
+      "name": "Box type",
+      "help": "Which boundaries of the plot to draw (only for Logratio plot)"
+    },
+    "bandwidth": {
+      "name": "Bandwidth",
+      "help": "The smoothing bandwidth to be used for the kernel density estimate"
+    },
+    "vermeeschPease": {
+      "name": "Decision",
+      "help": "Adds Vermeesch and Pease's two-stage decision boundary between the calc-alkaline and tholeiitic magma series to the plot"
+    },
+    "decisionLineType": {
+      "name": "Line type",
+      "help": "Line type of the decision boundary"
+    },
+    "decisionLineWidth": {
+      "name": "Line width",
+      "help": "Line width of the decision boundary"
+    },
+    "decisionLineColour": {
+      "name": "Colour",
+      "help": "Colour of the decision boundary"
     }
   },
   "optiongroups": {
     "plot": {
       "@title": {
-        "name": "Plotting options",
-        "help": "Options controlling the look of the plot"
+        "name": "Point dimensions",
+        "help": "How big the points on the plot are"
+      },
+      "lwd": {
+        "name": "Point line width",
+        "help": "The line width the points are drawn with, default is 1.0"
+      },
+      "cex": {
+        "name": "Point size",
+        "help": "Magnification factor for the points"
+      }
+    },
+    "plot_chr": {
+      "@title": {
+        "name": "Point look",
+        "help": "Options controlling the look of points on the plot"
       },
       "pch": {
         "name": "Point symbol",
         "help": "Plotting symbol to use. Between 0 and 25 for standard symbols or 32 and 127 for ASCII characters"
       },
-      "col": {
-        "name": "Point colour",
-        "help": "Main colour of the points drawn"
-      },
       "bg": {
         "name": "Secondary point color",
         "help": "Symbols between 21 and 25 have two colours; this is the second one."
+      }
+    },
+    "plot_col": {
+      "@title": {
+        "name": "Point colour"
       },
-      "lwd": {
-        "name": "Point line width",
-        "help": "The line width the points are drawn with, default is 1. A floating point value."
-      },
-      "cex": {
-        "name": "Point size",
-        "help": "Magnification factor for the points"
+      "col": {
+        "name": "Point colour",
+        "help": "Main colour of the points drawn"
       }
     }
   },
@@ -120,6 +167,54 @@
       "ppm": {
         "name": "ppm",
         "help": "Parts per million"
+      }
+    },
+    "boxType": {
+      "n": {
+        "name": "none",
+        "help": "no box"
+      },
+      "o": {
+        "name": "all",
+        "help": "complete box"
+      },
+      "7": {
+        "name": "top right",
+        "help": "Top and right lines"
+      },
+      "L": {
+        "name": "bottom left",
+        "help": "Bottom and left lines"
+      },
+      "C": {
+        "name": "open right",
+        "help": "top, left and bottom lines"
+      },
+      "U": {
+        "name": "open top",
+        "help": "left, bottom and right lines"
+      }
+    },
+    "bandwidth": {
+      "nrd0": {
+        "name": "Silverman",
+        "help": "Silverman's rule of thumb"
+      },
+      "nrd": {
+        "name": "Scott",
+        "help": "Scott's variation of Silverman's rule of thumb"
+      },
+      "ucv": {
+        "name": "UCV",
+        "help": "Unbiased cross-validation"
+      },
+      "bcv": {
+        "name": "BCV",
+        "help": "Biased cross-validation"
+      },
+      "SJ": {
+        "name": "Sheather & Jones",
+        "help": "Using pilot estimation of derivatives"
       }
     }
   }

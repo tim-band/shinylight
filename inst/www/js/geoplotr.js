@@ -23,6 +23,7 @@ function geoplotr() {
   var subheaderInitials = [];
   var subheaderTypes = [];
   var top;
+  var body;
 
   function getHttp(url, callback, errorCallback) {
     var xhr = new XMLHttpRequest();
@@ -277,7 +278,7 @@ function geoplotr() {
 
   function noop() {}
 
-  function forEachParam(functionDescriptor, enumFn, columnFn, subheaderFn) {
+  function forEachParam(functionDescriptor, singleFn, columnFn, subheaderFn) {
     toolkit.forEach(functionDescriptor.params, function(paramId, paramKey) {
       var p = schema.params[paramKey[0]];
       var d = schema.data[p.data[0]];
@@ -286,10 +287,10 @@ function geoplotr() {
         if (p.type[0] === 'subheader') {
           subheaderFn(paramId, d);
         } else {
-          console.warn('Did not understand type name', p.type[0]);
+          singleFn(paramId, d[0], paramKey[0]);
         }
       } else if (t.kind[0] === 'enum') {
-        enumFn(paramId, d, t.values, paramKey);
+        singleFn(paramId, d[0], paramKey[0]);
       } else if (t.kind[0] === 'column') {
         try {
           var unitTypeName = 'unittype' in t? t.unittype[0] : null;
@@ -299,20 +300,6 @@ function geoplotr() {
         }
       } else {
         console.warn('Did not understand type kind', t.kind[0]);
-      }
-    });
-  }
-
-  // calls callback(paramKey, initial, values, typeKey) for each param,
-  // where paramKey is the ID of the type, initial[0] is the
-  // default value, values is an array of all possible values and
-  // typeKey is the ID of the type
-  function forEachEnumParam(callback) {
-    toolkit.forEach(schema.params, function(paramKey, p) {
-      var d = schema.data[p.data[0]];
-      var t = schema.types[p.type[0]];
-      if (typeof(t) === 'object' && t.kind[0] === 'enum') {
-        callback(paramKey, d, t.values, p.type[0]);
       }
     });
   }
@@ -377,7 +364,9 @@ function geoplotr() {
           subheaderDefaults.push(null);
         }
       } else {
-        console.warn("no such type", paramKey);
+        if (paramKey) {
+          console.warn("no such type", paramKey);
+        }
         subheaderSpecs.push(null);
         subheaderDefaults.push(null);
       }
@@ -434,6 +423,24 @@ function geoplotr() {
     }
   };
 
+  function addControl(typeId, elementId, container, tr, initial, callback) {
+    var e = toolkit.deref(schema, ['types', typeId]);
+    if (e) {
+      var kindId = toolkit.deref(e, ['kind', 0]);
+      if (kindId === 'enum') {
+        var valuesTr = translations(['app', 'types', typeId],
+          translations(['framework', 'framework-types', typeId], {}));
+        return toolkit.paramSelector(elementId, container,
+          tr, e.values, valuesTr, initial, callback);
+      }
+      return null;
+    }
+    if (typeId in standardTypes) {
+      return standardTypes[typeId](elementId, container, tr, initial, callback);
+    }
+    return toolkit.paramText(elementId, container, tr, initial, callback);
+  }
+
   function setOptions() {
     if (typeof(schema.optiongroups) !== 'object') {
       return;
@@ -444,7 +451,7 @@ function geoplotr() {
       }
       var options = optionGroups[groupId];
       var groupTr = translations(['framework', 'framework-options', '@title'], { name: groupId });
-      if (groupId === 'framework') {
+      if (groupId !== 'framework') {
         groupTr = translations(['app', 'optiongroups', groupId, '@title'], groupTr);
       }
     toolkit.groupTitle(optionsPage, groupTr);
@@ -456,24 +463,7 @@ function geoplotr() {
         }
         var initial = toolkit.deref(option, ['initial', 0]);
         var callback = toolkit.deref(optionCallbacks, [groupId, optionId], markPlotDirty);
-        var e = toolkit.deref(schema, ['types', typeId]);
-        if (e) {
-          var kindId = toolkit.deref(e, ['kind', 0]);
-          if (kindId === 'enum') {
-            var valuesTr = translations(['app', 'types', typeId], {});
-            if (groupId === 'framework') {
-              valuesTr = translations(['framework', 'framework-types', typeId], valuesTr);
-            }
-            options[optionId] = toolkit.paramSelector(optionId, optionsPage,
-              tr, e.values, valuesTr, initial, callback);
-            return;
-          }
-        }
-        if (typeId in standardTypes) {
-          options[optionId] = standardTypes[typeId](optionId, optionsPage, tr, initial, callback);
-        } else {
-          options[optionId] = toolkit.paramText(optionId, optionsPage, tr, initial, callback);
-        }
+        options[optionId] = addControl(typeId, optionId, optionsPage, tr, initial, callback);
       });
     });
   }
@@ -491,11 +481,11 @@ function geoplotr() {
     subheaderInitials = [];
     subheaderTypes = [];
     headerParams = {};
-    forEachParam(fd, function(paramId, initialEnum, enumValues, paramKey) {
+    forEachParam(fd, function(paramId, initial, paramKey) {
       shownParameters[paramKey] = paramId;
       var e = allParameterSelectors[paramKey];
       e.show();
-      e.setData(initialEnum[0]);
+      e.setData(initial);
     }, function(paramId, columnData, unitTypeName) {
       headerParams[paramId] = headers.length;
       headers.push(paramId);
@@ -510,6 +500,7 @@ function geoplotr() {
       subheaderTypes,
       subheaderInitials,
       data);
+    body.resize();
   }
 
   function setCalculateMode(automatic) {
@@ -550,12 +541,13 @@ function geoplotr() {
     rrpc.initialize(function() {
       rrpc.call('getSchema', {}, function(result, err) {
         schema = result.data;
-        var body = setupScreen();
+        body = setupScreen();
+        toolkit.setAsBody(body);
+        removeTopParameters();
         addFunctionSelectButton();
         addParamSelectors();
         setParameters();
         setOptions();
-        toolkit.setAsBody(body);
         displayPlotNow(function() {
           setCalculateMode(calculateMode());
         });
@@ -563,9 +555,20 @@ function geoplotr() {
     });
   });
 
+  function removeTopParameters() {
+    var nodes = top.childNodes;
+    var i = 0;
+    while (i < nodes.length) {
+      if (nodes[i].classList.contains('param-box')) {
+        top.removeChild(nodes[i]);
+      } else {
+        ++i;
+      }
+    }
+  }
+
   function addFunctionSelectButton() {
     var fns = Object.keys(schema.functions);
-    top.deleteAll();
     functionSelector = toolkit.paramSelector('', top,
       { name: translations(['framework','functions'], 'Function') },
       fns, translations(['app','functions']), null, setParameters);
@@ -690,23 +693,39 @@ function geoplotr() {
     document.title = translations(['app', 'title'], 'R');
     logo.className = 'logo';
     logo.textContent = document.title;
-    var header = toolkit.leftSideBar(toolkit.scrollingWrapper(logo, 10, 30), top);
-    header.classList.add('top-header');
+    logo.style.float = 'left';
+    //var header = toolkit.leftSideBar(toolkit.scrollingWrapper(logo, 10, 30), top);
+    //header.classList.add('top-header');
+    top.classList.add('top-header');
+    top.appendChild(logo);
     inputGrid.addWatcher(markPlotDirty);
-    return toolkit.header(header, doc);
+    return toolkit.header(top, doc);
   }
 
   function addParamSelectors() {
+    paramKeys = {};
+    toolkit.forEach(schema.functions, function(fid, fd) {
+      toolkit.forEach(fd.params, function(pid, paramKey) {
+        var v = toolkit.deref(schema.params, [paramKey]);
+        if (v) {
+          paramKeys[paramKey] = v;
+        }
+      });
+    });
     allParameterSelectors = {};
-    forEachEnumParam(function(paramKey, initial, values, typeKey) {
-      var button = toolkit.paramSelector(
+    toolkit.forEach(paramKeys, function(paramKey, p) {
+      var c = addControl(
+        p.type[0],
         paramKey,
         top,
         translations(['app', 'params', paramKey]),
-        values,
-        translations(['app', 'types', typeKey]),
-        initial[0], markPlotDirty);
-      allParameterSelectors[paramKey] = button;
+        schema.data[p.data[0]][0],
+        markPlotDirty
+      );
+      if (c) {
+        allParameterSelectors[paramKey] = c;
+        c.hide();
+      }
     });
   }
 }

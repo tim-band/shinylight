@@ -173,7 +173,7 @@
   transition: opacity 0.5s;
 }
 
-.param-selector .param-box {
+.param-box .param-selector {
   border: 1px solid #222;
   background-color: #ccc;
   padding: 0px 4px;

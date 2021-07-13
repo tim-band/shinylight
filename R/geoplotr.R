@@ -35,18 +35,18 @@ rrpc <- function(interface) { function(ws) {
             error <- list(message = e$message,
                 call = format(e$call),
                 stack = format(sys.calls()))
-            list(error=simpleError(error), result=NULL)
+            list(error=error, result=NULL)
           }
         ),
         error=function(err) {
           print(err);
-          list(error=err, result=NULL)
+          list(error=err$message, result=NULL)
         }
       )
       envelope$result <- r$result
       envelope$error <- r$error
     }
-    ws$send(jsonlite::toJSON(envelope))
+    ws$send(jsonlite::toJSON(envelope, force=TRUE))
   })
 }}
 
@@ -173,9 +173,22 @@ fetchTestData <- function() {
   }
 }
 
-getColumn = function(column) {
+fetchCathData <- function() {
+  if (!exists("cath", dataEnvironment)) {
+    data(cath, package='GeoplotR', envir=dataEnvironment);
+  }
+}
+
+getColumn <- function(column) {
   fetchTestData()
   get("test", dataEnvironment)[,column]
+}
+
+getCathColumn <- function(column) {
+  fetchCathData()
+  cath <- get("cath", dataEnvironment)
+  cascades <- cath$affinity=='ca'
+  cath[[column]][cascades]
 }
 
 functions <- list(
@@ -184,41 +197,77 @@ functions <- list(
       Ti="Ti",
       Zr="Zr",
       Y="Y",
-      units="tizry_units",
+      #units="tizry_units",
       type="tizry_type",
       plot="tizry_plot"
     ),
-    optiongroups=c("plot")
+    optiongroups=c("plot", "plot_chr")
   ),
   TAS=list(
     params=list(
       Na2O="Na2O",
       K2O="K2O",
-      SiO2="SiO2"
+      SiO2="SiO2",
+      volcanic="volcanic"
     ),
-    optiongroups=c("plot")
+    optiongroups=c("plot", "plot_col")
+  ),
+  AFM=list(
+    params=list(
+      A="A",
+      F="F",
+      M="M",
+      ternary="ternaryLogratio",
+      radial="radial",
+      bty="boxType",
+      bw="bandwidth",
+      decision="vermeeschPease",
+      dlty="decisionLineType",
+      dlwd="decisionLineWidth",
+      dcol="decisionLineColour"
+    ),
+    optiongroups=c("plot", "plot_chr", "plot_col")
   )
 )
 
 params <- list(
+  # TAS
   Na2O=list(type="weightCol", data="Na2O"),
   K2O=list(type="weightCol", data="K2O"),
   SiO2=list(type="weightCol", data="SiO2"),
+  volcanic=list(type="b", data="true"),
+  # TiZrY
   Ti=list(type="proportionCol_TiO2", data="Ti"),
   Zr=list(type="proportionCol_ZrO2", data="Zr"),
   Y=list(type="proportionCol_Y2O3", data="Y"),
   tizry_units=list(type="subheader", data="tizry_units"),
   tizry_type=list(type="tizry_type", data="tizry_type"),
-  tizry_plot=list(type="tizry_plot", data="tizry_plot")
+  tizry_plot=list(type="tizry_plot", data="tizry_plot"),
+  # AFM
+  A=list(type="weightCol", data="A"),
+  F=list(type="weightCol", data="F"),
+  M=list(type="weightCol", data="M"),
+  ternaryLogratio=list(type="b", data="true"),
+  radial=list(type="b", data="false"),
+  boxType=list(type="boxType", data="n"),
+  bandwidth=list(type="bandwidth", data="bandwidth"),
+  vermeeschPease=list(type="b", data="true"),
+  decisionLineType=list(type="u8", data="decisionLineType"),
+  decisionLineWidth=list(type="u8", data="decisionLineWidth"),
+  decisionLineColour=list(type="color", data="decisionLineColour")
 )
 
 optiongroups <- list(
   plot=list(
-#    col=list(type="color", initial='#000'),
-#    cex=list(type="f"),
-    pch=list(type="u8"),
-    bg=list(type="color", initial='#666'),
+    cex=list(type="f"),
     lwd=list(type="u8")
+  ),
+  plot_chr=list(
+    bg=list(type="color", initial='#666'),
+    pch=list(type="u8")
+  ),
+  plot_col=list(
+    col=list(type="color", initial='#000')
   ),
   framework=list(
     autorefresh=list(type="b", initial=FALSE)
@@ -236,18 +285,18 @@ types <- list(
   ),
   proportionCol_TiO2=list(
     kind="column",
-    subtype="float",
-    unittype="proportion_TiO2"
+    subtype="float"#,
+    #unittype="proportion_TiO2"
   ),
   proportionCol_ZrO2=list(
     kind="column",
-    subtype="float",
-    unittype="proportion_ZrO2"
+    subtype="float"#,
+    #unittype="proportion_ZrO2"
   ),
   proportionCol_Y2O3=list(
     kind="column",
-    subtype="float",
-    unittype="proportion_Y2O3"
+    subtype="float"#,
+    #unittype="proportion_Y2O3"
   ),
   proportion_TiO2=list(
     kind="enum",
@@ -267,19 +316,37 @@ types <- list(
   weightCol=list(
     kind="column",
     subtype="float"
+  ),
+  boxType=list(
+    kind="enum",
+    values=c("o", "n", "7", "L", "C", "U")
+  ),
+  bandwidth=list(
+    kind="enum",
+    values=c("nrd0", "nrd", "ucv", "bcv", "SJ")
   )
 )
 
 examples <- list(
-  Na2O=getColumn("NA2O(WT%)"),
-  K2O=getColumn("K2O(WT%)"),
-  SiO2=getColumn("SIO2(WT%)"),
-  Ti=getColumn("TIO2(WT%)"),
-  Zr=getColumn("ZR(PPM)"),
-  Y=getColumn("Y(PPM)"),
+  Na2O=getColumn("Na2O"),
+  K2O=getColumn("K2O"),
+  SiO2=getColumn("SiO2"),
+  Ti=getColumn("TiO2"),
+  Zr=getColumn("Zr"),
+  Y=getColumn("Y"),
   tizry_units=c("wt%", "ppm", "ppm"),
   tizry_type="LDA",
-  tizry_plot="ternary"
+  tizry_plot="ternary",
+  A=getCathColumn("Na2O") + getCathColumn("K2O"),
+  F=getCathColumn("FeOT"),
+  M=getCathColumn("MgO"),
+  true=TRUE,
+  false= FALSE,
+  n = "n",
+  bandwidth="nrd0",
+  decisionLineType=2,
+  decisionLineWidth=1.5,
+  decisionLineColour="blue"
 )
 
 #' Starts the \code{GeoplotR} GUI
@@ -304,6 +371,7 @@ GeoplotR <- function(host='0.0.0.0', port=NULL) {
     interface=list(
       TiZrY = GeoplotR::TiZrY,
       TAS = GeoplotR::TAS,
+      AFM = GeoplotR::AFM,
       getSchema = function() {
         list(functions=functions, params=params, types=types,
           data=examples, optiongroups=optiongroups)
