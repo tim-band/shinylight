@@ -50,12 +50,23 @@ rrpc <- function(interface) { function(ws) {
   })
 }}
 
-rrpcServer <- function(interface, host='0.0.0.0', port=NULL, appDir=NULL, root="/") {
-  app <- list(onWSOpen=rrpc(interface))
+rrpcServer <- function(interface, host='0.0.0.0', port=NULL, appDirs=NULL, root="/") {
+  existingFiles <- list()
   paths <- list("/lang"=httpuv::excludeStaticPath())
-  paths[[root]] <- appDir
+  paths[[root]] <- appDirs[[1]]
+  for(appDir in appDirs) {
+    files <- list.files(appDir, recursive=TRUE)
+    for (file in setdiff(files, existingFiles)) {
+      paths[[paste0(root,file)]] <- file.path(appDir, file)
+    }
+    existingFiles <- union(existingFiles, files)
+  }
+  app <- list(onWSOpen=rrpc(interface))
   app$staticPaths <- paths
-  langs <- list.dirs(path=file.path(appDir, "locales"), full.names=FALSE, recursive=FALSE)
+  langs <- list.dirs(path=file.path(appDir, "locales"),
+    full.names=FALSE,
+    recursive=FALSE
+  )
   lang <- 'en'
   app$call <- function(req) {
     al <- req$HTTP_ACCEPT_LANGUAGE
@@ -163,6 +174,22 @@ downloadCsv <- function(results) {
         "data:text/csv;base64,",
         jsonlite::base64_enc(raw))
     forJson
+}
+
+#' Stops a ShinyLight GUI
+#'
+#' @param server The server (returned by \code{\link{GeoplotRgui::GeoplotR()}})
+#' to stop. If not supplied all servers will be stopped.
+#' @examples
+#' # s <- GeoplotR()
+#' # stopGeoplotR(s)
+#' @export
+slStop <- function(server=NULL) {
+  if (is.null(server)) {
+    httpuv::stopAllServers()
+  } else {
+    server$stop()
+  }
 }
 
 dataEnvironment <- new.env(parent=emptyenv())
@@ -349,25 +376,57 @@ examples <- list(
   decisionLineColour="blue"
 )
 
+#' Start a ShinyLight server
+#' @param appDir Directory containing files to serve (for example
+#' system.file("www", package = "your-package"))
+#' @param interface List of functions you want to be able to call from
+#' the browser
+#' @param host IP address to listen on, default is 0.0.0.0 (all interfaces)
+#' @param port Internet port of the virtual server. If not defined, a
+#' random free port will be chosen and the browser will be opened
+#' to show the GUI.
+#' @param daemonize If TRUE, keep serving forever without returning.
+#' This is useful when called from RScript, to keep
+#' @return server object, unless daemonize is TRUE.
+slServer <- function(appDir, interface, host='0.0.0.0', port=NULL, daemonize=FALSE) {
+  s <- rrpcServer(host=host, port=port, appDir=list(appDir), root="/",
+    interface=interface
+  )
+  extraMessage <- ""
+  if (is.null(port)) {
+    browseTo(s)
+    extraMessage <- "Call ShinyLight::slStop() to stop serving\n"
+  }
+  cat(sprintf("Listening on %s:%d\n%s", host, port, extraMessage))
+  if (daemonize) {
+    while (TRUE) {
+      later::run_now(9999)
+    }
+  }
+  invisible(s)
+}
+
 #' Starts the \code{GeoplotR} GUI
 #'
 #' Opens a web-browser with a Graphical User Interface (GUI) for the
 #' \code{IsoplotR} package.
-#' @param host IP address of the virtual server, default is 0.0.0.0
+#' @param host IP address to listen on, default is 0.0.0.0 (all interfaces)
 #' @param port Internet port of the virtual server. If not defined, a
 #' random free port will be chosen and the browser will be opened
 #' to show the GUI.
-#' @return server object
+#' @param daemonize If TRUE, keep serving forever without returning.
+#' This is useful when called from RScript, to keep
+#' @return server object, unless daemonize is TRUE.
 #' @examples
 #' #GeoplotR()
 #' @export
-GeoplotR <- function(host='0.0.0.0', port=NULL) {
+GeoplotR <- function(host='0.0.0.0', port=NULL, daemonize=FALSE) {
   appDir <- system.file("www", package = "GeoplotRgui")
   if (appDir == "") {
     stop("Could not find www directory. Try re-installing `GeoplotRgui`.",
       call. = FALSE)
   }
-  s <- rrpcServer(host=host, port=port, appDir=appDir, root="/",
+  slServer(host=host, port=port, appDir=appDir, daemonize=daemonize,
     interface=list(
       TiZrY = GeoplotR::TiZrY,
       TAS = GeoplotR::TAS,
@@ -378,47 +437,4 @@ GeoplotR <- function(host='0.0.0.0', port=NULL) {
       }
     )
   )
-  extraMessage <- ""
-  if (is.null(port)) {
-    browseTo(s)
-    extraMessage <- "Call GeoplotRgui::stopGeoplotR() to stop serving GeoplotR\n"
-  }
-  cat(sprintf("Listening on %s:%d\n%s", host, port, extraMessage))
-  invisible(s)
-}
-
-#' Stops a \code{GeoplotR} GUI
-#'
-#' @param server The server (returned by \code{\link{GeoplotRgui::GeoplotR()}})
-#' to stop. If not supplied all servers will be stopped.
-#' @examples
-#' # s <- GeoplotR()
-#' # stopGeoplotR(s)
-#' @export
-stopGeoplotR <- function(server=NULL) {
-  if (is.null(server)) {
-    httpuv::stopAllServers()
-  } else {
-    server$stop()
-  }
-}
-
-#' Starts the \code{GeoplotR} GUI without exiting
-#'
-#' Opens a web-browser with a Graphical User Interface (GUI) for the
-#' \code{GeoplotR} package. This function is intended to be used from
-#' Rscript so that Rscript does not terminate and the server stays up.
-#' @param host IP address of the virtual server
-#' @param port Internet port of the virtual server. If not defined, a
-#' random free port will be chosen and the browser will be opened
-#' to show the GUI.
-#' @return This function does not return.
-#' @examples
-#' #daemon(3838)
-#' @export
-daemon <- function(port=NULL, host='127.0.0.1') {
-  GeoplotR(host=host, port=port)
-  while (TRUE) {
-    later::run_now(9999)
-  }
 }

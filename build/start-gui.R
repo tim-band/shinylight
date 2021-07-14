@@ -13,4 +13,4 @@ if (0 < length(args)) {
     }
 }
 
-GeoplotRgui::daemon(host=host, port=port)
+GeoplotRgui::GeoplotR(host=host, port=port, daemonize=TRUE)

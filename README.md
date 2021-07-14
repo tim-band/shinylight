@@ -15,7 +15,7 @@ docker run --name geoplotr -p 3820:80 -d timband/geoplotr:beta
 
 If reverse-proxying to GeoplotRgui on a subpath, you need to
 enable upgrading (to allow the websocket connection through)
-abd to set the `SCRIPT_NAME` header to the subpath:
+and to set the `SCRIPT_NAME` header to the subpath:
 
 ```
 location /geoplotr/ {
