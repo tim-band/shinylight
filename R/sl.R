@@ -217,7 +217,8 @@ slStop <- function(server=NULL) {
 #' @return server object, unless daemonize is TRUE.
 #' @export
 slServer <- function(appDir, interface, host='0.0.0.0', port=NULL, daemonize=FALSE) {
-  s <- rrpcServer(host=host, port=port, appDir=list(appDir), root="/",
+  slDir <- system.file("www", package = "shinylight")
+  s <- rrpcServer(host=host, port=port, appDir=list(appDir, slDir), root="/",
     interface=interface
   )
   extraMessage <- ""
