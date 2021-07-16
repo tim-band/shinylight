@@ -1,4 +1,4 @@
-function geoplotr() {
+function shinylight() {
   var inputGrid;
   var optionGroups = {};
   var outputImgWrapper;

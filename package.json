@@ -1,9 +1,8 @@
 {
-    "name": "geoplotrgui",
-    "description": "Front end for GeoplotR",
+    "name": "shinylight",
+    "description": "Web front end for R functions",
     "private": true,
     "scripts": {
-        "server": "Rscript --vanilla build/start-gui.R 50056",
         "test": "mocha test"
     },
     "devDependencies": {
