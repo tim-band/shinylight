@@ -63,12 +63,14 @@ rrpc <- function(interface) { function(ws) {
 rrpcServer <- function(interface, host='0.0.0.0', port=NULL, appDirs=NULL, root="/") {
   paths <- list()
   paths[[paste0(root, "lang")]] <- httpuv::excludeStaticPath()
-  paths[[root]] <- appDirs[[1]]
   existingFiles <- list()
   for(appDir in appDirs) {
     files <- list.files(appDir, recursive=TRUE)
     for (file in setdiff(files, existingFiles)) {
       paths[[paste0(root,file)]] <- file.path(appDir, file)
+      if (file == "index.html" && !(root %in% names(paths))) {
+        paths[[root]] <- file.path(appDir, file)
+      }
     }
     existingFiles <- union(existingFiles, files)
   }
