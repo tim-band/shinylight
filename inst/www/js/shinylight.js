@@ -98,8 +98,28 @@ function shinylight() {
 
   function makeTable(data) {
     if (Array.isArray(data)) {
+      if (0 < data.length && data[0] instanceof Object) {
+        // data frame was returned
+        var table = [];
+        var headerSet = {};
+        var headers = [];
+        toolkit.forEach(data, function(i, row) {
+          var tableRow = [];
+          toolkit.forEach(row, function(k, v) {
+            if (!(k in headerSet)) {
+              headerSet[k] = headers.length;
+              headers.push(k);
+            }
+            tableRow[headerSet[k]] = v;
+          });
+          table.push(tableRow);
+        });
+        return { headers: headers, rows: table };
+      }
+      // array was returned
       return { headers: ['out'], rows: data.map(function(x) { return [x]; }) };
     }
+    // GeoplotR style?
     var headers = [];
     var table = [];
     toolkit.forEach(data, function(k,v) {
@@ -282,6 +302,9 @@ function shinylight() {
     toolkit.forEach(functionDescriptor.params, function(paramId, paramKey) {
       var p = schema.params[paramKey[0]];
       var d = schema.data[p.data[0]];
+      if (!d) {
+        d = [null];
+      }
       var t = schema.types[p.type[0]];
       if (typeof(t) === 'undefined') {
         if (p.type[0] === 'subheader') {
@@ -719,7 +742,7 @@ function shinylight() {
         paramKey,
         top,
         translations(['app', 'params', paramKey]),
-        schema.data[p.data[0]][0],
+        toolkit.deref(schema.data, [p.data[0], 0], null),
         markPlotDirty
       );
       if (c) {

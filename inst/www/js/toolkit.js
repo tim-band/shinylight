@@ -475,7 +475,7 @@ var toolkit = function() {
     box.addElement(makeLabel(translations));
     var input = document.createElement('input');
     input.className = 'param-text';
-    if (initial) {
+    if (initial !== null) {
       input.value = initial;
     }
     callback = ensureFunction(callback);
@@ -545,7 +545,8 @@ var toolkit = function() {
         var f = parseFloat(v);
         return rangeFn(f);
       }
-    }, parseInt);
+      return false;
+    }, parseFloat);
   }
 
   function span(container) {
