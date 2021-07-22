@@ -474,6 +474,7 @@ var toolkit = function() {
     box.className = 'param-box';
     box.addElement(makeLabel(translations));
     var input = document.createElement('input');
+    input.id = 'param-' + id;
     input.className = 'param-text';
     if (initial !== null) {
       input.value = initial;
@@ -624,6 +625,9 @@ var toolkit = function() {
     button.className = 'param-selector';
     button.style.display = 'inline-block';
     var buttonText = document.createElement('span');
+    if (id) {
+      buttonText.id = 'param-' + id;
+    }
     button.appendChild(buttonText);
     var downArrow = document.createElement('div');
     downArrow.style.padding = '0px';
@@ -636,10 +640,12 @@ var toolkit = function() {
     var selectedOption = null;
     var options = {};
     var optionNames = {};
+    var idPrefix = id? id + '-' : '';
     forEach(values, function(i,id) {
       var optr = document.createElement('tr');
       optr.classList.add('param-option');
       var opt = document.createElement('td');
+      opt.id = idPrefix + id;
       opt.style.padding = '0px';
       var trs = id in valueTranslations? valueTranslations[id] : {};
       var name = 'name' in trs? trs.name : id;
