@@ -97,14 +97,6 @@ var toolkit = function() {
     }
   }
 
-  var generatedId = 0;
-
-  function genId(pref) {
-    var p = typeof(pref) === 'string'? 'generated-id-' + pref + '-' : 'generated-id-';
-    ++generatedId;
-    return p + generatedId;
-  }
-
   function reposition(el, left, top, width, height) {
     if (typeof(el.reposition) === 'function') {
       el.reposition(left, top, width, height);
@@ -412,6 +404,7 @@ var toolkit = function() {
     box.addElement(makeLabel(translations));
     var input = document.createElement('input');
     input.type = 'color';
+    input.id = 'param-' + id;
     input.className = 'param-color';
     if (initial) {
       input.value = initial;
@@ -444,7 +437,7 @@ var toolkit = function() {
     var box = typeof(container.makeSubElement) === 'function'?
       container.makeSubElement(id) : span(container);
     box.className = 'param-box';
-    var idFor = genId(id);
+    var idFor = 'param-' + id;
     box.addElement(makeLabel(translations, null, null, idFor));
     var input = document.createElement('input');
     input.type = 'checkbox';
@@ -906,6 +899,7 @@ var toolkit = function() {
   function button(id, fn, translations) {
     var b = makeLabel(translations, null, id);
     b.classList.add('button');
+    b.id = 'button-' + id;
     b.tabIndex = 0;
     b.onclick = function() {
       b.classList.add('pressed');
@@ -1014,6 +1008,8 @@ var toolkit = function() {
   // permanently and not be set through the setData call.
   // labelTranslations: dictionary of pageIds to objects with keys
   // name (for the label text) and help (for tooltip help HTML)
+  // tabIdPrefix: If you want ids for your tab elements, set this and
+  // the id will be set to tabIdPrefix + pageId
   // Returns an element that has the tabs and the tabs that switch
   // between them. The active tab has the "active" class.
   // It has the following extra methods:
@@ -1023,7 +1019,7 @@ var toolkit = function() {
   // buttons) are summarily disabled. Pages with data are enabled.
   // reposition(): sets each page to the same dimensions as the container
   // and calls each page's reposition() method (if it exists)
-  function pages(pageElements, labelTranslations) {
+  function pages(pageElements, labelTranslations, tabIdPrefix) {
     var tabs = {};
     // a deep copy of pageElements, or wrapped versions as appropriate
     var pages = {};
@@ -1066,6 +1062,9 @@ var toolkit = function() {
     }
     forEach(pageElements, function(pageId, page) {
       var tab = makeLabel(labelTranslations, tabStrip, pageId);
+      if (typeof(tabIdPrefix) === 'string') {
+        tab.id = tabIdPrefix + pageId;
+      }
       tab.onclick = function() {
         if (tabs[pageId].classList.contains('disabled')) {
           return;

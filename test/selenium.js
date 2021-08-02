@@ -28,6 +28,7 @@ describe('shinylight', function() {
     });
 
     it('selects parameters based on function chosen', async function() {
+        this.timeout(5000);
         await assertParamIs(driver, 'plot_param', 'p');
         await assertParamIs(driver, 'a', null);
         await switchFunction(driver, 'test2');
@@ -37,7 +38,65 @@ describe('shinylight', function() {
         await assertParamIs(driver, 'plot_param', 'p');
         await assertParamIs(driver, 'a', null);
     });
+
+    it('hides and shows the calculate button', async function() {
+        this.timeout(5000);
+        const calculateButton = await driver.findElement(By.id('button-calculate'));
+        await driver.wait(until.elementIsVisible(calculateButton));
+        assert(await calculateButton.isDisplayed());
+        await clickInputTab(driver, 'options');
+        await clickId(driver, 'param-autorefresh');
+        await driver.wait(until.elementIsNotVisible(calculateButton));
+        await clickId(driver, 'param-autorefresh');
+        await driver.wait(until.elementIsVisible(calculateButton));
+    });
+ 
+    it('can run the calculation', async function() {
+        this.timeout(15000);
+        await clickOutputTab(driver, 'table');
+        const cell = await driver.findElement(inputCell(0, 0));
+        await cell.click();
+        await cell.findElement(By.css('input')).sendKeys('10', Key.RETURN);
+        await assertElementText(driver, outputCell(0,0), '15');
+        await clickCalculate(driver);
+        await assertElementText(driver, outputCell(0,0), '10');
+    });
 });
+
+async function assertElementText(driver, by, text) {
+    await driver.wait(until.elementTextIs(
+        await driver.findElement(by),
+        text
+    ));
+}
+
+async function clickCalculate(driver) {
+    await driver.findElement(By.id('button-calculate')).click();
+}
+
+function cellInTable(id, row, column) {
+    return By.css(`#${id} tbody tr:nth-of-type(${row+1}) td:nth-of-type(${column+1})`);
+}
+
+function inputCell(row, column) {
+    return cellInTable('input-table', row, column);
+}
+
+function outputCell(row, column) {
+    return cellInTable('output-table', row, column);
+}
+
+async function clickInputTab(driver, tabName) {
+    await clickId(driver, 'input-tab-' + tabName);
+}
+
+async function clickOutputTab(driver, tabName) {
+    await clickId(driver, 'output-tab-' + tabName);
+}
+
+async function clickId(driver, id) {
+    await driver.findElement(By.id(id)).click();
+}
 
 async function switchFunction(driver, funcName) {
     await driver.findElement(By.id('param-function-selector')).click();

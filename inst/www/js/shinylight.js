@@ -617,6 +617,7 @@ function shinylight() {
     var outputTable = createDataEntryGrid(null, 5, 5);
     translateGrid(outputTable);
     var oTable = outputTable.getTable();
+    oTable.id = 'output-table';
     oTable.classList.add('data-entry-grid');
     oTable.setAttribute('style', 'width: 100%; height: 100%;');
     oTable.setData = function(data) {
@@ -691,12 +692,12 @@ function shinylight() {
       table: toolkit.footer(tableFooter, toolkit.scrollingWrapper(oTable)),
       error: outputError,
       debug: toolkit.footer(debugFooter, toolkit.scrollingWrapper(outputDebug))
-    }, translations(['framework', 'pages']));
+    }, translations(['framework', 'pages']), 'output-tab-');
     optionsPage = toolkit.optionsPage();
     var inputPane = toolkit.pages({
       inputTable: table,
       options: optionsPage
-    }, translations(['framework', 'pages']));
+    }, translations(['framework', 'pages']), 'input-tab-');
     var leftFooter = toolkit.banner({
       savedata: saveData,
       loaddata: loadData,

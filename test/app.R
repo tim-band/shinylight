@@ -47,6 +47,9 @@ optiongroups <- list(
   ),
   color=list(
     col=list(type="color", initial='#000')
+  ),
+  framework=list(
+    autorefresh=list(type="b", initial=FALSE)
   )
 )
 
