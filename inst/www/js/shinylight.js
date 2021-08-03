@@ -615,6 +615,8 @@ function shinylight() {
     var outputImg = toolkit.image(markPlotDirty);
     var outputError = toolkit.staticText(translations(['framework', 'error']));
     var outputTable = createDataEntryGrid(null, 5, 5);
+    outputImg.id = 'output-plot';
+    outputError.id = 'output-error';
     translateGrid(outputTable);
     var oTable = outputTable.getTable();
     oTable.id = 'output-table';

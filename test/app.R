@@ -1,7 +1,7 @@
-test1 <- function(c1, c2, type, units, factor, offset) {
+test1 <- function(c1, c2, type, units, factor, offset, pch, bg, lwd) {
   c1f <- c1 * factor
   c2o <- c2 + offset
-  plot(c1f, c2o, type=type)
+  plot(c1f, c2o, type=type, pch=pch, bg=bg, lwd=lwd)
   df <- data.frame(
     lengths = c1f,
     weights = c2o
@@ -20,7 +20,7 @@ functions <- list(
       type="plot_param",
       units="test1_units"
     ),
-    optiongroups=c("adjust")
+    optiongroups=c("adjust", "plot_points")
   ),
   test2=list(
     params=list(
@@ -47,6 +47,11 @@ optiongroups <- list(
   ),
   color=list(
     col=list(type="color", initial='#000')
+  ),
+  plot_points=list(
+    pch=list(type="u8", initial=1),
+    bg=list(type="color", initial='#FFF'),
+    lwd=list(type="f", initial=1.0)
   ),
   framework=list(
     autorefresh=list(type="b", initial=FALSE)
