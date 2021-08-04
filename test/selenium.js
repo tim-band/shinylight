@@ -23,7 +23,7 @@ describe('shinylight', function() {
     })
 
     beforeEach(async function() {
-        this.timeout(12000);
+        this.timeout(20000);
         await driver.get('http://localhost:8000');
     });
 
@@ -78,7 +78,64 @@ describe('shinylight', function() {
         const imgB64 = imgSrc.split(',')[1];
         const png = PNG.sync.read(Buffer.from(imgB64, 'base64'));
         const axes = getAxes(png);
-        assert(isPoint(png, 'Y', axes.leftTick, axes.bottomTick));
+        // Test the points are present
+        assert(isPoint(png, 'Y', axes.leftTick, axes.bottomTick)); // 1,1
+        assert(isPoint(
+            png, 'Y',
+            floor((axes.leftTick * 2 + axes.rightTick)/3),
+            floor((axes.bottomTick * 2 + axes.topTick)/3),
+        )); // 2,2
+        assert(isPoint(
+            png, 'Y',
+            floor((axes.leftTick + axes.rightTick * 2)/3),
+            floor((axes.bottomTick + axes.topTick * 2)/3),
+        )); // 3,3
+        assert(isPoint(png, 'Y', axes.rightTick, axes.topTick)); // 4,4
+    });
+
+    it('displays the error', async function() {
+        this.timeout(5000);
+        await switchFunction(driver, 'test2');
+        await clickCalculate(driver);
+        await driver.wait(until.elementLocated(By.css('#output-tab-error.active')));
+        const error = await driver.findElement(By.css('#output-error'));
+        const text = await error.getText();
+        assert.strictEqual(text, 'This does not work');
+    });
+
+    it('autorefreshes', async function() {
+        this.timeout(12000);
+        await typeIn(driver, inputCell(0,0), '5');
+        await clickCalculate(driver);
+        await clickInputTab(driver, 'options');
+        await driver.sleep(100);
+        await clickId(driver, 'param-autorefresh');
+        const calculateButton = await driver.findElement(By.id('button-calculate'));
+        await driver.wait(until.elementIsNotVisible(calculateButton));
+        await clickOutputTab(driver, 'table');
+        await assertElementText(driver, outputCell(0,0), '5');
+        await clickInputTab(driver, 'inputTable');
+        await typeIn(driver, inputCell(0,0), '9', Key.RETURN);
+        await assertElementText(driver, outputCell(0,0), '9');
+    });
+
+    it('respects options', async function() {
+        this.timeout(6000);
+        await typeIn(driver, inputCell(0,0),
+            '2', Key.TAB, '0', Key.RETURN,
+            '1', Key.TAB, '1', Key.RETURN,
+            '0', Key.TAB, '0', Key.RETURN,
+            '1', Key.TAB, '2', Key.RETURN
+        );
+        await clickInputTab(driver, 'options');
+        await setValue(driver, 'param-offset', '1.5');
+        await setValue(driver, 'param-factor', '2.4');
+        await clickOutputTab(driver, 'table');
+        await clickCalculate(driver);
+        await assertElementText(driver, outputCell(0, 0), '4.8');
+        await assertElementText(driver, outputCell(1, 0), '2.4');
+        await assertElementText(driver, outputCell(0, 1), '1.5');
+        await assertElementText(driver, outputCell(1, 1), '2.5');
     });
 });
 
@@ -99,10 +156,15 @@ async function setValue(driver, id, text) {
 }
 
 async function assertElementText(driver, by, text) {
-    await driver.wait(until.elementTextIs(
-        await driver.findElement(by),
-        text
-    ));
+    await driver.wait(async function() {
+        const e = await driver.findElement(by);
+        try {
+            const t = await e.getText();
+            return text === t.trim();
+        } catch {
+            return false;
+        }
+    });
 }
 
 async function clickCalculate(driver) {

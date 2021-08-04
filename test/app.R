@@ -10,6 +10,7 @@ test1 <- function(c1, c2, type, units, factor, offset, pch, bg, lwd) {
 }
 
 test2 <- function(x, y, c1, factor, offset, col) {
+  stop("This does not work")
 }
 
 functions <- list(
