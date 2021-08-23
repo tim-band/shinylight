@@ -93,14 +93,19 @@ examples <- list(
   test1_weight_inits=list(4.4, 4.2, 6.1, 1.0)
 )
 
+symbolList <- c('<-', 'c', 'plot', 'data.frame', '+', '-', '*', '/', 'x', 'y')
+
 testServer <- function(port=NULL) {
   appDir <- R.utils::getAbsolutePath("inst/www")
   shinylight::slServer(host='0.0.0.0', port=port, appDir=appDir, daemonize=TRUE,
-    interface=list(test1=test1, test2=test2,
-      getSchema = function() {
+    interface=list(
+      test1=test1,
+      test2=test2,
+      getSchema=function() {
         list(functions=functions, params=params, types=types,
           data=examples, optiongroups=optiongroups)
-      }
+      },
+      runR=shinylight::runR(symbolList)
     )
   )
 }

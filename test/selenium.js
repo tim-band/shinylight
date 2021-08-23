@@ -137,7 +137,35 @@ describe('shinylight', function() {
         await assertElementText(driver, outputCell(0, 1), '1.5');
         await assertElementText(driver, outputCell(1, 1), '2.5');
     });
+
+    it('allows R code to be run from the client side', async function() {
+        this.timeout(2000);
+        const result = await executeRrpc(driver, "2+2");
+        assert.deepStrictEqual(result.plot, {});
+        assert.deepStrictEqual(result.data, [4]);
+    });
+
+    it('Does not allow R code to be run that includes forbidden symbols', async function() {
+        this.timeout(2000);
+        const result = await executeRrpc(driver, "eval('2+2')");
+        assert.deepStrictEqual(result.plot, {});
+        assert.deepStrictEqual(result.data, [4]);
+    });
 });
+
+async function executeRrpc(driver, code) {
+    const ecode = code.replace(/"/g, '\\"');
+    await pageLoaded(driver);
+    await driver.executeScript(`window.rrpc_x=null;rrpc.call("runR", {Rcommand:"${ecode}"}, x=>{window.rrpc_x=x});`);
+    return await driver.wait(async function() {
+        return await driver.executeScript('return window.rrpc_x;');
+    });
+}
+
+async function pageLoaded(driver) {
+    // arbitrarily wait for something to appear
+    await clickInputTab(driver, 'inputTable');
+}
 
 async function typeIn(driver, id, ...text) {
     const by = typeof(id) === 'string'? By.id(id) : id;

@@ -192,6 +192,75 @@ downloadCsv <- function(results) {
     forJson
 }
 
+# Finds all names in an expression
+# but the result needs flattening
+findNames <- function(exp) {
+  # don't care about is.atomic
+  if (is.name(exp)) {
+    exp
+  } else if (is.pairlist(exp)) {
+    Map(findNames, exp)
+  } else if (is.call(exp)) {
+    if ("::" == exp[[1]] && is.name(exp[[2]]) && is.name(exp[[3]])) {
+      paste0(exp[2], "::", exp[3])
+    } else {
+      Map(findNames, exp)
+    }
+  }
+}
+
+nameCheck <- function(exps, allowed) {
+  symbls <- unlist(Map(findNames, exps))
+  nams <- unique(Map(as.character, symbls))
+  setdiff(nams, allowed)
+}
+
+sanitizeCommand <- function(command, symbolList, callback) {
+    com <- parse(text=command)
+    failures <- nameCheck(com, symbolList)
+    if (0 < length(failures)) {
+        txt <- paste(failures, collapse=", ")
+        stop(paste0("non-whitelisted names used: ", txt), call.=FALSE, domain=NA)
+    }
+    callback(com)
+}
+
+#' Returns a function that runs an R command
+#'
+#' If you set this as a part of your interface, like:
+#' runR=shinylight::runR(c("+", "plot", "c", "x", "y"))
+#' then you can call it from Javascript like this:
+#'
+#' rrpc.call("runR", {
+#'  Rcommand:"2+2"
+#' }, function(x) {console.log(x);});
+#'
+#' rrpc.call("runR", {
+#'  Rcommand:"y<-c(2,0,1);plot(c(1,2,3),y);y",
+#'  format:"png",
+#'  width:200,
+#'  height:300
+#' }, function(x) {console.log(x.data.data,x.data.plot[0]);});
+#'
+#' @param symbolList A list of permitted symbols in the R command
+#' @export
+runR <- function(symbolList) {
+  function(data, Rcommand, format=NA, width=7, height=7, timeout=2000) {
+    sanitizeCommand(Rcommand, symbolList, function(com) {
+      print(com)
+      setTimeLimit(elapsed=timeout)
+      on.exit({
+        setTimeLimit(elapsed=Inf)
+      })
+      if (is.na(format)) {
+        return(eval(com))
+      }
+      fmt = list(type=format, width=width, height=height)
+      return(encodePlotAs(fmt, function() { eval(com) }))
+    })
+  }
+}
+
 #' Stops a ShinyLight GUI
 #'
 #' @param server The server (returned by \code{\link{shinylight::slServer()}})
