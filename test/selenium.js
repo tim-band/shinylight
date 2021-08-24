@@ -141,22 +141,44 @@ describe('shinylight', function() {
     it('allows R code to be run from the client side', async function() {
         this.timeout(2000);
         const result = await executeRrpc(driver, "2+2");
-        assert.deepStrictEqual(result.plot, {});
-        assert.deepStrictEqual(result.data, [4]);
+        assert.strictEqual(result.error, null);
+        assert.deepStrictEqual(result.result.plot, {});
+        assert.deepStrictEqual(result.result.data, [4]);
     });
 
     it('Does not allow R code to be run that includes forbidden symbols', async function() {
         this.timeout(2000);
         const result = await executeRrpc(driver, "eval('2+2')");
-        assert.deepStrictEqual(result.plot, {});
-        assert.deepStrictEqual(result.data, [4]);
+        assert.notStrictEqual(result.error, null);
+        assert.ok(result.error =~ /.*whitelist.*eval.*/);
+        assert.strictEqual(result.result, null);
+    });
+
+    it('allows R plots to be made from the client side', async function() {
+        this.timeout(2000);
+        const result = await executeRrpc(driver, "y<-c(2,0,1);plot(c(0,1,2),y);y", {
+            width: 200,
+            height: 300,
+            format: 'png'
+        });
+        assert.strictEqual(result.error, null);
+        assert.strictEqual(typeof(result.result.data.plot), 'object');
+        assert.strictEqual(typeof(result.result.data.plot[0]), 'string');
+        assert.ok(200 < result.result.data.plot[0].length);
+        assert.deepStrictEqual(result.result.data.data, [2,0,1]);
     });
 });
 
-async function executeRrpc(driver, code) {
-    const ecode = code.replace(/"/g, '\\"');
+async function executeRrpc(driver, code, extraOpts) {
+    if (typeof(extraOpts) === 'undefined') {
+        extraOpts = {};
+    }
+    extraOpts.Rcommand = code.replace(/"/g, '\\"');
     await pageLoaded(driver);
-    await driver.executeScript(`window.rrpc_x=null;rrpc.call("runR", {Rcommand:"${ecode}"}, x=>{window.rrpc_x=x});`);
+    await driver.executeScript(
+        'var a=arguments[0];window.rrpc_x=null;rrpc.call("runR", a, (x,e)=>{window.rrpc_x={result:x, error:e}});',
+        extraOpts
+    );
     return await driver.wait(async function() {
         return await driver.executeScript('return window.rrpc_x;');
     });

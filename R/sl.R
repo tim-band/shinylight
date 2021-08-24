@@ -247,7 +247,6 @@ sanitizeCommand <- function(command, symbolList, callback) {
 runR <- function(symbolList) {
   function(data, Rcommand, format=NA, width=7, height=7, timeout=2000) {
     sanitizeCommand(Rcommand, symbolList, function(com) {
-      print(com)
       setTimeLimit(elapsed=timeout)
       on.exit({
         setTimeLimit(elapsed=Inf)
@@ -255,7 +254,7 @@ runR <- function(symbolList) {
       if (is.na(format)) {
         return(eval(com))
       }
-      fmt = list(type=format, width=width, height=height)
+      fmt <- list(type=format, width=width, height=height)
       return(encodePlotAs(fmt, function() { eval(com) }))
     })
   }
