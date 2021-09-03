@@ -1,10 +1,15 @@
 "use strict";
 
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const { spawn } = require('child_process');
 const { Builder, By, Key, until } = require('selenium-webdriver');
 const { describe, before, after, it } = require('mocha');
 const assert = require("assert");
 const { PNG } = require("pngjs");
+//const Chrome = require('selenium-webdriver/chrome');
+const Firefox = require('selenium-webdriver/firefox');
 const floor = Math.floor;
 
 describe('shinylight', function() {
@@ -13,7 +18,16 @@ describe('shinylight', function() {
 
     before(function() {
         rProcess = spawn('Rscript', ['test/run.R'], { stdio: [ 'ignore', 'inherit', 'inherit' ] });
-        driver = new Builder().forBrowser('firefox').build();
+        let firefoxOptions = new Firefox.Options();
+        // Prevent Firefox from opening up a download dialog when a CSV file is requested
+        firefoxOptions.setPreference('browser.download.folderList', 2);  // do not use default download directory
+        firefoxOptions.setPreference('browser.download.manager.showWhenStarting', false);  // do not show download progress
+        const tmp = os.tmpdir();
+        firefoxOptions.setPreference('browser.download.dir', tmp);
+        firefoxOptions.setPreference('browser.helperApps.neverAsk.saveToDisk', 'text/csv');
+        driver = new Builder().forBrowser('firefox').
+            setFirefoxOptions(firefoxOptions).
+            build();
         driver.manage().setTimeouts({ implicit: 1000 });
     });
 
@@ -63,12 +77,7 @@ describe('shinylight', function() {
 
     it('displays the plot', async function() {
         this.timeout(8000);
-        await typeIn(driver, inputCell(0,0),
-            '1', Key.TAB, '1', Key.RETURN,
-            '2', Key.TAB, '2', Key.RETURN,
-            '3', Key.TAB, '3', Key.RETURN,
-            '4', Key.TAB, '4', Key.RETURN
-        );
+        await enterCellText(driver, 0, 0, ['1', '1'], ['2', '2'], ['3', '3'], ['4', '4']);
         await clickInputTab(driver, 'options');
         await setValue(driver, 'param-pch', '22');
         await setValue(driver, 'param-bg', '#ffff00');
@@ -91,6 +100,31 @@ describe('shinylight', function() {
             floor((axes.bottomTick + axes.topTick * 2)/3),
         )); // 3,3
         assert(isPoint(png, 'Y', axes.rightTick, axes.topTick)); // 4,4
+    });
+
+    it('downloads a csv of the results', async function() {
+        this.timeout(8000);
+        const downloadFile = path.join(os.tmpdir(), 'output.csv');
+        if (fs.existsSync(downloadFile)) {
+            fs.unlinkSync(downloadFile);
+        }
+        const input = [['4', '3'], ['2', '1'], ['3', '3'], ['1', '4']];
+        await enterCellText(driver, 0, 0, ...input);
+        await clickId(driver, 'button-calculate');
+        await clickOutputTab(driver, 'table')
+        await clickId(driver, 'button-download-csv');
+        await driver.wait(async function() {
+            return fs.existsSync(downloadFile);
+        });
+        const csvBuffer = fs.readFileSync(downloadFile);
+        const csv = csvBuffer.toString('utf-8');
+        const rows = csv.split('\n');
+        for (let i = 0; i !== input.length; ++i) {
+            const row = rows[i + 1];
+            const cells = row.split(',');
+            assert.strictEqual(cells[0], input[i][0]);
+            assert.strictEqual(cells[1], input[i][1]);
+        }
     });
 
     it('displays the error', async function() {
@@ -121,12 +155,7 @@ describe('shinylight', function() {
 
     it('respects options', async function() {
         this.timeout(6000);
-        await typeIn(driver, inputCell(0,0),
-            '2', Key.TAB, '0', Key.RETURN,
-            '1', Key.TAB, '1', Key.RETURN,
-            '0', Key.TAB, '0', Key.RETURN,
-            '1', Key.TAB, '2', Key.RETURN
-        );
+        await enterCellText(driver, 0, 0, ['2', '0'], ['1', '1'], ['0', '0'], ['1', '2']);
         await clickInputTab(driver, 'options');
         await setValue(driver, 'param-offset', '1.5');
         await setValue(driver, 'param-factor', '2.4');
@@ -198,6 +227,20 @@ async function typeIn(driver, id, ...text) {
     const tag = await e.getTagName();
     const b = tag.toLowerCase() === 'input'? e : await e.findElement(By.css('input'));
     await b.sendKeys.apply(b, text);
+}
+
+async function enterCellText(driver, r, c) {
+    let ins = Array.from(arguments);
+    let outs = [driver, inputCell(r, c)];
+    for (let i = 3; i !== ins.length; ++i) {
+        let row = ins[i];
+        for (let j = 0; j !== row.length; ++j) {
+            outs.push(row[j]);
+            outs.push(Key.TAB);
+        }
+        outs.push(Key.RETURN);
+    }
+    await typeIn.apply(null, outs);
 }
 
 async function setValue(driver, id, text) {

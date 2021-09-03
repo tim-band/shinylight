@@ -119,7 +119,6 @@ function shinylight() {
       // array was returned
       return { headers: ['out'], rows: data.map(function(x) { return [x]; }) };
     }
-    // GeoplotR style?
     var headers = [];
     var table = [];
     toolkit.forEach(data, function(k,v) {
@@ -156,14 +155,14 @@ function shinylight() {
     });
   }
 
-  function downloadCsv(table) {
+  function downloadCsv(table, filename) {
     var h = table.getColumnHeaders();
     var rows = table.getCells();
     var rs = [h.join(',')];
     toolkit.forEach(rows, function(i,r) {
       rs.push(r.join(','));
     });
-    download('geoplot.csv', 'data:text/csv;base64,' + btoa(rs.join('\n')));
+    download(filename, 'data:text/csv;base64,' + btoa(rs.join('\n')));
   }
 
   function prettyJson(j) {
@@ -639,7 +638,7 @@ function shinylight() {
       doPlot, buttonTranslations);
     calculateButtons.push(calculate1);
     var saveData = toolkit.button('savedata', toolkit.withTimeout(function() {
-      downloadJsonText('geoplotr-params.json', JSON.stringify(getParams()));
+      downloadJsonText('params.json', JSON.stringify(getParams()));
     }), buttonTranslations);
     var loadData = toolkit.loadFileButton('loaddata', function(file, done) {
       if (20000 < file.size) {
@@ -667,7 +666,7 @@ function shinylight() {
       downloadCsv: toolkit.button(
         'download-csv',
         function(callback) {
-          downloadCsv(outputTable)
+          downloadCsv(outputTable, 'output.csv')
           setTimeout(callback, 200);
         },
         translations(['framework', 'buttons'])
@@ -680,7 +679,7 @@ function shinylight() {
       downloadDebug: toolkit.button(
         'download-json',
         function() {
-          downloadJsonText('geoplotr.json', debugJson);
+          downloadJsonText('debug.json', debugJson);
         },
         translations(['framework', 'buttons'])
       )
