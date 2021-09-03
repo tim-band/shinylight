@@ -157,15 +157,17 @@ describe('shinylight', function() {
     it('allows R plots to be made from the client side', async function() {
         this.timeout(2000);
         const result = await executeRrpc(driver, "y<-c(2,0,1);plot(c(0,1,2),y);y", {
-            width: 200,
-            height: 300,
-            format: 'png'
+            'rrpc.resultformat': {
+                type: 'png',
+                width: 200,
+                height: 300,
+            }
         });
         assert.strictEqual(result.error, null);
-        assert.strictEqual(typeof(result.result.data.plot), 'object');
-        assert.strictEqual(typeof(result.result.data.plot[0]), 'string');
-        assert.ok(200 < result.result.data.plot[0].length);
-        assert.deepStrictEqual(result.result.data.data, [2,0,1]);
+        assert.strictEqual(typeof(result.result.plot), 'object');
+        assert.strictEqual(typeof(result.result.plot[0]), 'string');
+        assert.ok(200 < result.result.plot[0].length);
+        assert.deepStrictEqual(result.result.data, [2,0,1]);
     });
 });
 

@@ -17,12 +17,11 @@ rrpc <- function(interface) { function(ws) {
       envelope$result <- NULL
     } else {
       r <- tryCatch(
-        withCallingHandlers(
+        {
           if ("rrpc.resultformat" %in% rnames) {
-            result <- encodePlotAs(rparams$rrpc.resultformat, function() {
+            validateAndEncodePlotAs(rparams$rrpc.resultformat, function() {
               do.call(interface[[method]], params)
             })
-            list(error=NULL, result=result)
           } else {
             list(error=NULL,
               result=list(
@@ -30,17 +29,12 @@ rrpc <- function(interface) { function(ws) {
                 plot=NULL
               )
             )
-          },
-          error=function(e) {
-            error <- list(message = e$message,
-                call = format(e$call),
-                stack = format(sys.calls()))
-            list(error=error, result=NULL)
           }
-        ),
-        error=function(err) {
-          print(err);
-          list(error=err$message, result=NULL)
+        },
+        error=function(e) {
+          print(paste("Error:", e$message))
+          print(paste("call:", format(e$call)))
+          list(error=e$message, result=NULL)
         }
       )
       envelope$result <- r$result
@@ -148,6 +142,20 @@ encodePlot <- function(device, mimeType, width, height, plotFn) {
   list(plot=plot, data=data)
 }
 
+validateAndEncodePlotAs <- function(format, plotFn) {
+  if (!is.list(format)) {
+    list(result=NULL, error="rrpc.resultformat specified but not as {type=[,height=,width=]}")
+  } else {
+    valid <- c('pdf', 'png', 'csv')
+    if (format$type %in% valid) {
+      r <- encodePlotAs(format, plotFn)
+      list(result=r, error=NULL)
+    } else {
+      list(result=NULL, error="rrpc.resultformat type should be 'png', 'pdf' or 'csv")
+    }
+  }
+}
+
 #' Renders a plot as a base64-encoded PNG
 #'
 #' The result can be set as the `src` attribute of an `img` element in HTML.
@@ -228,7 +236,7 @@ sanitizeCommand <- function(command, symbolList, callback) {
 #' Returns a function that runs an R command
 #'
 #' If you set this as a part of your interface, like:
-#' runR=shinylight::runR(c("+", "plot", "c", "x", "y"))
+#' \code{runR=shinylight::runR(c("+", "plot", "c", "x", "y"))}
 #' then you can call it from Javascript like this:
 #'
 #' rrpc.call("runR", {
@@ -237,25 +245,23 @@ sanitizeCommand <- function(command, symbolList, callback) {
 #'
 #' rrpc.call("runR", {
 #'  Rcommand:"y<-c(2,0,1);plot(c(1,2,3),y);y",
-#'  format:"png",
-#'  width:200,
-#'  height:300
-#' }, function(x) {console.log(x.data.data,x.data.plot[0]);});
+#'  'rrpc.resultformat': {
+#'    type: 'png',
+#'    width: 200,
+#'    height: 300,
+#'  }
+#' }, function(x) {img.setAttribute('src', x.plot[0])});
 #'
 #' @param symbolList A list of permitted symbols in the R command
 #' @export
 runR <- function(symbolList) {
-  function(data, Rcommand, format=NA, width=7, height=7, timeout=2000) {
+  function(data=NA, Rcommand, width=7, height=7, timeout=2000) {
     sanitizeCommand(Rcommand, symbolList, function(com) {
       setTimeLimit(elapsed=timeout)
       on.exit({
         setTimeLimit(elapsed=Inf)
       })
-      if (is.na(format)) {
-        return(eval(com))
-      }
-      fmt <- list(type=format, width=width, height=height)
-      return(encodePlotAs(fmt, function() { eval(com) }))
+      eval(com)
     })
   }
 }
