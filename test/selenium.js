@@ -8,26 +8,53 @@ const { Builder, By, Key, until } = require('selenium-webdriver');
 const { describe, before, after, it } = require('mocha');
 const assert = require("assert");
 const { PNG } = require("pngjs");
-//const Chrome = require('selenium-webdriver/chrome');
+const Chrome = require('selenium-webdriver/chrome');
 const Firefox = require('selenium-webdriver/firefox');
 const floor = Math.floor;
+
+function getBrowser() {
+    const br = /--browser=(.*)/;
+    for (let i = 3; i < process.argv.length; ++i) {
+        const m = process.argv[i].match(br);
+        if (m) {
+            return m[1];
+        }
+    }
+    return 'firefox';
+}
 
 describe('shinylight', function() {
     let rProcess;
     let driver;
 
-    before(function() {
+    before(async function() {
+        this.timeout(10000);
         rProcess = spawn('Rscript', ['test/run.R'], { stdio: [ 'ignore', 'inherit', 'inherit' ] });
-        let firefoxOptions = new Firefox.Options();
         // Prevent Firefox from opening up a download dialog when a CSV file is requested
-        firefoxOptions.setPreference('browser.download.folderList', 2);  // do not use default download directory
-        firefoxOptions.setPreference('browser.download.manager.showWhenStarting', false);  // do not show download progress
         const tmp = os.tmpdir();
-        firefoxOptions.setPreference('browser.download.dir', tmp);
-        firefoxOptions.setPreference('browser.helperApps.neverAsk.saveToDisk', 'text/csv');
-        driver = new Builder().forBrowser('firefox').
-            setFirefoxOptions(firefoxOptions).
-            build();
+        let firefoxOptions = new Firefox.Options().
+            setPreference('browser.download.folderList', 2).  // do not use default download directory
+            setPreference('browser.download.manager.showWhenStarting', false).  // do not show download progress
+            setPreference('browser.download.dir', tmp).
+            setPreference('browser.helperApps.neverAsk.saveToDisk', 'text/csv');
+        let chromeOptions = new Chrome.Options().setUserPreferences({
+            'profile.default_content_settings.popups': 0,
+            'download.prompt_for_download': 'false',
+            'download.default_directory': tmp,
+        });
+        driver = null;
+        for (let attempt = 0; !driver && attempt < 5; ++attempt) {
+            try {
+                driver = new Builder().forBrowser(getBrowser()).
+                    setFirefoxOptions(firefoxOptions).
+                    setChromeOptions(chromeOptions).
+                    build();
+                await driver.get('http://localhost:8000');
+            } catch(e) {
+                await driver.quit();
+                driver = null;
+            }
+        }
         driver.manage().setTimeouts({ implicit: 1000 });
     });
 
@@ -83,9 +110,10 @@ describe('shinylight', function() {
         await setValue(driver, 'param-bg', '#ffff00');
         await clickId(driver, 'button-calculate');
         const img = await driver.wait(until.elementLocated(By.css('img#output-plot')));
-        const imgSrc = await img.getAttribute('src');
+        const imgSrc = decodeURIComponent(await img.getAttribute('src'));
         const imgB64 = imgSrc.split(',')[1];
-        const png = PNG.sync.read(Buffer.from(imgB64, 'base64'));
+        const imgBuffer = Buffer.from(imgB64, 'base64');
+        const png = PNG.sync.read(imgBuffer);
         const axes = getAxes(png);
         // Test the points are present
         assert(isPoint(png, 'Y', axes.leftTick, axes.bottomTick)); // 1,1
@@ -194,6 +222,13 @@ describe('shinylight', function() {
         });
         assert.strictEqual(result.error, null);
         assert.strictEqual(typeof(result.result.plot), 'object');
+        const imgBuffer = Buffer.from(result.result.plot[0].split(',')[1], 'base64');
+        const png = PNG.sync.read(imgBuffer);
+        const axes = getAxes(png);
+        assert.strictEqual(axes.left, 58);
+        assert.strictEqual(axes.width, 111);
+        assert.strictEqual(axes.bottom, 226);
+        assert.strictEqual(axes.height, 167);
         assert.strictEqual(typeof(result.result.plot[0]), 'string');
         assert.ok(200 < result.result.plot[0].length);
         assert.deepStrictEqual(result.result.data, [2,0,1]);
