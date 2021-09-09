@@ -4,6 +4,8 @@ A lightweight server for R calculations
 
 ## Building ShinyLight
 
+To rebuild documentation:
+
 ```sh
 Rscript -e 'devtools::document()'
 ```
@@ -19,7 +21,9 @@ Rscript -e 'install.packages(".",repos=NULL,type="source")'
 ```sh
 npm test
 ```
+
 or
+
 ```sh
 npm test -- --fgrep 'test that I want' --browser=chrome
 ```

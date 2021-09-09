@@ -93,7 +93,7 @@ examples <- list(
   test1_weight_inits=list(4.4, 4.2, 6.1, 1.0)
 )
 
-symbolList <- c('<-', 'c', 'plot', 'data.frame', '+', '-', '*', '/', 'x', 'y')
+symbolList <- c('<-', 'c', 'plot', 'data.frame', '+', '-', '*', '/', 'x', 'y', 'data', '$', 'one', 'two')
 
 testServer <- function(port=NULL) {
   appDir <- R.utils::getAbsolutePath("inst/www")

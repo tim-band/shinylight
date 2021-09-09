@@ -81,7 +81,7 @@ describe('shinylight', function() {
     });
 
     it('hides and shows the calculate button', async function() {
-        this.timeout(8000);
+        this.timeout(15000);
         const calculateButton = await driver.findElement(By.id('button-calculate'));
         await driver.wait(until.elementIsVisible(calculateButton));
         assert(await calculateButton.isDisplayed());
@@ -201,6 +201,38 @@ describe('shinylight', function() {
         assert.strictEqual(result.error, null);
         assert.deepStrictEqual(result.result.plot, {});
         assert.deepStrictEqual(result.result.data, [4]);
+    });
+
+    it('allows R code with data to be run from the client side', async function() {
+        this.timeout(2000);
+        const result = await executeRrpc(driver,
+            "data$one + data$two", {
+            data: {
+                one: [1, 2, 3],
+                two: [10, 11, 12]
+            }
+        });
+        assert.strictEqual(result.error, null);
+        assert.deepStrictEqual(result.result.plot, {});
+        assert.deepStrictEqual(result.result.data, [11, 13, 15]);
+    });
+
+    it('returns data frames from R code', async function() {
+        this.timeout(2000);
+        const result = await executeRrpc(driver,
+            "data.frame(sum=data$two+data$one,diff=data$two-data$one)", {
+            data: {
+                one: [1, 2, 3],
+                two: [10, 20, 30]
+            }
+        });
+        assert.strictEqual(result.error, null);
+        assert.deepStrictEqual(result.result.plot, {});
+        assert.deepStrictEqual(result.result.data, [
+            { sum: 11, diff: 9 },
+            { sum: 22, diff: 18 },
+            { sum: 33, diff: 27 },
+        ]);
     });
 
     it('Does not allow R code to be run that includes forbidden symbols', async function() {
