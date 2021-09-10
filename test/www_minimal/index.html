@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<meta charset='utf-8'>
+<html>
+<head>
+<link rel="stylesheet" href="css/dataentrygrid.css">
+<link rel="icon" href="images/favicon.ico">
+<script src="js/dataentrygrid.min.js" type="text/javascript"></script>
+<script src="js/rrpc.min.js" type="text/javascript"></script>
+<script>
+var inputTable = null;
+var outputTable = null;
+function start() {
+    inputTable = createDataEntryGrid('input-table', ['x', 'y'], 6);
+    outputTable = createDataEntryGrid('output-table', 2, 6);
+    rrpc.initialize();
+}
+function trim(s) {
+    return s.trim();
+}
+function non_null(s) {
+    return s.length !== 0;
+}
+function set_headers() {
+    var command = document.getElementById('headers_input').value;
+    var new_headers = command.split(',').map(trim).filter(non_null);
+    if (new_headers.length !== 0) {
+        inputTable.init(new_headers, 5);
+    }
+}
+function compute() {
+    var command = document.getElementById('command_param').value;
+    var headers = inputTable.getColumnHeaders();
+    var data = {};
+    for (var i = 0; i !== headers.length; ++i) {
+        data[headers[i]] = inputTable.getColumn(i).map(parseFloat);
+    }
+    rrpc.call('runR', {
+        Rcommand: command,
+        data: data
+    }, function (result, error) {
+        if (error) {
+            document.getElementById('error').value = error;
+        }
+        if (typeof(result.data) === 'object') {
+            var headers = [];
+            var header_map = {};
+            var rows = [];
+            for (var r in result.data) {
+                var row = [];
+                var result_row = result.data[r];
+                for (var c in result_row) {
+                    var cell = result_row[c];
+                    var index;
+                    if (c in header_map) {
+                        index = header_map[c];
+                    } else {
+                        index = headers.length;
+                        header_map[c] = index;
+                        headers.push(c);
+                    }
+                    row[index] = cell;
+                }
+                rows.push(row);
+            }
+            outputTable.init(headers, rows);
+        }
+    });
+}
+</script>
+</head>
+<main>
+<header>
+</header>
+<body onload="start()">
+    <div id="controls">
+        <div>
+            <label for="headers_input">Headers</label>
+            <input type="text" id="headers_input">
+            <button onclick="set_headers()">Set headers</button>
+        </div>
+        <div>
+            <label for="command_param">R command</label>
+            <textarea rows="10" cols="80" id="command_param"></textarea>
+            <button onclick="compute()">Compute!</button>
+        </div>
+    </div>
+    <table id="input-table">
+    </table> 
+    <img id="plot">
+    <table id="output-table">
+    </table>
+    <textarea rows="5" cols="80" id="error"></textarea>
+</body>
+</main>
+</html>

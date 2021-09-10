@@ -292,9 +292,14 @@ slStop <- function(server=NULL) {
 #' This is useful when called from RScript, to keep
 #' @return server object, unless daemonize is TRUE.
 #' @export
-slServer <- function(appDir, interface, host='0.0.0.0', port=NULL, daemonize=FALSE) {
+slServer <- function(interface, appDir=NULL, host='0.0.0.0', port=NULL, daemonize=FALSE) {
   slDir <- system.file("www", package = "shinylight")
-  s <- rrpcServer(host=host, port=port, appDir=list(appDir, slDir), root="/",
+  if (is.null(appDir)) {
+    appDirList <- list(slDir)
+  } else {
+    appDirList <- list(appDir, slDir)
+  }
+  s <- rrpcServer(host=host, port=port, appDir=appDirList, root="/",
     interface=interface
   )
   extraMessage <- ""
