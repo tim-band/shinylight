@@ -3,7 +3,7 @@ testServer <- function(port=NULL) {
   shinylight::slServer(host='0.0.0.0', port=port, appDir=appDir, daemonize=TRUE,
     interface=list(
       runR=shinylight::runR(
-        c('<-', 'c', 'plot', 'data.frame', '+', '-', '*', '/', 'x', 'y', 'data', '$', 'one', 'two')
+        c('<-', 'c', 'plot', 'data.frame', '+', '-', '*', '/', 'x', 'y', 'data', '$', 'one', 'two', 'list')
       )
     )
   )
