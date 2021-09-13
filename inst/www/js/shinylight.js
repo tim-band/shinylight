@@ -56,77 +56,6 @@ function shinylight() {
     });
   }
 
-  function arrayWidth(a) {
-    var max = 0;
-    for(var i = 0; i !== a.length; ++i) {
-      var r = a[i];
-      var n = typeof(r) === 'object'? r.length : 1;
-      if (max < n) {
-        max = n;
-      }
-    }
-    return max;
-  }
-
-  function appendColumns(headers, table, key, columns) {
-    var existingColumnCount = headers.length;
-    var width = arrayWidth(columns);
-    if (width === 1) {
-      headers.push(key);
-    } else {
-      for (var w = 0; w !== width; ++w) {
-        headers.push(key + ' ' + (w + 1));
-      }
-    }
-    for (var r = 0; r !== columns.length; ++r) {
-      if (typeof(table[r]) === 'undefined') {
-        table[r] = new Array(existingColumnCount).fill('');
-      }
-      var row = columns[r];
-      if (typeof(row) !== 'object') {
-        row = [row];
-      }
-      for (var c = 0; c !== width; ++c) {
-        var v = row[c];
-        if (typeof(v) === 'undefined') {
-          v = '';
-        }
-        table[r][existingColumnCount + c] = v;
-      }
-    }
-  }
-
-  function makeTable(data) {
-    if (Array.isArray(data)) {
-      if (0 < data.length && data[0] instanceof Object) {
-        // data frame was returned
-        var table = [];
-        var headerSet = {};
-        var headers = [];
-        toolkit.forEach(data, function(i, row) {
-          var tableRow = [];
-          toolkit.forEach(row, function(k, v) {
-            if (!(k in headerSet)) {
-              headerSet[k] = headers.length;
-              headers.push(k);
-            }
-            tableRow[headerSet[k]] = v;
-          });
-          table.push(tableRow);
-        });
-        return { headers: headers, rows: table };
-      }
-      // array was returned
-      return { headers: ['out'], rows: data.map(function(x) { return [x]; }) };
-    }
-    var headers = [];
-    var table = [];
-    toolkit.forEach(data, function(k,v) {
-      appendColumns(headers, table, k, v);
-    });
-    return { headers: headers, rows: table };
-  }
-
   function unitSettings() {
     return inputGrid.getSubheaders();
   }
@@ -622,7 +551,7 @@ function shinylight() {
     oTable.classList.add('data-entry-grid');
     oTable.setAttribute('style', 'width: 100%; height: 100%;');
     oTable.setData = function(data) {
-      var t = makeTable(data);
+      var t = toolkit.makeTable(data);
       var h = t.headers;
       h.push('');
       outputTable.init(h, t.rows);
