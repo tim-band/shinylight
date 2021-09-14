@@ -1243,7 +1243,7 @@ var toolkit = function() {
         }
         // array of scalars was returned
         return {
-          headers: data[0].length + extraColumnCount,
+          headers: 1 + extraColumnCount,
           rows: data.map(function(x) { return [x]; })
         };
       }

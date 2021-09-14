@@ -11,6 +11,7 @@
 <link rel="icon" href="images/favicon.ico">
 <script src="js/dataentrygrid.min.js" type="text/javascript"></script>
 <script src="js/rrpc.min.js" type="text/javascript"></script>
+<script src="js/toolkit.js" type="text/javascript"></script>
 <script>
 var inputTable = null;
 var outputTable = null;
@@ -51,28 +52,9 @@ function compute() {
             document.getElementById('error').value = JSON.stringify(error);
         }
         document.getElementById('result').value = JSON.stringify(result);
-        if (typeof(result.data) === 'object') {
-            var headers = [];
-            var header_map = {};
-            var rows = [];
-            for (var r in result.data) {
-                var row = [];
-                var result_row = result.data[r];
-                for (var c in result_row) {
-                    var cell = result_row[c];
-                    var index;
-                    if (c in header_map) {
-                        index = header_map[c];
-                    } else {
-                        index = headers.length;
-                        header_map[c] = index;
-                        headers.push(c);
-                    }
-                    row[index] = cell;
-                }
-                rows.push(row);
-            }
-            outputTable.init(headers, rows);
+        const t = toolkit.makeTable(result.data);
+        if (t) {
+            outputTable.init(t.headers, t.rows);
         }
     });
 }
@@ -106,13 +88,13 @@ function plot() {
         <div>
             <label for="headers_input">Headers</label>
             <input type="text" id="headers_input">
-            <button onclick="set_headers()">Set headers</button>
+            <button id='headers_button' onclick="set_headers()">Set headers</button>
         </div>
         <div>
             <label for="command_param">R command</label>
             <textarea rows="10" cols="80" id="command_param"></textarea>
-            <button onclick="compute()">Compute!</button>
-            <button onclick="plot()">Plot!</button>
+            <button id='compute_button' onclick="compute()">Compute!</button>
+            <button id='plot_button' onclick="plot()">Plot!</button>
         </div>
     </div>
     <table id="input-table">

@@ -23,26 +23,24 @@ function getBrowser() {
     return 'firefox';
 }
 
-describe('shinylight', function() {
-    let rProcess;
-    let driver;
+function spawnR(script) {
+    return spawn('Rscript', [script], { stdio: [ 'ignore', 'inherit', 'inherit' ] });
+}
 
-    before(async function() {
-        this.timeout(10000);
-        rProcess = spawn('Rscript', ['test/run.R'], { stdio: [ 'ignore', 'inherit', 'inherit' ] });
+async function startSelenium(tmpdir) {
         // Prevent Firefox from opening up a download dialog when a CSV file is requested
-        const tmp = os.tmpdir();
         let firefoxOptions = new Firefox.Options().
             setPreference('browser.download.folderList', 2).  // do not use default download directory
             setPreference('browser.download.manager.showWhenStarting', false).  // do not show download progress
-            setPreference('browser.download.dir', tmp).
+    setPreference('browser.download.dir', tmpdir).
             setPreference('browser.helperApps.neverAsk.saveToDisk', 'text/csv');
         let chromeOptions = new Chrome.Options().setUserPreferences({
             'profile.default_content_settings.popups': 0,
             'download.prompt_for_download': 'false',
-            'download.default_directory': tmp,
+        'download.default_directory': tmpdir,
         });
-        driver = null;
+    let driver = null;
+    // wait for port 8000 to open
         for (let attempt = 0; !driver && attempt < 5; ++attempt) {
             try {
                 driver = new Builder().forBrowser(getBrowser()).
@@ -55,7 +53,19 @@ describe('shinylight', function() {
                 driver = null;
             }
         }
-        driver.manage().setTimeouts({ implicit: 1000 });
+    await driver.manage().setTimeouts({ implicit: 1000 });
+    return driver;
+}
+
+describe('shinylight framework', function() {
+    let rProcess;
+    let driver;
+
+    before(async function() {
+        this.timeout(15000);
+        rProcess = spawnR('test/run.R');
+        const tmp = os.tmpdir();
+        driver = await startSelenium(tmp);
     });
 
     after(function() {
@@ -182,17 +192,17 @@ describe('shinylight', function() {
     });
 
     it('respects options', async function() {
-        this.timeout(6000);
+        this.timeout(10000);
         await enterCellText(driver, 0, 0, ['2', '0'], ['1', '1'], ['0', '0'], ['1', '2']);
         await clickInputTab(driver, 'options');
         await setValue(driver, 'param-offset', '1.5');
         await setValue(driver, 'param-factor', '2.4');
         await clickOutputTab(driver, 'table');
         await clickCalculate(driver);
-        await assertElementText(driver, outputCell(0, 0), '4.8');
-        await assertElementText(driver, outputCell(1, 0), '2.4');
-        await assertElementText(driver, outputCell(0, 1), '1.5');
-        await assertElementText(driver, outputCell(1, 1), '2.5');
+        await assertOutputCells(driver, 0, 0, 2, 2, [
+            [4.8, 1.5],
+            [2.4, 2.5]
+        ]);
     });
 
     it('allows R code to be run from the client side', async function() {
@@ -267,6 +277,40 @@ describe('shinylight', function() {
     });
 });
 
+describe('minimal shinylight', function() {
+    let rProcess;
+    let driver;
+
+    before(async function() {
+        this.timeout(15000);
+        rProcess = spawnR('test/run_minimal.R');
+        const tmp = os.tmpdir();
+        driver = await startSelenium(tmp);
+    });
+
+    after(function() {
+        rProcess.kill('SIGHUP');
+        driver.quit();
+    })
+
+    beforeEach(async function() {
+        this.timeout(20000);
+        await driver.get('http://localhost:8000');
+    });
+
+    it('calls R', async function() {
+        this.timeout(10000);
+        await typeIn(driver, 'headers_input', 'one,two');
+        await clickId(driver, 'headers_button');
+        await enterCellText(driver, 0, 0, ['2', '0'], ['3', '4'], ['10', '11'], ['21', '2']);
+        await typeIn(driver, 'command_param', 'data$one+data$two');
+        await clickId(driver, 'compute_button');
+        await assertOutputCells(driver, 0, 0, 4, 1, [
+            [2], [7], [21], [23]
+        ]);
+    });
+});
+
 async function executeRrpc(driver, code, extraOpts) {
     if (typeof(extraOpts) === 'undefined') {
         extraOpts = {};
@@ -291,8 +335,9 @@ async function typeIn(driver, id, ...text) {
     const by = typeof(id) === 'string'? By.id(id) : id;
     const e = await driver.findElement(by);
     await e.click();
-    const tag = await e.getTagName();
-    const b = tag.toLowerCase() === 'input'? e : await e.findElement(By.css('input'));
+    const tag = (await e.getTagName()).toLowerCase();
+    const b = tag === 'input' || tag === 'textarea'?
+        e : await e.findElement(By.css('input,textarea'));
     await b.sendKeys.apply(b, text);
 }
 
@@ -301,9 +346,12 @@ async function enterCellText(driver, r, c) {
     let outs = [driver, inputCell(r, c)];
     for (let i = 3; i !== ins.length; ++i) {
         let row = ins[i];
-        for (let j = 0; j !== row.length; ++j) {
-            outs.push(row[j]);
+        if (row) {
+            outs.push(row[0]);
+            for (let j = 1; j !== row.length; ++j) {
             outs.push(Key.TAB);
+                outs.push(row[j]);
+            }
         }
         outs.push(Key.RETURN);
     }
@@ -360,6 +408,15 @@ async function clickId(driver, id) {
 async function switchFunction(driver, funcName) {
     await driver.findElement(By.id('param-function-selector')).click();
     await driver.findElement(By.id('function-selector-' + funcName)).click();
+}
+
+async function assertOutputCells(driver, r, c, rowCount, columnCount, expectedCells) {
+    for (let i = 0; i !== rowCount; ++i) {
+        const row = expectedCells[i];
+        for (let j = 0; j !== columnCount; ++j) {
+            await assertElementText(driver, outputCell(r + i, c + j), '' + row[j]);
+        }
+    }
 }
 
 async function assertParamIs(driver, id, value) {
