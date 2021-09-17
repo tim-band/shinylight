@@ -1,6 +1,7 @@
 "use strict";
 
 const fs = require('fs');
+const net = require('net');
 const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -32,6 +33,35 @@ function kill(process) {
         process.on('exit', () => resolve());
         process.kill('SIGHUP');
     });
+}
+
+function wait(ms) {
+    return new Promise(resolve => {
+        setTimeout(resolve, ms);
+    });
+}
+
+async function retry(attempts, ms, untilFn) {
+    while (!await untilFn()) {
+        if (--attempts === 0) {
+            return false;
+        }
+        await wait(ms);
+    }
+    return true;
+}
+
+function checkPort(port) {
+    return new Promise(resolve => {
+        const c = new net.Socket();
+        c.on('connect', () => resolve(true));
+        c.on('error', () => resolve(false));
+        c.connect(port, 'localhost');
+    });
+}
+
+async function portIsOpen(port) {
+    return await retry(10, 300, checkPort.bind(null, port));
 }
 
 async function startSelenium(tmpdir) {
@@ -66,12 +96,14 @@ describe('shinylight framework', function() {
     });
 
     after(async function() {
+        this.timeout(4000);
         await kill(rProcess);
         await driver.quit();
     });
 
     beforeEach(async function() {
         this.timeout(20000);
+        await portIsOpen(8000);
         await driver.get('http://localhost:8000');
     });
 
@@ -288,12 +320,14 @@ describe('minimal shinylight', function() {
     });
 
     after(async function() {
+        this.timeout(4000);
         await kill(rProcess);
         await driver.quit();
     });
 
     beforeEach(async function() {
         this.timeout(20000);
+        await portIsOpen(8000);
         await driver.get('http://localhost:8000');
     });
 
@@ -316,7 +350,7 @@ describe('minimal shinylight', function() {
         await enterCellText(driver, 0, 0, ['2', '0'], ['3', '4'], ['10', '11'], ['21', '2']);
         await typeIn(driver, 'command_param', 'data.frame(sum=data$one+data$two, diff=data$one-data$two)');
         await clickId(driver, 'compute_button');
-        await driver.wait(outputHeaderIs(driver, 0, 'sum'));
+        await driver.wait(async () => outputHeaderIs(driver, 0, 'sum'));
         await assertOutputHeaders(driver, ['sum', 'diff']);
         await assertOutputCells(driver, 0, 0, 4, 1, [
             [2, 2], [7, -1], [21, -1], [23, 19]
@@ -330,11 +364,35 @@ describe('minimal shinylight', function() {
         await enterCellText(driver, 0, 0, ['2', '0'], ['3', '4'], ['10', '11'], ['21', '2']);
         await typeIn(driver, 'command_param', 'list(diff=data$one-data$two, sum=data$one+data$two)');
         await clickId(driver, 'compute_button');
-        await driver.wait(outputHeaderIs(driver, 0, 'diff'));
+        await driver.wait(async () => outputHeaderIs(driver, 0, 'diff'));
         await assertOutputHeaders(driver, ['diff', 'sum']);
         await assertOutputCells(driver, 0, 0, 4, 1, [
             [2, 2], [-1, 7], [-1, 21], [19, 23]
         ]);
+    });
+
+    it('calls R that returns a plot', async function() {
+        this.timeout(10000);
+        await typeIn(driver, 'headers_input', 'one,two');
+        await clickId(driver, 'headers_button');
+        await typeIn(driver, 'command_param', 'plot(x=c(1,2,3), y=c(3,2,1), pch=22, bg="#fff000")');
+        await clickId(driver, 'plot_button');
+        let png = null;
+        let axes = null;
+        await driver.wait(async function() {
+            png = await getPng(driver, By.css('img#plot'));
+            if (!png) {
+                return false;
+            }
+            axes = getAxes(png);
+            return isPoint(png, 'Y', axes.leftTick, axes.topTick); // 1,3
+        });
+        assert(isPoint(
+            png, 'Y',
+            floor((axes.leftTick + axes.rightTick)/2),
+            floor((axes.bottomTick + axes.topTick)/2),
+        )); // 2,2
+        assert(isPoint(png, 'Y', axes.rightTick, axes.bottomTick)); // 3,3
     });
 });
 
@@ -345,6 +403,9 @@ async function getPng(driver, locator) {
     }
     const imgSrc = decodeURIComponent(await img.getAttribute('src'));
     const imgB64 = imgSrc.split(',')[1];
+    if (typeof(imgB64) !== 'string') {
+        return null;
+    }
     const imgBuffer = Buffer.from(imgB64, 'base64');
     return PNG.sync.read(imgBuffer);
 }
@@ -458,9 +519,10 @@ async function assertOutputCells(driver, r, c, rowCount, columnCount, expectedCe
 }
 
 async function assertOutputHeaders(driver, expected) {
-    const ths = await driver.findElements(By.css('#output-table thead tr th'));
     for (let i = 0; i !== expected.length; ++i) {
-        const th = await ths[i + 1];
+        const th = await driver.findElement(By.css(
+            `#output-table thead tr th:nth-child(${i+2})`
+        ));
         assert.strictEqual(await th.getText(), expected[i]);
     }
 }
