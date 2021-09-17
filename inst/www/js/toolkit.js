@@ -1133,7 +1133,7 @@ var toolkit = function() {
   }
 
   function arrayWidth(a) {
-    return Math.max(a.map(function (r) {
+    return Math.max.apply(null, a.map(function (r) {
       return typeof(r) === 'object'? r.length : 1;
     }));
   }

@@ -27,32 +27,29 @@ function spawnR(script) {
     return spawn('Rscript', [script], { stdio: [ 'ignore', 'inherit', 'inherit' ] });
 }
 
+function kill(process) {
+    return new Promise(resolve => {
+        process.on('exit', () => resolve());
+        process.kill('SIGHUP');
+    });
+}
+
 async function startSelenium(tmpdir) {
-        // Prevent Firefox from opening up a download dialog when a CSV file is requested
-        let firefoxOptions = new Firefox.Options().
-            setPreference('browser.download.folderList', 2).  // do not use default download directory
-            setPreference('browser.download.manager.showWhenStarting', false).  // do not show download progress
-    setPreference('browser.download.dir', tmpdir).
-            setPreference('browser.helperApps.neverAsk.saveToDisk', 'text/csv');
-        let chromeOptions = new Chrome.Options().setUserPreferences({
-            'profile.default_content_settings.popups': 0,
-            'download.prompt_for_download': 'false',
+    // Prevent Firefox from opening up a download dialog when a CSV file is requested
+    let firefoxOptions = new Firefox.Options().
+        setPreference('browser.download.folderList', 2).  // do not use default download directory
+        setPreference('browser.download.manager.showWhenStarting', false).  // do not show download progress
+        setPreference('browser.download.dir', tmpdir).
+        setPreference('browser.helperApps.neverAsk.saveToDisk', 'text/csv');
+    let chromeOptions = new Chrome.Options().setUserPreferences({
+        'profile.default_content_settings.popups': 0,
+        'download.prompt_for_download': 'false',
         'download.default_directory': tmpdir,
-        });
-    let driver = null;
-    // wait for port 8000 to open
-        for (let attempt = 0; !driver && attempt < 5; ++attempt) {
-            try {
-                driver = new Builder().forBrowser(getBrowser()).
-                    setFirefoxOptions(firefoxOptions).
-                    setChromeOptions(chromeOptions).
-                    build();
-                await driver.get('http://localhost:8000');
-            } catch(e) {
-                await driver.quit();
-                driver = null;
-            }
-        }
+    });
+    const driver = new Builder().forBrowser(getBrowser()).
+        setFirefoxOptions(firefoxOptions).
+        setChromeOptions(chromeOptions).
+        build();
     await driver.manage().setTimeouts({ implicit: 1000 });
     return driver;
 }
@@ -68,10 +65,10 @@ describe('shinylight framework', function() {
         driver = await startSelenium(tmp);
     });
 
-    after(function() {
-        rProcess.kill('SIGHUP');
-        driver.quit();
-    })
+    after(async function() {
+        await kill(rProcess);
+        await driver.quit();
+    });
 
     beforeEach(async function() {
         this.timeout(20000);
@@ -119,14 +116,16 @@ describe('shinylight framework', function() {
         await setValue(driver, 'param-pch', '22');
         await setValue(driver, 'param-bg', '#ffff00');
         await clickId(driver, 'button-calculate');
-        const img = await driver.wait(until.elementLocated(By.css('img#output-plot')));
-        const imgSrc = decodeURIComponent(await img.getAttribute('src'));
-        const imgB64 = imgSrc.split(',')[1];
-        const imgBuffer = Buffer.from(imgB64, 'base64');
-        const png = PNG.sync.read(imgBuffer);
-        const axes = getAxes(png);
-        // Test the points are present
-        assert(isPoint(png, 'Y', axes.leftTick, axes.bottomTick)); // 1,1
+        let png = null;
+        let axes = null;
+        await driver.wait(async function() {
+            png = await getPng(driver, By.css('img#output-plot'));
+            if (!png) {
+                return false;
+            }
+            axes = getAxes(png);
+            return isPoint(png, 'Y', axes.leftTick, axes.bottomTick); // 1,1
+        });
         assert(isPoint(
             png, 'Y',
             floor((axes.leftTick * 2 + axes.rightTick)/3),
@@ -288,17 +287,17 @@ describe('minimal shinylight', function() {
         driver = await startSelenium(tmp);
     });
 
-    after(function() {
-        rProcess.kill('SIGHUP');
-        driver.quit();
-    })
+    after(async function() {
+        await kill(rProcess);
+        await driver.quit();
+    });
 
     beforeEach(async function() {
         this.timeout(20000);
         await driver.get('http://localhost:8000');
     });
 
-    it('calls R', async function() {
+    it('calls R that returns a vector', async function() {
         this.timeout(10000);
         await typeIn(driver, 'headers_input', 'one,two');
         await clickId(driver, 'headers_button');
@@ -309,7 +308,46 @@ describe('minimal shinylight', function() {
             [2], [7], [21], [23]
         ]);
     });
+
+    it('calls R that returns a data frame', async function() {
+        this.timeout(10000);
+        await typeIn(driver, 'headers_input', 'one,two');
+        await clickId(driver, 'headers_button');
+        await enterCellText(driver, 0, 0, ['2', '0'], ['3', '4'], ['10', '11'], ['21', '2']);
+        await typeIn(driver, 'command_param', 'data.frame(sum=data$one+data$two, diff=data$one-data$two)');
+        await clickId(driver, 'compute_button');
+        await driver.wait(outputHeaderIs(driver, 0, 'sum'));
+        await assertOutputHeaders(driver, ['sum', 'diff']);
+        await assertOutputCells(driver, 0, 0, 4, 1, [
+            [2, 2], [7, -1], [21, -1], [23, 19]
+        ]);
+    });
+
+    it('calls R that returns a list of vectors', async function() {
+        this.timeout(10000);
+        await typeIn(driver, 'headers_input', 'one,two');
+        await clickId(driver, 'headers_button');
+        await enterCellText(driver, 0, 0, ['2', '0'], ['3', '4'], ['10', '11'], ['21', '2']);
+        await typeIn(driver, 'command_param', 'list(diff=data$one-data$two, sum=data$one+data$two)');
+        await clickId(driver, 'compute_button');
+        await driver.wait(outputHeaderIs(driver, 0, 'diff'));
+        await assertOutputHeaders(driver, ['diff', 'sum']);
+        await assertOutputCells(driver, 0, 0, 4, 1, [
+            [2, 2], [-1, 7], [-1, 21], [19, 23]
+        ]);
+    });
 });
+
+async function getPng(driver, locator) {
+    const img = await driver.findElement(locator);
+    if (!img) {
+        return null;
+    }
+    const imgSrc = decodeURIComponent(await img.getAttribute('src'));
+    const imgB64 = imgSrc.split(',')[1];
+    const imgBuffer = Buffer.from(imgB64, 'base64');
+    return PNG.sync.read(imgBuffer);
+}
 
 async function executeRrpc(driver, code, extraOpts) {
     if (typeof(extraOpts) === 'undefined') {
@@ -417,6 +455,19 @@ async function assertOutputCells(driver, r, c, rowCount, columnCount, expectedCe
             await assertElementText(driver, outputCell(r + i, c + j), '' + row[j]);
         }
     }
+}
+
+async function assertOutputHeaders(driver, expected) {
+    const ths = await driver.findElements(By.css('#output-table thead tr th'));
+    for (let i = 0; i !== expected.length; ++i) {
+        const th = await ths[i + 1];
+        assert.strictEqual(await th.getText(), expected[i]);
+    }
+}
+
+async function outputHeaderIs(driver, index, expected) {
+    const th = await driver.findElement(By.css(`#output-table thead tr th:nth-child(${index+2})`));
+    return expected === await th.getText();
 }
 
 async function assertParamIs(driver, id, value) {
