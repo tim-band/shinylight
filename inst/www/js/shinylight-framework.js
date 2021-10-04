@@ -1,4 +1,4 @@
-function shinylight() {
+function shinylightFrameworkStart() {
   var inputGrid;
   var optionGroups = {};
   var outputImgWrapper;
