@@ -1132,40 +1132,6 @@ var toolkit = function() {
     return container;
   }
 
-  function arrayWidth(a) {
-    return Math.max.apply(null, a.map(function (r) {
-      return typeof(r) === 'object'? r.length : 1;
-    }));
-  }
-
-  function appendColumns(headers, table, key, columns) {
-    var existingColumnCount = headers.length;
-    var width = arrayWidth(columns);
-    if (width === 1) {
-      headers.push(key);
-    } else {
-      for (var w = 0; w !== width; ++w) {
-        headers.push(key + ' ' + (w + 1));
-      }
-    }
-    for (var r = 0; r !== columns.length; ++r) {
-      if (typeof(table[r]) === 'undefined') {
-        table[r] = new Array(existingColumnCount).fill('');
-      }
-      var row = columns[r];
-      if (typeof(row) !== 'object') {
-        row = [row];
-      }
-      for (var c = 0; c !== width; ++c) {
-        var v = row[c];
-        if (typeof(v) === 'undefined') {
-          v = '';
-        }
-        table[r][existingColumnCount + c] = v;
-      }
-    }
-  }
-
   return {
     forEach: forEach,
     deref: deref,
@@ -1195,64 +1161,5 @@ var toolkit = function() {
     withTimeout: withTimeout,
     stack: stack,
     pages: pages,
-
-    /**
-     * @typedef TableData
-     * @property {string[]|number} headers Array of strings to become the new
-     * column headers, or the number of columns to create
-     * @param {Array.<Array.<string>>} rows Array of rows, each of which is an
-     * array of cell contents.
-     */
-    /**
-     * Turns data received from R into a form that can be set into
-     * dataentrygrid.js. 
-     * @param {object} data Data as returned from R
-     * @param {string[]|number} extraColumns The extra column headers
-     * required or the number of extra columns required.
-     * @returns {TableData} Headers and rows
-     * @example
-     * t = toolkit.makeTable(data);
-     * grid.init(t.headers, t.rows);
-     */
-    makeTable: function(data, extraColumns) {
-      var extraColumnCount = 0;
-      if (typeof(extraColumns) === 'number') {
-        extraColumnCount = extraColumns;
-        extraColumns = new Array(extraColumnCount);
-      } else if (typeof(extraColumns) === 'object') {
-        extraColumnCount = extraColumns.length;
-      }
-      if (Array.isArray(data)) {
-        if (0 < data.length && data[0] instanceof Object) {
-          // data frame was returned
-          var table = [];
-          var headerSet = {};
-          var headers = [];
-          toolkit.forEach(data, function(i, row) {
-            var tableRow = [];
-            toolkit.forEach(row, function(k, v) {
-              if (!(k in headerSet)) {
-                headerSet[k] = headers.length;
-                headers.push(k);
-              }
-              tableRow[headerSet[k]] = v;
-            });
-            table.push(tableRow);
-          });
-          return { headers: headers, rows: table };
-        }
-        // array of scalars was returned
-        return {
-          headers: 1 + extraColumnCount,
-          rows: data.map(function(x) { return [x]; })
-        };
-      }
-      var headers = [];
-      var table = [];
-      toolkit.forEach(data, function(k,v) {
-        appendColumns(headers, table, k, v);
-      });
-      return { headers: headers.concat(extraColumns), rows: table };
-    }
   };
 }();

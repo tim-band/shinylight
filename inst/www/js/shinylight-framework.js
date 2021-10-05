@@ -551,7 +551,7 @@ function shinylightFrameworkStart() {
     oTable.classList.add('data-entry-grid');
     oTable.setAttribute('style', 'width: 100%; height: 100%;');
     oTable.setData = function(data) {
-      var t = toolkit.makeTable(data);
+      var t = shinylight.makeTable(data);
       var h = t.headers;
       h.push('');
       outputTable.init(h, t.rows);

@@ -268,7 +268,8 @@ runR <- function(symbolList) {
 
 #' Stops a ShinyLight GUI
 #'
-#' @param server The server (returned by \code{\link{shinylight::slServer()}})
+#' @param server The server (returned by \code{\link{shinylight::slServer()}}
+#' or \code{\link{shinylight:slRunRServer}})
 #' to stop. If not supplied all servers will be stopped.
 #' @export
 slStop <- function(server=NULL) {
@@ -314,4 +315,26 @@ slServer <- function(interface, appDir=NULL, host='0.0.0.0', port=NULL, daemoniz
     }
   }
   invisible(s)
+}
+
+#' Start a ShinyLight server which runs R that it is sent
+#' @param appDir Directory containing files to serve (for example
+#' system.file("www", package = "your-package"))
+#' @param permittedSymbols List of symbols that are permitted in the R
+#' commands passed. Remember to include \code{data}, \code{$} and
+#' \code{<-}.
+#' @param host IP address to listen on, default is 0.0.0.0 (all interfaces)
+#' @param port Internet port of the virtual server. If not defined, a
+#' random free port will be chosen and the browser will be opened
+#' to show the GUI.
+#' @param daemonize If TRUE, keep serving forever without returning.
+#' This is useful when called from RScript, to keep
+#' @return server object, unless daemonize is TRUE.
+#' @export
+slRunRServer <- function(permittedSymbols, appDir=NULL, host='0.0.0.0', port=NULL, daemonize=FALSE) {
+  slServer(host=host, port=port, appDir=appDir, daemonize=daemonize,
+    interface=list(
+      runR=shinylight::runR(permittedSymbols)
+    )
+  )
 }
