@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<meta charset='utf-8'>
+<html>
+<head>
+<style>
+#error {
+    color: red;
+}
+img#plot {
+    display: absolute;
+    width: 400px;
+    height: 600px;
+}
+</style>
+<link rel="stylesheet" href="css/dataentrygrid.css">
+<link rel="stylesheet" href="css/shinylight.css">
+<link rel="icon" href="images/favicon.ico">
+<script src="js/dataentrygrid.min.js" type="text/javascript"></script>
+<script src="js/rrpc.min.js" type="text/javascript"></script>
+<script src="js/shinylight.js" type="text/javascript"></script>
+<script src="js/shinylight-toolkit.js" type="text/javascript"></script>
+<script>
+var inputTable = null;
+var outputTable = null;
+var paramPch = null;
+var functionSelector = null;
+function start() {
+    inputTable = createDataEntryGrid('input-table', ['x', 'y'], 6);
+    outputTable = createDataEntryGrid('output-table', 2, 6);
+    rrpc.initialize();
+    var controlsDiv = document.getElementById('controls');
+    functionSelector = toolkit.paramSelector(
+        'function',
+        controlsDiv,
+        { fn: { name: 'Function', help: 'Which function to call' } },
+        [ 'test1', 'test2' ],
+        {},
+        'test1'
+    );
+    paramPch = toolkit.paramSelector(
+        'pch',
+        controlsDiv,
+        { pch: { name: 'Point character' } },
+        [21, 22, 23],
+        {
+            21: { name: 'circle' },
+            22: { name: 'square' },
+            23: { name: 'diamond' }
+        },
+        21
+    );
+    var plotButton = toolkit.button('plot', plot, { plot: { name: 'Plot!' }});
+    controlsDiv.appendChild(plotButton);
+}
+function assembleData(grid) {
+    var headers = grid.getColumnHeaders();
+    var data = {};
+    for (var i = 0; i !== headers.length; ++i) {
+        data[headers[i]] = grid.getColumn(i).map(parseFloat);
+    }
+    return data;
+}
+function plot(callback) {
+    var data = assembleData(inputTable);
+    data.pch = paramPch.getData();
+    shinylight.call(
+        functionSelector.getData(), data, 'plot'
+    ).then(result => {
+        shinylight.setGridResult(outputTable, result);
+        callback();
+    }).catch(error => {
+        shinylight.setElementText('error', error);
+        callback();
+    });
+}
+</script>
+</head>
+<main>
+<header>
+</header>
+<body onload="start()">
+    <div id="controls">
+    </div>
+    <table id="input-table">
+    </table> 
+    <img id="plot">
+    <table id="output-table">
+    </table>
+    <textarea rows="5" cols="80" id="error"></textarea>
+</body>
+</main>
+</html>

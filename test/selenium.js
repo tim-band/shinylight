@@ -308,6 +308,63 @@ describe('shinylight framework', function() {
     });
 });
 
+describe('freeform shinylight', function() {
+    let rProcess;
+    let driver;
+
+    before(async function() {
+        this.timeout(15000);
+        rProcess = spawnR('test/run_freeform.R');
+        const tmp = os.tmpdir();
+        driver = await startSelenium(tmp);
+    });
+
+    after(async function() {
+        this.timeout(4000);
+        await kill(rProcess);
+        await driver.quit();
+    });
+
+    beforeEach(async function() {
+        this.timeout(20000);
+        await portIsOpen(8000);
+        await driver.get('http://localhost:8000');
+    });
+
+    it('calls R that returns a data frame', async function() {
+        this.timeout(10000);
+        await enterCellText(driver, 0, 0, ['2', '0'], ['3', '4'], ['10', '11'], ['21', '2']);
+        await clickId(driver, 'button-plot');
+        await driver.wait(async () => outputHeaderIs(driver, 0, 'sum'));
+        await assertOutputHeaders(driver, ['sum', 'diff']);
+        await assertOutputCells(driver, 0, 0, 4, 1, [
+            [2, 2], [7, -1], [21, -1], [23, 19]
+        ]);
+    });
+
+    it('calls R that returns a plot', async function() {
+        this.timeout(10000);
+        await enterCellText(driver, 0, 0, ['1', '3'], ['2', '2'], ['3', '1']);
+        await clickId(driver, 'button-plot');
+        let png = null;
+        let axes = null;
+        await driver.wait(async function() {
+            png = await getPng(driver, By.css('img#plot'));
+            if (!png) {
+                return false;
+            }
+            axes = getAxes(png);
+            return isPoint(png, 'Y', axes.leftTick, axes.topTick); // 1,3
+        });
+        assert(isPoint(
+            png, 'Y',
+            floor((axes.leftTick + axes.rightTick)/2),
+            floor((axes.bottomTick + axes.topTick)/2),
+        )); // 2,2
+        assert(isPoint(png, 'Y', axes.rightTick, axes.bottomTick)); // 3,3
+    });
+});
+
 describe('minimal shinylight', function() {
     let rProcess;
     let driver;

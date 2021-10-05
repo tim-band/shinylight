@@ -893,9 +893,11 @@ var toolkit = function() {
   }
 
   // fn should take a single parameter of a function to call on completion
-  // of the work. If the function you want does not take much time
-  // (less than 100ms, say) or you do not have a convenient callback
-  // to piggyback off, please wrap your fn in a call to withTimeout
+  // of the work (which will be used to remove the button's 'click'
+  // animation). If the function want to use as a callback does not take
+  // an argument, you can wrap it in withTimeout(). You might also want
+  // to use withTimeout() if your function returns too quickly, otherwise
+  // the user might not see the button click.
   function button(id, fn, translations) {
     var b = makeLabel(translations, null, id);
     b.classList.add('button');

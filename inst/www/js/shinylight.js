@@ -108,6 +108,29 @@ var shinylight = function () {
         }
     }
 
+    function callServer(fn, params, plotElement) {
+        return new Promise(function (resolve, errorFn) {
+            plotElement = getElement(plotElement);
+            if (plotElement) {
+                params['rrpc.resultformat'] = {
+                    type: 'png',
+                    width: plotElement.clientWidth,
+                    height: plotElement.clientHeight
+                };
+            }
+            rrpc.call(fn, params, function (result, error) {
+                if (error) {
+                    errorFn(error);
+                } else {
+                    if (plotElement) {
+                        setPlot(plotElement, result);
+                    }
+                    resolve(result);
+                }
+            });
+        });
+    }
+
     return {
         /**
          * Sets the text condent of an element (or its \code{value} as
@@ -185,6 +208,34 @@ var shinylight = function () {
         makeTable: makeTable,
 
         /**
+         * Calls a server function as defined in the server's call to the
+         * \code{slServer} function.
+         *
+         * @param fn {string} The name of the R function to call.
+         * @param data {object} An object whose keys are the arguments
+         * to the function being called.
+         * @param plotElement {string|HTMLElement} If provided, the
+         * \code{<img>} element (or id of the element) that will receive the
+         * plot output (if any). The plot returned will be the size that this
+         * element already has, so ensure that it is styled in a way that it has
+         * the correct size even if no image (or an old image) has been set.
+         * @returns {Promise} Result object that might have a \code{plot}
+         * property (giving a string that would work as the \code{src}
+         * attribute of an \code{img} element, representing graphics
+         * drawn by the command) and a \code{data} property (giving
+         * the value returned by the command). If the promise resolves
+         * to an error, the argument to the error function is a string
+         * representing the cause of the error.
+         */
+        call: function (fn, data, plotElement) {
+            var params = {};
+            forEach(data, function(k,v) {
+                params[k] = v;
+            });
+            return callServer(fn, params, plotElement);
+        },
+
+        /**
          * Runs an R function.
          *
          * The R side must be running the slRunRServer function.
@@ -206,30 +257,11 @@ var shinylight = function () {
          * representing the cause of the error.
          */
         runR: function (rCommand, data, plotElement) {
-            return new Promise(function (resolve, errorFn) {
-                plotElement = getElement(plotElement);
-                var params = {
-                    Rcommand: rCommand,
-                    data: data,
-                };
-                if (plotElement) {
-                    params['rrpc.resultformat'] = {
-                        type: 'png',
-                        width: plotElement.clientWidth,
-                        height: plotElement.clientHeight
-                    };
-                }
-                rrpc.call('runR', params, function (result, error) {
-                    if (error) {
-                        errorFn(error);
-                    } else {
-                        if (plotElement) {
-                            setPlot(plotElement, result);
-                        }
-                        resolve(result);
-                    }
-                });
-            });
+            var params = {
+                Rcommand: rCommand,
+                data: data,
+            };
+            return callServer('runR', params, plotElement);
         }
     }
 }();
