@@ -133,6 +133,13 @@ var shinylight = function () {
 
     return {
         /**
+         * Call this before calling any other ShinyLight function.
+         */
+        initialize: function() {
+            rrpc.initialize();
+        },
+
+        /**
          * Sets the text condent of an element (or its \code{value} as
          * appropriate).
          *
