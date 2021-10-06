@@ -201,8 +201,7 @@ describe('shinylight framework', function() {
         await switchFunction(driver, 'test2');
         await clickCalculate(driver);
         await driver.wait(until.elementLocated(By.css('#output-tab-error.active')));
-        const error = await driver.findElement(By.css('#output-error'));
-        const text = await error.getText();
+        const text = await driver.findElement(By.css('#output-error')).getText();
         assert.strictEqual(text, 'This does not work');
     });
 
@@ -432,7 +431,7 @@ describe('minimal shinylight', function() {
         this.timeout(10000);
         await typeIn(driver, 'headers_input', 'one,two');
         await clickId(driver, 'headers_button');
-        await typeIn(driver, 'command_param', 'plot(x=c(1,2,3), y=c(3,2,1), pch=22, bg="#fff000")');
+        await typeIn(driver, 'command_param', 'plot(x=c(1,2,3), y=c(3,2,1), pch=22, bg="#ffff00")');
         await clickId(driver, 'plot_button');
         let png = null;
         let axes = null;
@@ -523,9 +522,8 @@ async function setValue(driver, id, text) {
 
 async function assertElementText(driver, by, text) {
     await driver.wait(async function() {
-        const e = await driver.findElement(by);
         try {
-            const t = await e.getText();
+            const t = await driver.findElement(by).getText();
             return text === t.trim();
         } catch {
             return false;
@@ -577,16 +575,18 @@ async function assertOutputCells(driver, r, c, rowCount, columnCount, expectedCe
 
 async function assertOutputHeaders(driver, expected) {
     for (let i = 0; i !== expected.length; ++i) {
-        const th = await driver.findElement(By.css(
+        const t = await driver.findElement(By.css(
             `#output-table thead tr th:nth-child(${i+2})`
-        ));
-        assert.strictEqual(await th.getText(), expected[i]);
+        )).getText();
+        assert.strictEqual(t, expected[i]);
     }
 }
 
 async function outputHeaderIs(driver, index, expected) {
-    const th = await driver.findElement(By.css(`#output-table thead tr th:nth-child(${index+2})`));
-    return expected === await th.getText();
+    const t = await driver.findElement(
+        By.css(`#output-table thead tr th:nth-child(${index+2})`)
+    ).getText();
+    return expected === t;
 }
 
 async function assertParamIs(driver, id, value) {
