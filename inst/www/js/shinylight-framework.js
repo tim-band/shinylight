@@ -106,7 +106,7 @@ function shinylightFrameworkStart() {
         width: imgSize.width,
         height: imgSize.height
       }
-    }, function(result, params) {
+    }, function(result, params, fn) {
       var data = {};
       if ('data' in result) {
         data.table = result.data;
@@ -116,6 +116,7 @@ function shinylightFrameworkStart() {
         data.plot = plot;
       }
       data.debug = prettyJson({
+        fn: fn,
         input: params,
         output: result
       });
@@ -199,7 +200,7 @@ function shinylightFrameworkStart() {
           debug: prettyJson({ input: params })
         });
       } else if (result) {
-        callback(result, params);
+        callback(result, params, p.fn);
       }
     });
   };
@@ -551,10 +552,8 @@ function shinylightFrameworkStart() {
     oTable.classList.add('data-entry-grid');
     oTable.setAttribute('style', 'width: 100%; height: 100%;');
     oTable.setData = function(data) {
-      var t = shinylight.makeTable(data);
-      var h = t.headers;
-      h.push('');
-      outputTable.init(h, t.rows);
+      var t = shinylight.makeTable(data, 1);
+      outputTable.init(t.headers, t.rows);
     };
     oTable.hide = function() {
       oTable.style.display = 'none';

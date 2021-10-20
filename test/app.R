@@ -13,6 +13,14 @@ test2 <- function(x, y, c1, factor, offset, col) {
   stop("This does not work")
 }
 
+test3 <- function(c1, c2) {
+  r <- list()
+  for (i in 1:length(c1)) {
+    r[[i]] <- c(c1[[i]], c2[[i]])
+  }
+  r
+}
+
 functions <- list(
   test1=list(
     params=list(
@@ -30,6 +38,12 @@ functions <- list(
       c1="lengths"
     ),
     optiongroups=c("adjust", "color")
+  ),
+  test3=list(
+    params=list(
+      c1="lengths",
+      c2="weights"
+    )
   )
 )
 
@@ -100,6 +114,7 @@ testServer <- function(port=NULL) {
     interface=list(
       test1=test1,
       test2=test2,
+      test3=test3,
       getSchema=function() {
         list(functions=functions, params=params, types=types,
           data=examples, optiongroups=optiongroups)

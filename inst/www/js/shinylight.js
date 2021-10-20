@@ -83,7 +83,10 @@ var shinylight = function () {
                     });
                     table.push(tableRow);
                 });
-                return { headers: headers, rows: table };
+                return {
+                    headers: headers.concat(extraColumns),
+                    rows: table
+                };
             }
             // array of scalars was returned
             return {
@@ -96,7 +99,10 @@ var shinylight = function () {
         forEach(data, function (k, v) {
             appendColumns(headers, table, k, v);
         });
-        return { headers: headers.concat(extraColumns), rows: table };
+        return {
+            headers: headers.concat(extraColumns),
+            rows: table
+        };
     }
 
     function setElementText(elementOrId, text) {

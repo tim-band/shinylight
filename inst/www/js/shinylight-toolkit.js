@@ -805,11 +805,11 @@ var toolkit = function() {
     var div = document.createElement('div');
     div.className = 'static-text';
     makeLabel(labelTranslations, div);
-    var static = document.createElement(type);
-    div.appendChild(static);
+    var element = document.createElement(type);
+    div.appendChild(element);
     setShowHide(div);
     div.setData = function(data) {
-      static.textContent = data;
+      element.textContent = data;
     };
     return div;
   }

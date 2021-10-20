@@ -6,10 +6,10 @@
         "test": "mocha test"
     },
     "devDependencies": {
+        "babel-cli": "^6.26.0",
+        "jsdoc": "^3.6.7",
         "mocha": "^7.1.1",
+        "pngjs": "^6.0.0",
         "selenium-webdriver": "^4.0.0-alpha.7"
-    },
-    "dependencies": {
-        "pngjs": "^6.0.0"
     }
 }

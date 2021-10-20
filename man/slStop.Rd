@@ -7,7 +7,8 @@
 slStop(server = NULL)
 }
 \arguments{
-\item{server}{The server (returned by \code{\link{shinylight::slServer()}})
+\item{server}{The server (returned by \code{\link{shinylight::slServer()}}
+or \code{\link{shinylight:slRunRServer}})
 to stop. If not supplied all servers will be stopped.}
 }
 \description{
