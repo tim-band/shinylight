@@ -140,9 +140,13 @@ var shinylight = function () {
     return {
         /**
          * Call this before calling any other ShinyLight function.
+         * Returns a promise that resolves (to nothing) when the
+         * connection is ready.
          */
         initialize: function() {
-            rrpc.initialize();
+            return new Promise((resolve, reject) => {
+                rrpc.initialize(() => resolve(), error => reject(error));
+            });
         },
 
         /**
