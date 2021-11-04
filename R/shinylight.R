@@ -1,3 +1,37 @@
+globals <- new.env(parent=emptyenv())
+
+#' Sends a progress update to the client.
+#'
+#' During a slow remote procedure call, call this to inform the client of progress.
+#' @param numerator The progress, out of [denominator]
+#' @param denominator What the progress is out of. You could use this for the
+#' number of known items to be completed so that each call increases either
+#' the numerator (for more items done) and/or the denominator (for more items
+#' discovered that need to be done). However, it is not necessary to do this, you
+#' can reduce the numerator if you want.
+#' @export
+sendProgress <- function(numerator, denominator=1) {
+  globals$ws$send(jsonlite::toJSON(list(
+    type="progress",
+    id=globals$id,
+    numerator=numerator,
+    denominator=denominator
+  )))
+}
+
+#' Sends informational text to the client.
+#'
+#' During a slow remote procedure call, call this to inform the client of progress.
+#' @param text The text to send
+#' @export
+sendInfoText <- function(text) {
+  globals$ws$send(jsonlite::toJSON(list(
+    type="info",
+    id=globals$id,
+    text=text
+  )))
+}
+
 rrpc <- function(interface) { function(ws) {
   ws$onMessage(function(binary, message) {
     df <- jsonlite::fromJSON(message);
@@ -16,6 +50,8 @@ rrpc <- function(interface) { function(ws) {
       envelope$error <- "no such method"
       envelope$result <- NULL
     } else {
+      globals$ws <- ws
+      globals$id <- df$id
       r <- tryCatch(
         {
           if ("rrpc.resultformat" %in% rnames) {
@@ -40,7 +76,7 @@ rrpc <- function(interface) { function(ws) {
       envelope$result <- r$result
       envelope$error <- r$error
     }
-    ws$send(jsonlite::toJSON(envelope, force=TRUE))
+    ws$send(jsonlite::toJSON(envelope, force=TRUE, digits=NA))
   })
 }}
 
@@ -146,12 +182,18 @@ validateAndEncodePlotAs <- function(format, plotFn) {
   if (!is.list(format)) {
     list(result=NULL, error="rrpc.resultformat specified but not as {type=[,height=,width=]}")
   } else {
-    valid <- c('pdf', 'png', 'csv')
+    valid <- c('pdf', 'png', 'svg', 'csv')
     if (format$type %in% valid) {
       r <- encodePlotAs(format, plotFn)
       list(result=r, error=NULL)
     } else {
-      list(result=NULL, error="rrpc.resultformat type should be 'png', 'pdf' or 'csv")
+      validCount <- length(valid)
+      errorText <- paste(
+        "rrpc.resultformat type should be",
+        paste(valid[1:validCount-1]),
+        "or", valid[validCount]
+      )
+      list(result=NULL, error=errorText)
     }
   }
 }
@@ -178,6 +220,9 @@ encodePlotAs <- function(format, plotFn) {
     downloadCsv(plotFn())
   } else if (format$type == "png") {
     encodePlot(grDevices::png, "image/png",
+        format$width, format$height, plotFn)
+  } else if (format$type == "svg") {
+    encodePlot(grDevices::svg, "image/svg+xml",
         format$width, format$height, plotFn)
   } else if (format$type == "pdf") {
     encodePlot(grDevices::pdf, "application/pdf",
