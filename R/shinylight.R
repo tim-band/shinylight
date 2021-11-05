@@ -90,7 +90,12 @@ rrpc <- function(interface) { function(ws) {
 #' @param root Root of the app on the server (with trailing slash)
 #' @return The server object, can be passed to [slStop]
 #' @export
-rrpcServer <- function(interface, host='0.0.0.0', port=NULL, appDirs=NULL, root="/") {
+rrpcServer <- function(
+    interface,
+    host='0.0.0.0',
+    port=NULL,
+    appDirs=NULL,
+    root="/") {
   paths <- list()
   paths[[paste0(root, "lang")]] <- httpuv::excludeStaticPath()
   existingFiles <- list()
@@ -120,7 +125,9 @@ rrpcServer <- function(interface, host='0.0.0.0', port=NULL, appDirs=NULL, root=
     path <- sub("^/lang/", paste0("/locales/", lang, "/"), req$PATH_INFO)
     list(
       status=307L,
-      headers=list("Location"=paste0(req$rook.url_scheme, "://", host, req$HTTP_SCRIPT_NAME, path)),
+      headers=list("Location"=paste0(
+        req$rook.url_scheme, "://", host, req$HTTP_SCRIPT_NAME, path
+      )),
       body=""
     )
   }
@@ -180,7 +187,10 @@ encodePlot <- function(device, mimeType, width, height, plotFn) {
 
 validateAndEncodePlotAs <- function(format, plotFn) {
   if (!is.list(format)) {
-    list(result=NULL, error="rrpc.resultformat specified but not as {type=[,height=,width=]}")
+    list(
+      result=NULL,
+      error="rrpc.resultformat specified but not as {type=[,height=,width=]}"
+    )
   } else {
     valid <- c('pdf', 'png', 'svg', 'csv')
     if (format$type %in% valid) {
@@ -273,7 +283,11 @@ sanitizeCommand <- function(command, symbolList, callback) {
     failures <- nameCheck(com, symbolList)
     if (0 < length(failures)) {
         txt <- paste(failures, collapse=", ")
-        stop(paste0("non-whitelisted names used: ", txt), call.=FALSE, domain=NA)
+        stop(
+          paste0("non-whitelisted names used: ", txt),
+          call.=FALSE,
+          domain=NA
+        )
     }
     callback(com)
 }
@@ -338,7 +352,12 @@ slStop <- function(server=NULL) {
 #' This is useful when called from RScript, to keep
 #' @return server object, unless daemonize is TRUE.
 #' @export
-slServer <- function(interface, appDir=NULL, host='0.0.0.0', port=NULL, daemonize=FALSE) {
+slServer <- function(
+    interface,
+    appDir=NULL,
+    host='0.0.0.0',
+    port=NULL,
+    daemonize=FALSE) {
   slDir <- system.file("www", package = "shinylight")
   if (is.null(appDir)) {
     appDirList <- list(slDir)
@@ -376,7 +395,12 @@ slServer <- function(interface, appDir=NULL, host='0.0.0.0', port=NULL, daemoniz
 #' This is useful when called from RScript, to keep
 #' @return server object, unless daemonize is TRUE.
 #' @export
-slRunRServer <- function(permittedSymbols, appDir=NULL, host='0.0.0.0', port=NULL, daemonize=FALSE) {
+slRunRServer <- function(
+    permittedSymbols,
+    appDir=NULL,
+    host='0.0.0.0',
+    port=NULL,
+    daemonize=FALSE) {
   slServer(host=host, port=port, appDir=appDir, daemonize=daemonize,
     interface=list(
       runR=shinylight::runR(permittedSymbols)

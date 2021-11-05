@@ -289,6 +289,22 @@ describe('shinylight framework', function() {
         ]);
     });
 
+    it('returns accurate data frames', async function() {
+        this.timeout(2000);
+        const result = await executeRrpc(driver,
+            "data.frame(sum=data$two+data$one,diff=data$two-data$one)", {
+            data: {
+                one: [1.00000012],
+                two: [10.00000027]
+            }
+        });
+        assert.strictEqual(result.error, null);
+        assert.deepStrictEqual(result.result.plot, {});
+        assert.deepStrictEqual(result.result.data, [
+            { sum: 11.00000039, diff: 9.00000015 }
+        ]);
+    });
+
     it('Does not allow R code to be run that includes forbidden symbols', async function() {
         this.timeout(2000);
         const result = await executeRrpc(driver, "eval('2+2')");
@@ -375,6 +391,27 @@ describe('freeform shinylight', function() {
             floor((axes.bottomTick + axes.topTick)/2),
         )); // 2,2
         assert(isPoint(png, 'Y', axes.rightTick, axes.bottomTick)); // 3,3
+    });
+
+    it('receives progress and info reports', async function() {
+        this.timeout(10000);
+        await switchFunction(driver, 'test3');
+        await clickId(driver, 'button-plot');
+        const expectedInfos = [
+            'progress: 0%',
+            'first information',
+            'progress: 50%',
+            'second thing',
+            'progress: 100%'
+        ];
+        const errorElement = await driver.findElement(By.id('error'));
+        for (let i in expectedInfos) {
+            const e = expectedInfos[i];
+            await driver.wait(async function() {
+                const t = await errorElement.getAttribute('value');
+                return t === e;
+            });
+        }
     });
 });
 

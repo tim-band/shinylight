@@ -8,8 +8,8 @@
 }
 img#plot {
     display: absolute;
-    width: 400px;
-    height: 600px;
+    width: 300px;
+    height: 400px;
 }
 </style>
 <link rel="stylesheet" href="css/dataentrygrid.css">
@@ -30,10 +30,10 @@ function start() {
     rrpc.initialize();
     var controlsDiv = document.getElementById('controls');
     functionSelector = toolkit.paramSelector(
-        'function',
+        'function-selector',
         controlsDiv,
         { fn: { name: 'Function', help: 'Which function to call' } },
-        [ 'test1', 'test2' ],
+        [ 'test1', 'test2', 'test3' ],
         {},
         'test1'
     );
@@ -63,8 +63,20 @@ function assembleData(grid) {
 function plot(callback) {
     var data = assembleData(inputTable);
     data.pch = paramPch.getData();
+    var extra = {
+        'info': function(text) {
+            shinylight.setElementText('error', text);
+        },
+        'progress': function(numerator, denominator) {
+            const pc = Math.ceil(numerator * 100 / denominator);
+            shinylight.setElementText('error', 'progress: ' + pc + '%');
+        }
+    };
+    if (document.getElementById('svg').checked) {
+        extra.imgType = 'svg';
+    }
     shinylight.call(
-        functionSelector.getData(), data, 'plot'
+        functionSelector.getData(), data, 'plot', extra
     ).then(result => {
         shinylight.setGridResult(outputTable, result);
         callback();
@@ -80,6 +92,7 @@ function plot(callback) {
 </header>
 <body onload="start()">
     <div id="controls">
+        <label for="svg">SVG plot</label><input type="checkbox" id="svg">
     </div>
     <table id="input-table">
     </table> 

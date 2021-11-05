@@ -7,8 +7,24 @@ test1 <- function(x, y, pch) {
   df
 }
 
-test2 <- function(x, y, c1, factor, offset, col) {
+test2 <- function(x, y, c1, factor, offset, pch) {
   stop("This does not work")
+}
+
+test3 <- function(x, y, pch) {
+  shinylight::sendProgress(0, 100);
+  Sys.sleep(0.3);
+  shinylight::sendInfoText("first information");
+  Sys.sleep(0.3);
+  shinylight::sendProgress(50, 100);
+  Sys.sleep(0.3);
+  shinylight::sendInfoText("second thing");
+  Sys.sleep(0.3);
+  shinylight::sendProgress(100, 100);
+  data.frame(
+    sum = x+y,
+    diff = y-x
+  )
 }
 
 symbolList <- c('<-', 'c', 'plot', 'data.frame', '+', '-', '*', '/', 'x', 'y', 'data', '$', 'one', 'two')
@@ -18,7 +34,8 @@ testServer <- function(port=NULL) {
   shinylight::slServer(host='0.0.0.0', port=port, appDir=appDir, daemonize=TRUE,
     interface=list(
       test1=test1,
-      test2=test2
+      test2=test2,
+      test3=test3
     )
   )
 }

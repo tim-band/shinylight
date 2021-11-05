@@ -694,6 +694,9 @@ var toolkit = function() {
         buttonText.textContent = optionNames[selectedOption];
       }
     };
+    if (typeof(callback) !== 'function') {
+      callback = function() {};
+    }
     box.setData = function(value) {
       setSelected(value);
       callback(value);

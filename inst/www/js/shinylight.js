@@ -114,15 +114,36 @@ var shinylight = function () {
         }
     }
 
-    function callServer(fn, params, plotElement) {
+    function copyValue(to, from, key) {
+        if (typeof(from) === 'object' && key in from) {
+            to[key] = from[key];
+        }
+    }
+
+    function callServer(fn, params, plotElement, extra) {
+        if (typeof(extra) !== 'object') {
+            extra = {};
+        }
+        const infoCallbacks = {};
+        copyValue(infoCallbacks, extra, 'progress');
+        copyValue(infoCallbacks, extra, 'info');
         return new Promise(function (resolve, errorFn) {
             plotElement = getElement(plotElement);
             if (plotElement) {
-                params['rrpc.resultformat'] = {
-                    type: 'png',
-                    width: plotElement.clientWidth,
-                    height: plotElement.clientHeight
-                };
+                if ('imgType' in extra && extra.imgType === 'svg') {
+                    const dpi = 96 * window.devicePixelRatio;
+                    params['rrpc.resultformat'] = {
+                        type: 'svg',
+                        width: plotElement.clientWidth / dpi,
+                        height: plotElement.clientHeight / dpi
+                    };
+                } else {
+                    params['rrpc.resultformat'] = {
+                        type: 'png',
+                        width: plotElement.clientWidth,
+                        height: plotElement.clientHeight
+                    };
+                }
             }
             rrpc.call(fn, params, function (result, error) {
                 if (error) {
@@ -133,7 +154,7 @@ var shinylight = function () {
                     }
                     resolve(result);
                 }
-            });
+            }, infoCallbacks);
         });
     }
 
@@ -180,7 +201,7 @@ var shinylight = function () {
          * Normally you do not need to call this because to get
          * \code{\link{shinylight}} to produce a plot you need to set the
          * \code{plotElement} argument, and doing so will cause this
-         * element to receive the plot automativally.
+         * element to receive the plot automatically.
          *
          * @param {string|HTMLImageElement} elementOrId The
          * \code{<img>} element (or its id) that will receive the image.
@@ -194,7 +215,7 @@ var shinylight = function () {
          * Sets a \code{dataentrygrid} object to the result of
          * \code{\link{runR}}, if appropriate.
          * 
-         * @param grid {DataEntryGrid} Table that recieves the result
+         * @param grid {DataEntryGrid} Table that receives the result
          * @param result {object} Return value promised by \code{\link{runR}}
          */
         setGridResult: function (grid, result) {
@@ -236,6 +257,11 @@ var shinylight = function () {
          * plot output (if any). The plot returned will be the size that this
          * element already has, so ensure that it is styled in a way that it has
          * the correct size even if no image (or an old image) has been set.
+         * @param extra {object={}} An object whose keys can be:
+         * "imgType": Type of image required, "png" (default) or "svg";
+         * "info": Funtion to be called if the R function [sendInfoText] is
+         * called; "progress": Function to be called if the R function
+         * [sendProgress] is called.
          * @returns {Promise} Result object that might have a \code{plot}
          * property (giving a string that would work as the \code{src}
          * attribute of an \code{img} element, representing graphics
@@ -244,12 +270,12 @@ var shinylight = function () {
          * to an error, the argument to the error function is a string
          * representing the cause of the error.
          */
-        call: function (fn, data, plotElement) {
+        call: function (fn, data, plotElement, extra) {
             var params = {};
             forEach(data, function(k,v) {
                 params[k] = v;
             });
-            return callServer(fn, params, plotElement);
+            return callServer(fn, params, plotElement, extra);
         },
 
         /**
@@ -265,6 +291,11 @@ var shinylight = function () {
          * plot output (if any). The plot returned will be the size that this
          * element already has, so ensure that it is styled in a way that it has
          * the correct size even if no image (or an old image) has been set.
+         * @param extra {object={}} An object whose keys can be:
+         * "imgType": Type of image required, "png" (default) or "svg";
+         * "info": Funtion to be called if the R function [sendInfoText] is
+         * called; "progress": Function to be called if the R function
+         * [sendProgress] is called.
          * @returns {Promise} Result object that might have a \code{plot}
          * property (giving a string that would work as the \code{src}
          * attribute of an \code{img} element, representing graphics
@@ -273,12 +304,12 @@ var shinylight = function () {
          * to an error, the argument to the error function is a string
          * representing the cause of the error.
          */
-        runR: function (rCommand, data, plotElement) {
+        runR: function (rCommand, data, plotElement, extra) {
             var params = {
                 Rcommand: rCommand,
                 data: data,
             };
-            return callServer('runR', params, plotElement);
+            return callServer('runR', params, plotElement, extra);
         }
     }
 }();
