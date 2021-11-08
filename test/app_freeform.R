@@ -27,8 +27,6 @@ test3 <- function(x, y, pch) {
   )
 }
 
-symbolList <- c('<-', 'c', 'plot', 'data.frame', '+', '-', '*', '/', 'x', 'y', 'data', '$', 'one', 'two')
-
 testServer <- function(port=NULL) {
   appDir <- R.utils::getAbsolutePath("test/www_freeform")
   shinylight::slServer(host='0.0.0.0', port=port, appDir=appDir, daemonize=TRUE,
