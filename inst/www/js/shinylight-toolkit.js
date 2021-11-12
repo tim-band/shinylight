@@ -8,10 +8,6 @@ var toolkit = function() {
     }
   }
 
-  // deref(o, [a,b,c], d) is a safe way of doing o[a][b][c].
-  // If that path does not exist, d is returned. If d is not
-  // supplied, null is returned. Any undefined values in path are
-  // ignored.
   function deref(object, path, defaultValue) {
     for (var i = 0; i !== path.length; ++i) {
       var p = path[i];
@@ -593,22 +589,6 @@ var toolkit = function() {
     return table;
   }
 
-  // Creates a custom selection box
-  // id: when getData or setData is called on the container, the value at
-  // key 'id' refers to this selector.
-  // container: HTML element to add the box to. If the container came from
-  // optionsPage() the new selection box will be formatted as a table row.
-  // labelTranslations: A dictionary with two optional keys; 'name' gives the
-  // label to display and 'help' gives HTML help text. 'help' has no effect
-  // unless 'name' is also present.
-  // values: An array of the IDs of the options in the selection.
-  // valueTranslations: A dictionary whose keys are the IDs of the options in the
-  // selection, the values are more dictionaries. These dictionaries have
-  // two optional keys; 'name' (giving the name to display for this option)
-  // and 'help' (giving tooltip HTML text).
-  // initial: ID of the option to start selecting (optional)
-  // callback: The (nullary) function to call when the value changes (optional)
-  // returns element you can add to the DOM
   function paramSelector(id, container, labelTranslations, values,
       valueTranslations, initial, callback) {
     var box = typeof(container.makeSubElement) === 'function'?
@@ -780,12 +760,6 @@ var toolkit = function() {
     };
   }
 
-  // returned object has a getSize() method, returning an
-  // object with width and height members. This is the width
-  // and height set by reposition(), not the actual on-screen
-  // width and height, if that is different for some reason. In
-  // other words, it returns the width and height the image
-  // "should" have.
   function image(updateSizeFunction) {
     var img = document.createElement('img');
     img.style.display = 'block';
@@ -886,8 +860,6 @@ var toolkit = function() {
     return b;
   }
 
-  // returns a function that calls fn immediately, then calls the callback
-  // function after 200ms
   function withTimeout(fn) {
     return function(callback) {
       fn();
@@ -895,12 +867,6 @@ var toolkit = function() {
     };
   }
 
-  // fn should take a single parameter of a function to call on completion
-  // of the work (which will be used to remove the button's 'click'
-  // animation). If the function want to use as a callback does not take
-  // an argument, you can wrap it in withTimeout(). You might also want
-  // to use withTimeout() if your function returns too quickly, otherwise
-  // the user might not see the button click.
   function button(id, fn, translations) {
     var b = makeLabel(translations, null, id);
     b.classList.add('button');
@@ -916,8 +882,6 @@ var toolkit = function() {
     return b;
   }
 
-  // fn takes two parameters, the File object uploaded and
-  // a callback function to be called when the operation completes
   function loadFileButton(id, fn, translations) {
     var b = makeLabel(translations, null, id);
     b.classList.add('button');
@@ -1005,25 +969,6 @@ var toolkit = function() {
       : typeof(defaultFn) === 'function'? defaultFn : noop;
   }
 
-  // pageElements: dictionary of pageIds to elements (that will be
-  // added to the return value of this function). These elements each need
-  // methods show, hide and setData (like the ones returned by
-  // image, dataTable, stack, staticText, optionsPage) if they are to
-  // be output pages. Only show and hide if they are to be available
-  // permanently and not be set through the setData call.
-  // labelTranslations: dictionary of pageIds to objects with keys
-  // name (for the label text) and help (for tooltip help HTML)
-  // tabIdPrefix: If you want ids for your tab elements, set this and
-  // the id will be set to tabIdPrefix + pageId
-  // Returns an element that has the tabs and the tabs that switch
-  // between them. The active tab has the "active" class.
-  // It has the following extra methods:
-  // setData(data): data is a dictionary with keys matching the pageIds.
-  // The values are passed to the setData() functions of the corresponding
-  // elements. Pages without any data (and their corresponding radio
-  // buttons) are summarily disabled. Pages with data are enabled.
-  // reposition(): sets each page to the same dimensions as the container
-  // and calls each page's reposition() method (if it exists)
   function pages(pageElements, labelTranslations, tabIdPrefix) {
     var tabs = {};
     // a deep copy of pageElements, or wrapped versions as appropriate
@@ -1138,33 +1083,428 @@ var toolkit = function() {
   }
 
   return {
+    /**
+     * Calls a function for each member of an array or object.
+     * 
+     * @param {object} a Object or array to be iterated through.
+     * @param {function} f Function to call with two arguments: the key
+     * of the element (or index in the case of an array) and the value.
+     */
     forEach: forEach,
+    /**
+     * Dereferences an object or array through multiple indices.
+     * 
+     * \code {deref(o, [a,b,c], d)} is a safe way of doing
+     * \code {o[a][b][c]}. If that path does not exist, d is returned.
+     * If d is not supplied, null is returned. Any undefined values in
+     * path are ignored.
+     * @param {object} object The object to be dereferenced.
+     * @param {Array} path The series of indices to be applied.
+     * @param {any} defaultValue The default value to be returned if
+     * the path cannot be followed to the end.
+     * @returns {any} Object dereferenced, \code {defaultValue}, or null.
+     */
     deref: deref,
+    /**
+     * Transforms a function that should not be called too often into
+     * a function that can be called as often as you like.
+     * 
+     * The returned function can be called as often as you like with
+     * whatever arguments you like. If it is called again within
+     * \code{ticks} ticks (a tick is 100ms), this call is ignored. If
+     * it is not called again within this time, the arguments are passed
+     * on to the delegate function.
+     * @param {int} ticks Duration (x 100ms) to wait until calling the
+     * delgate function.
+     * @param {function} f Delegate function to be called
+     * \code{ticks} ticks after the last call to the retuned function.
+     * @return Function that can be called often, resulting in fewer
+     * calls to the delegate function \code {f}.
+     */
     whenQuiet: whenQuiet,
+    /**
+     * Replaces the \code{<main>} tag in the document with this element.
+     * 
+     * The element will have its \code{resize} event wired up. If \code{el}
+     * is a Toolkit widget, it will be resized correctly when the window is
+     * resized.
+     * @param {HTMLElement} el The element to set as \code{<main>}
+     */
     setAsBody: setAsBody,
+    /**
+     * Divides a Toolkit widget with a draggable vertical divider.
+     *
+     * All three parameters should be Toolkit widgets to ensure resizing works
+     * correctly.
+     * @param {HTMLElement} container The container to divide.
+     * @param {HTMLElement} left The element to put on the left of the divider.
+     * @param {HTMLElement} right The element to put on the right of the divider.
+     */
     verticalDivide: vDivide,
+    /**
+     * Returns a Toolkit widget consisting of a header and a body.
+     * 
+     * Both arguments should be Toolkit widgets for resizing to work properly.
+     * @param {HTMLElement} hdr The header element.
+     * @param {HTMLElement} main The body element.
+     * @returns {HTMLElement} The toolkit widget containing the header and body.
+     */
     header: header,
+    /**
+     * Returns a Toolkit widget consisting of a body and a footer.
+     * 
+     * Both arguments should be Toolkit widgets for resizing to work properly.
+     * @param {HTMLElement} ftr The footer element.
+     * @param {HTMLElement} main The body element.
+     * @returns {HTMLElement} The toolkit widget containing the footer and body.
+     */
     footer: footer,
+    /**
+     * Returns a Toolkit widget for displaying controls horizontally.
+     *
+     * Returns a Toolkit widget with a \code{makeSubElement} method that adds
+     * elements horizontally.
+     * @param {Array.<HTMLElement>} elements Initial array of elements to be added.
+     * @param {string} className HTML class for the returned banner.
+     */
     banner: banner,
+    /**
+     * Returns a Toolkit widget consisting of a left side bar and a body.
+     * 
+     * Both arguments should be Toolkit widgets for resizing to work properly.
+     * @param {HTMLElement} bar The side bar element.
+     * @param {HTMLElement} main The body element.
+     * @returns {HTMLElement} The toolkit widget containing the side bar
+     * and body.
+     * You can set the values for this widgets within this widget by
+     * calling its \code{setData} method with an object whose keys are the
+     * IDs of the contained widgets and whose values are the values to pass
+     * on to thier \code{setData} methods. You can retrieve the values by
+     * calling its \code{getData} method, returning an object like you would
+     * call \code{setData} with.
+     */
     leftSideBar: leftSideBar,
+    /**
+     * Returns a Toolkit widget consisting of a right side bar and a body.
+     * 
+     * Both arguments should be Toolkit widgets for resizing to work properly.
+     * @param {HTMLElement} bar The side bar element.
+     * @param {HTMLElement} main The body element.
+     * @returns {HTMLElement} The toolkit widget containing the side bar and body.
+     */
     rightSideBar: rightSideBar,
+    /**
+     * Returns a Toolkit widget just containing one element.
+     * 
+     * This element gains scrollbars if it is too large for this returned container.
+     * @param {HTMLElement} element The element to be wrapped
+     * @returns {HTMLElement} Toolkit widget containing the passed element
+     */
     scrollingWrapper: scrollingWrapper,
+    /**
+     * Returns a Toolkit widget just containing one element.
+     * 
+     * This element does not gain scrollbars if it is too large for this returned
+     * container.
+     * @param {HTMLElement} element The element to be wrapped
+     * @param {int} verticalPadding The number of extra pixels above the element's
+     * height to use as the returned widget's default height.
+     * @param {int} horizontalPadding The number of extra pixels above the element's
+     * width to use as the returned widget's default width.
+     * @returns {HTMLElement} Toolkit widget containing the passed element
+     * You can set the value for this widget by calling its \code{setData}
+     * method, and retrieve it by calling its \code{getData} method.
+     */
     nonScrollingWrapper: nonScrollingWrapper,
+    /**
+     * Returns a text input control.
+     * 
+     * Any text is permitted unless a \code{validate} function is supplied.
+     * @param {string} id: when \code{getData} or \code{setData} is
+     * called on the container, the value at \code{'id'} refers to this
+     * selector. The HTML id is set to \code{'param-' + id}.
+     * @param {HTMLElement} container Optional element to put the control in
+     * @param {object} translations Optional mapping: \code{translations.id}
+     * is the name of the control to be displayed and \code{translations.help}
+     * is help text to be displayed if the user hovers over the label
+     * @param {string} initial Optional initial value for the control
+     * @param {function} callback Optional function to be called whenever the
+     * input value changes
+     * @param {function} validate Optional function returning \code{true}
+     * if passed a value that this control should accept or \code{false}
+     * otherwise.
+     * @returns {HTMLElement} Text input control Toolkit widget
+     * You can set the value for this widget by calling its \code{setData}
+     * method, and retrieve it by calling its \code{getData} method.
+     */
     paramText: paramText,
+    /**
+     * Returns an integer input control.
+     * 
+     * Values outside the permitted range will gain the "invalid" class,
+     * but there is no other effect.
+     * @param {string} id: when \code{getData} or \code{setData} is
+     * called on the container, the value at \code{'id'} refers to this
+     * selector. The HTML id is set to \code{'param-' + id}.
+     * @param {HTMLElement} container Optional element to put the control in
+     * @param {object} translations Optional mapping: \code{translations.id}
+     * is the name of the control to be displayed and \code{translations.help}
+     * is help text to be displayed if the user hovers over the label
+     * @param {string} initial Optional initial value for the control
+     * @param {function} callback Optional function to be called whenever the
+     * input value changes
+     * @param {int} min Minimum permitted value (optional).
+     * @param {int} max Maximum permitted value (optional).
+     * @returns {HTMLElement} Text input control Toolkit widget
+     * You can set the value for this widget by calling its \code{setData}
+     * method, and retrieve it by calling its \code{getData} method.
+     */
     paramInteger: paramInteger,
+    /**
+     * Returns a floating point input control.
+     * 
+     * Values outside the permitted range will gain the "invalid" class,
+     * but there is no other effect.
+     * @param {string} id: when \code{getData} or \code{setData} is
+     * called on the container, the value at \code{'id'} refers to this
+     * selector. The HTML id is set to \code{'param-' + id}.
+     * @param {HTMLElement} container Optional element to put the control in
+     * @param {object} translations Optional mapping: \code{translations.id}
+     * is the name of the control to be displayed and \code{translations.help}
+     * is help text to be displayed if the user hovers over the label
+     * @param {string} initial Optional initial value for the control
+     * @param {function} callback Optional function to be called whenever the
+     * input value changes
+     * @param {float} min Minimum permitted value (optional).
+     * @param {float} max Maximum permitted value (optional).
+     * @returns {HTMLElement} Text input control Toolkit widget
+     * You can set the value for this widget by calling its \code{setData}
+     * method, and retrieve it by calling its \code{getData} method.
+     */
     paramFloat: paramFloat,
+    /**
+     * Returns a colour input control.
+     * 
+     * @param {string} id: when \code{getData} or \code{setData} is
+     * called on the container, the value at \code{'id'} refers to this
+     * selector. The HTML id is set to \code{'param-' + id}.
+     * @param {HTMLElement} container Optional element to put the control in
+     * @param {object} translations Optional mapping: \code{translations.id}
+     * is the name of the control to be displayed and \code{translations.help}
+     * is help text to be displayed if the user hovers over the label
+     * @param {string} initial Optional initial value for the control
+     * @param {function} callback Optional function to be called whenever the
+     * input value changes
+     * @returns {HTMLElement} Text input control Toolkit widget
+     * You can set the value for this widget by calling its \code{setData}
+     * method, and retrieve it by calling its \code{getData} method.
+     */
     paramColor: paramColor,
+    /**
+     * Returns a checkbox input control.
+     * 
+     * @param {string} id: when \code{getData} or \code{setData} is
+     * called on the container, the value at \code{'id'} refers to this
+     * selector. The HTML id is set to \code{'param-' + id}.
+     * @param {HTMLElement} container Optional element to put the control in
+     * @param {object} translations Optional mapping: \code{translations.id}
+     * is the name of the control to be displayed and \code{translations.help}
+     * is help text to be displayed if the user hovers over the label
+     * @param {string} initial Optional initial value for the control
+     * @param {function} callback Optional function to be called whenever the
+     * input value changes
+     * @returns {HTMLElement} Checkbox input control Toolkit widget
+     * You can set the value for this widget by calling its \code{setData}
+     * method, and retrieve it by calling its \code{getData} method.
+     */
     paramBoolean: paramBoolean,
+    /**
+     * Returns a custom selection box.
+     *
+     * This is different to a normal selection box because it allows
+     * tooltips on the items within the list.
+     * @param {string} id: when \code{getData} or \code{setData} is
+     * called on the container, the value at \code{'id'} refers to this
+     * selector. The HTML id is set to \code{'param-' + id}.
+     * @param {HTMLElement} container: HTML element to add the box to. If
+     * the container came from \code{optionsPage()} the new selection box
+     * will be formatted as a table row.
+     * @param {object} labelTranslations: A dictionary with two optional keys;
+     * 'name' gives the label to display and 'help' gives HTML help text.
+     * 'help' has no effect unless 'name' is also present.
+     * @param {Array.<int>} values: An array of the IDs of the options
+     * in the selection.
+     * @param {object} valueTranslations: A dictionary whose keys are the
+     * IDs of the options in the selection, the values are more dictionaries.
+     * These dictionaries have two optional keys; \code{'name'} (giving
+     * the name to display for this option) and \code{'help'} (giving tooltip
+     * HTML text).
+     * @param {string} initial: ID of the option to start selecting (optional)
+     * @param {function} callback: The (nullary) function to call when the
+     * value changes (optional)
+     * @returns {HTMLelement} The Toolkit widget selection box.
+     * You can set the value for this widget by calling its \code{setData}
+     * method, and retrieve it by calling its \code{getData} method.
+     */
     paramSelector: paramSelector,
+    /**
+     * Adds a group title to an [optionsPage].
+     * 
+     * @param {HTMLElement} container The container, preferably the
+     * return value from [optionsPage].
+     * @param {object} labelTranslations An object with two keys:
+     * \code{'name'} is the display text for this title,
+     * \code{'help'} (optional) is the tooltip text.
+     */
     groupTitle: groupTitle,
+    /**
+     * Returns a Toolkit widget for displaying controls vertically.
+     *
+     * Returns a Toolkit widget with a \code{makeSubElement} method that
+     * adds elements vertically. This differs from [stack] in that the labels
+     * will be aligned on the left and the controls will be aligned on the
+     * right. It would make a nice options page, for example.
+     * @returns A Toolkit widget for displaying elements vertically.
+     * You can set the values for this widgets within this widget by
+     * calling its \code{setData} method with an object whose keys are the
+     * IDs of the contained widgets and whose values are the values to pass
+     * on to thier \code{setData} methods. You can retrieve the values by
+     * calling its \code{getData} method, returning an object like you would
+     * call \code{setData} with.
+     */
     optionsPage: optionsPage,
+    /**
+     * An image toolkit widget.
+     *
+     * @param {function} updateSizeFunction Nullary function called when
+     * the object's size is changed.
+     * @returns {HTMLElement} Image element. It has a
+     * \code{getSize()} method, returning an object with width and height
+     * members. This is the width and height set by \code{reposition()},
+     * not the actual on-screen width and height, if that is different
+     * for some reason. In other words, it returns the width and height
+     * the image "should" have.
+     */
     image: image,
+    /**
+     * A static text toolkit widget.
+     *
+     * This control has a label and actual text content.
+     * @param {object} translations An object with keys \code{'name'}
+     * for the label displayed by the text and \code{'help'} for tooltop text.
+     * @returns {HTMLElement} The static text element. The text content
+     * can be set by calling its \code{setData()} function. This text can
+     * include HTML entities, so you might want to replace \code{&}
+     * with \code{&amp;} and \code{<} with \code{&lt;} if it is plain
+     * text.
+     */
     staticText: staticText,
-    preformattedText: preformattedText,
+    /**
+     * A static text toolkit widget in a preformatted style.
+     *
+     * This control has a label and actual text content.
+     * @param {object} translations An object with keys \code{'name'}
+     * for the label displayed by the text and \code{'help'} for tooltop text.
+     * @returns {HTMLElement} The static text element. The text content
+     * can be set by calling its \code{setData()} function with any plain
+     * text.
+     */
+     preformattedText: preformattedText,
+    /**
+     * Returns a Toolkit widget button.
+     *
+     * @param {string} id The HTML id of the button will be
+     * \code{'button-' + id}. It is also used in the interpretation of
+     * the \code{translations} argument.
+     * @param {function} fn Unary function that takes a single parameter
+     * of a nullary function. This function will be called on completion
+     * of the work (which will be used to remove the button's 'click'
+     * animation). If the function want to use as a callback does not take
+     * an argument, you can wrap it in [withTimeout]. You might also want
+     * to use [withTimeout] if your function returns too quickly, otherwise
+     * the user might not see the button click.
+     * @param {object} translations An object with a key \code{id}
+     * having a value that is an object having a key \code{'name'}
+     * with value the display name of the button, and optionally a key
+     * \code{'help'} with value of the tooltip text.
+     */
     button: button,
+    /**
+     * Returns a Toolkit widget button that uploads a file from the client.
+     * 
+     * @param {string} id The HTML id of the button will be
+     * \code{'button-' + id}. It is also used in the interpretation of
+     * the \code{translations} argument.
+     * @param {function} fn A binary callback function. Its two
+     * parameters are the File object uploaded and a (nullary)
+     * function that will be called when the operation completes.
+     * @param {object} translations An object with a key \code{id}
+     * having a value that is an object having a key \code{'name'}
+     * with value the display name of the button, and optionally a key
+     * \code{'help'} with value of the tooltip text.
+     */
     loadFileButton: loadFileButton,
+    /**
+     * Adds a fake callback argument to a nullary function.
+     * 
+     * Perhaps you have a nullary function that you want called
+     * when the user clicks a button, but the [button] function wants
+     * a unary function that has a completion callback so that the
+     * button knows when to pop back up again. In this situation
+     * you might wrap your function with a call to [withTimeout].
+     * @param {function} fn Nullary function to wrap.
+     * @returns {function} Unary function (taking one function as
+     * an argument) that simply calls \code{fn} immediately then
+     * calls its argument again after 200ms.
+     */
     withTimeout: withTimeout,
+    /**
+     * Returns a Toolkit widget for displaying controls vertically.
+     *
+     * Returns a Toolkit widget with a \code{makeSubElement} method that adds
+     * elements vertically.
+     * @param {Array.<HTMLElement>} elements Initial array of elements to be added.
+     * @returns A Toolkit widget for displaying elements vertically.
+     * You can set the values for this widgets within this widget by
+     * calling its \code{setData} method with an object whose keys are the
+     * IDs of the contained widgets and whose values are the values to pass
+     * on to thier \code{setData} methods. You can retrieve the values by
+     * calling its \code{getData} method, returning an object like you would
+     * call \code{setData} with.
+     */
     stack: stack,
+    /**
+     * Returns a Toolkit widget for displaying controls in tabbed pages.
+     * 
+     * Only one page will be visible at a time. The returned widget
+     * has \code{getData} and \code{setData} methods that take or
+     * return (respectively) an object with keys that are the IDs of the
+     * pages.
+     * @param {object} pageElements: dictionary of pageIds to elements
+     * (that will be added to the return value of this function). These
+     * elements each need methods \code{show}, \code{hide} and
+     * \code{setData} (like the ones returned by [image], [dataTable],
+     * [stack], [staticText], [optionsPage]; that is to say, Toolkit widgets)
+     * if they are to be output pages. Only \code{show} and \code{hide}
+     * if they are to be available permanently and not be set through the
+     * \code{setData} call.
+     * @param {object} labelTranslations dictionary of pageIds to objects
+     * with keys \code{name} (for the label text) and \code{help} (for
+     * tooltip help HTML)
+     * @param {string} tabIdPrefix If you want HTML IDs for your tab
+     * elements, set this and the ID will be set to
+     * \code{tabIdPrefix + pageId}.
+     * @returns {HTMLElement} A Toolkit widget that has the tabs and the
+     * tabs that switch between them. The active tab has the "active" class.
+     * It has the following extra methods: \code{setData(data)}: data is
+     * a dictionary with keys matching the pageIds. The values are passed
+     * to the \code{setData()} functions of the corresponding elements.
+     * Pages without any data (and their corresponding radio buttons) are
+     * summarily disabled. Pages with data are enabled.
+     * \code{reposition()}: sets each page to the same dimensions as the
+     * container and calls each page's \code{reposition()} method (if it
+     * exists).
+     */
     pages: pages,
   };
 }();

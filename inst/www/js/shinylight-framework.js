@@ -1,3 +1,126 @@
+/**
+ * Starts the Shinylight Framework, if you want to use it.
+ *
+ * The Shinylight Framework allows you to declare all your functions
+ * in R and have a nice-looking web front end for your code without
+ * having to write any JavaScript.
+ *
+ * You should never need to call this function yourself; if you do not
+ * provide your own \code{index.html}, the default Shinylight one
+ * will be used that will call this function on page load.
+ *
+ * Using the Shinylight Framework entails calling the [slServer]
+ * function with an argument
+ * \code{interface=list(getSchema=schema)}, where
+ * \code{schema} is defined in the following section.
+ * 
+ * \section The Schema
+ * 
+ * It is a list with the following members:
+ * \itemize{
+ * \item \code{functions}: a list of functions (keyed by their names),
+ * each of which is a list with the following members: \itemize{
+ *  \item \code{params}: a list of the main parameters the function
+ *   accepts. The keys are the parameter names and the values are
+ *   keys into the schema's \code{params} list.
+ *  \item \code{optiongroups}: a vector of keys into the schema's
+ *   \code{optiongroups} list giving other parameters to this function.
+ * }
+ * \item \code{params}: a list of the parameters the functions take,
+ *  each of which is a list with the following members: \itemize{
+ *  \item \code{type}: either a key into the schema's \code{types} list,
+ *   giving the type of this parameter or the values it can take, or one
+ *   of a set of standard types: \itemize{
+ *    \item \code{'b'}: Boolean
+ *    \item \code{'f'}: Floating point
+ *    \item \code{'u8'}: 8-bit unsigned integer
+ *    \item \code{'color'}: Colour
+ *    \item \code{'subheader'}: Vector of settings the user can choose
+ *     for each column using selectors in the subheader row. This is
+ *     usually used to select units (for example percent-by-weight versus
+ *     parts-per-million) for the columns.
+ *   }
+ *  \item \code{data}: a key into the schema's \code{data} list,
+ *   giving initial or example data for this parameter.
+ * }
+ * \item \code{types}: a list of types with keys referened from the
+ *  schema's \code{params} lists's \code{type} values. The values
+ *  are a list with the following members: \itemize{
+ *  \item \code{kind}: Mandatory; one of: \itemize{
+ *   \item \code{'enum'}: Enumeration type
+ *   \item \code{'column'}: A column from the input grid
+ *  }
+ *  \item \code{values}: A vector of permitted values (only if
+ *   \code{kind='enum'})
+ *  \item \code{factors}: Only if \code{kind='enum'} and this enum
+ *   is used as the unit type for some column; a vector of factors to
+ *   multiply column data by if the unit is changed by the user. Must
+ *   have the same number of elements as the \code{values}
+ *   vector. For every n, \code{factors[[n]]} of unit
+ *   \code{values[[n]]} must be equal. For example, if
+ *   \code{values=c('mm', 'cm', 'inch')} then \code{factors} could be
+ *   \code{c(25.4, 2.54, 1.0)}.
+ *  \item \code{subtype}: Only if \code{kind='column'}. The type of
+ *   data that can be entered into the column. Currenly only \code{'f'}
+ *   works well.
+ *  \item \code{unittype}: Optional and only if \code{kind='column'}.
+ *   The name of an enum type defining the units that the data in this
+ *   column can be expressed in.
+ * }
+ * \item \code{data}: A list of initial data with which table columns and
+ *  controls will be populated. Can be a single value or vector (or list)
+ *  as appropriate.
+ * \item \code{optiongroups}: A list of option groups. Each one is a set
+ *  of parameters that can be added as a block to functions that want
+ *  them. Each element is a list with the following keys: \itemize{
+ *  \item \code{type}: The same as for \code{param}'s \code{type}:
+ *   either a key into the schema's \code{types} list or one of the
+ *   standard types (\code{'b'}, \code{'u8'}, \code{'f'} or
+ *   \code{'color'}).
+ *  \item \code{initial}: The initial value for this option.
+ * }
+ * There is one special key in the \code{optiongroups} list; this is the
+ * \code{framework} key. This is reserved for options that apply to
+ * the framework itself, not to any of your functions. So far, the only
+ * option it has is \code{autorefresh=list(type="b", initial=FALSE)}.
+ * You can set its initial value to \code{TRUE} if you prefer. If you add
+ * this option, it controls whether the GUI has a "Calculate" button
+ * (\code{FALSE}) or whether the output should refresh a second or
+ * two after the user finishes changing parameters (\code{TRUE}).
+ * }
+ *
+ * \section Localization
+ *
+ * To display human-friendly text on the controls and to get tooltip
+ * help text, you need one or more localization files. These files
+ * are named \code{inst/www/locales/XX/app.json} where
+ * \code{XX} is replaced with the appropriate ISO language code.
+ * 
+ * These files are JSON files containing an object with the following
+ * keys: \itemize{
+ *  \item \code{title}: Title of link to put in the top left
+ *  \item \code{homepage}: Where the title link goes
+ *  \item \code{functions}: One pair of translations for each
+ *   function in the schema.
+ *  \item \code{params}: One pair of translations for each
+ *   parameter in the schema. 
+ *  \item \code{optiongroups}: Each of the \code{optiongroups}
+ *   in the schema gets a key which maps to an object which has
+ *   the following keys: \itemize{
+ *   \item \code{@title}: A translation pair for the option group itself.
+ *   \item One translation pair for each option in the group.
+ *  }
+ *  \item \code{types}: One object for each \code{'enum'} type in
+ *  the schema. Each value is an object with one key per possible
+ *  enum value. Each value in this object is that enum value's
+ *  translation pair.
+ * }
+ * 
+ * A "translation pair" is an object with the following keys: \itemize{
+ *  \item \code{name}: A short name
+ *  \item \code{help}: Tooltip text
+ * }
+ */
 function shinylightFrameworkStart() {
   var inputGrid;
   var optionGroups = {};
