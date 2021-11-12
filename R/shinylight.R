@@ -343,8 +343,11 @@ slStop <- function(server=NULL) {
 #' @param appDir Directory containing files to serve (for example
 #' system.file("www", package = "your-package"))
 #' @param interface List of functions you want to be able to call from
-#' the browser
-#' @param host IP address to listen on, default is 0.0.0.0 (all interfaces)
+#' the browser. If you want to use the Shinylight Framework, this should
+#' have one member \code{getSchema}. For details of this, see the
+#' documentation for [shinylightFrameworkStart].
+#' @param host IP address to listen on, default is '127.0.0.1'
+#' (localhost). Use '0.0.0.0' to run in a docker container.
 #' @param port Internet port of the virtual server. If not defined, a
 #' random free port will be chosen and the browser will be opened
 #' to show the GUI.
@@ -355,7 +358,7 @@ slStop <- function(server=NULL) {
 slServer <- function(
     interface,
     appDir=NULL,
-    host='0.0.0.0',
+    host='127.0.0.1',
     port=NULL,
     daemonize=FALSE) {
   slDir <- system.file("www", package = "shinylight")
@@ -387,7 +390,8 @@ slServer <- function(
 #' @param permittedSymbols List of symbols that are permitted in the R
 #' commands passed. Remember to include \code{data}, \code{$} and
 #' \code{<-}.
-#' @param host IP address to listen on, default is 0.0.0.0 (all interfaces)
+#' @param host IP address to listen on, default is '127.0.0.1'
+#' (localhost). Use '0.0.0.0' to run in a docker container.
 #' @param port Internet port of the virtual server. If not defined, a
 #' random free port will be chosen and the browser will be opened
 #' to show the GUI.
@@ -398,7 +402,7 @@ slServer <- function(
 slRunRServer <- function(
     permittedSymbols,
     appDir=NULL,
-    host='0.0.0.0',
+    host='127.0.0.1',
     port=NULL,
     daemonize=FALSE) {
   slServer(host=host, port=port, appDir=appDir, daemonize=daemonize,

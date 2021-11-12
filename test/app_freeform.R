@@ -29,7 +29,7 @@ test3 <- function(x, y, pch) {
 
 testServer <- function(port=NULL) {
   appDir <- R.utils::getAbsolutePath("test/www_freeform")
-  shinylight::slServer(host='0.0.0.0', port=port, appDir=appDir, daemonize=TRUE,
+  shinylight::slServer(host='127.0.0.1', port=port, appDir=appDir, daemonize=TRUE,
     interface=list(
       test1=test1,
       test2=test2,
