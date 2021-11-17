@@ -9,12 +9,12 @@
  * provide your own \code{index.html}, the default Shinylight one
  * will be used that will call this function on page load.
  *
- * Using the Shinylight Framework entails calling the [slServer]
+ * Using the Shinylight Framework entails calling the {@link slServer}
  * function with an argument
  * \code{interface=list(getSchema=schema)}, where
  * \code{schema} is defined in the following section.
  * 
- * \section The Schema
+ * }\section{The Schema}{
  * 
  * It is a list with the following members:
  * \itemize{
@@ -89,7 +89,7 @@
  * two after the user finishes changing parameters (\code{TRUE}).
  * }
  *
- * \section Localization
+ * }\section{Localization}{
  *
  * To display human-friendly text on the controls and to get tooltip
  * help text, you need one or more localization files. These files

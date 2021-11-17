@@ -1,5 +1,6 @@
 .RData
 .Rhistory
 Rplots.pdf
-node_modules
-.vscode
+/node_modules
+/.vscode
+/man

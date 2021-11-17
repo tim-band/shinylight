@@ -196,16 +196,16 @@ var shinylight = function () {
 
         /**
          * Sets an \code{<img>} element to display a plot returned by
-         * \code{\link{runR}}.
+         * {@link runR}.
          * 
          * Normally you do not need to call this because to get
-         * \code{\link{shinylight}} to produce a plot you need to set the
+         * {@link shinylight} to produce a plot you need to set the
          * \code{plotElement} argument, and doing so will cause this
          * element to receive the plot automatically.
          *
          * @param {string|HTMLImageElement} elementOrId The
          * \code{<img>} element (or its id) that will receive the image.
-         * @param {object} result The result from \code{\link{runR}}.
+         * @param {object} result The result from {@link runR}.
          */
         setElementPlot: function (elementOrId, result) {
             setPlot(getElement(elementOrId), result);
@@ -213,10 +213,10 @@ var shinylight = function () {
 
         /**
          * Sets a \code{dataentrygrid} object to the result of
-         * \code{\link{runR}}, if appropriate.
+         * {@link runR}, if appropriate.
          * 
-         * @param grid {DataEntryGrid} Table that receives the result
-         * @param result {object} Return value promised by \code{\link{runR}}
+         * @param {DataEntryGrid} grid Table that receives the result
+         * @param {object} result Return value promised by {@link runR}
          */
         setGridResult: function (grid, result) {
             const t = makeTable(result.data);
@@ -234,7 +234,7 @@ var shinylight = function () {
          */
         /**
          * Turns data received from R into a form that can be set into
-         * dataentrygrid.js. 
+         * dataentrygrid.js.
          * @param {object} data Data as returned from R
          * @param {string[]|number} extraColumns The extra column headers
          * required or the number of extra columns required.
@@ -249,19 +249,19 @@ var shinylight = function () {
          * Calls a server function as defined in the server's call to the
          * \code{slServer} function.
          *
-         * @param fn {string} The name of the R function to call.
-         * @param data {object} An object whose keys are the arguments
+         * @param {string} fn The name of the R function to call.
+         * @param {object} data An object whose keys are the arguments
          * to the function being called.
-         * @param plotElement {string|HTMLElement} If provided, the
+         * @param {string|HTMLElement} plotElement If provided, the
          * \code{<img>} element (or id of the element) that will receive the
          * plot output (if any). The plot returned will be the size that this
          * element already has, so ensure that it is styled in a way that it has
          * the correct size even if no image (or an old image) has been set.
-         * @param extra {object={}} An object whose keys can be:
+         * @param {object} [extra={}] An object whose keys can be:
          * "imgType": Type of image required, "png" (default) or "svg";
-         * "info": Funtion to be called if the R function [sendInfoText] is
-         * called; "progress": Function to be called if the R function
-         * [sendProgress] is called.
+         * "info": Funtion to be called if the R function {@link sendInfoText}
+         * is called; "progress": Function to be called if the R function
+         * {@link sendProgress} is called.
          * @returns {Promise} Result object that might have a \code{plot}
          * property (giving a string that would work as the \code{src}
          * attribute of an \code{img} element, representing graphics
@@ -282,20 +282,20 @@ var shinylight = function () {
          * Runs an R function.
          *
          * The R side must be running the slRunRServer function.
-         * @param rCommand {string} The R text to run. It can plot a graph
+         * @param {string} rCommand The R text to run. It can plot a graph
          * and/or return some R data structure (such as a data frame).
-         * @param data {any} A javascript value that will be translated
+         * @param {any} data A javascript value that will be translated
          * to the R command as a value also called 'data'.
-         * @param plotElement {string|HTMLElement} If provided, the
+         * @param {string|HTMLElement} plotElement If provided, the
          * \code{<img>} element (or id of the element) that will receive the
          * plot output (if any). The plot returned will be the size that this
          * element already has, so ensure that it is styled in a way that it has
          * the correct size even if no image (or an old image) has been set.
-         * @param extra {object={}} An object whose keys can be:
+         * @param {object} [extra={}] An object whose keys can be:
          * "imgType": Type of image required, "png" (default) or "svg";
          * "info": Funtion to be called if the R function [sendInfoText] is
          * called; "progress": Function to be called if the R function
-         * [sendProgress] is called.
+         * {@link sendProgress} is called.
          * @returns {Promise} Result object that might have a \code{plot}
          * property (giving a string that would work as the \code{src}
          * attribute of an \code{img} element, representing graphics

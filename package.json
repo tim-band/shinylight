@@ -2,8 +2,10 @@
     "name": "shinylight",
     "description": "Web front end for R functions",
     "private": true,
+    "license": "GPL-3.0",
     "scripts": {
-        "test": "mocha test"
+        "test": "mocha test",
+        "prepare": "jsdoc -c jsdoc.conf"
     },
     "devDependencies": {
         "babel-cli": "^6.26.0",
