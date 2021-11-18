@@ -1,4 +1,7 @@
 /**
+ * @namespace framework
+ */
+/**
  * Starts the Shinylight Framework, if you want to use it.
  *
  * The Shinylight Framework allows you to declare all your functions
@@ -10,8 +13,8 @@
  * will be used that will call this function on page load.
  *
  * Using the Shinylight Framework entails calling the {@link slServer}
- * function with an argument
- * \code{interface=list(getSchema=schema)}, where
+ * function with the \code{interface} argument set to
+ * \code{list(getSchema=schema)}, where
  * \code{schema} is defined in the following section.
  * 
  * }\section{The Schema}{

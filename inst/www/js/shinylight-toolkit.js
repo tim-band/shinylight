@@ -1,3 +1,6 @@
+/**
+ * @namespace toolkit
+ */
 var toolkit = function() {
 
   function forEach(a, f) {
@@ -1348,10 +1351,10 @@ var toolkit = function() {
      */
     paramSelector: paramSelector,
     /**
-     * Adds a group title to an {@link optionsPage}.
+     * Adds a group title to an {@link toolkit.optionsPage}.
      * 
      * @param {HTMLElement} container The container, preferably the
-     * return value from {@link optionsPage}.
+     * return value from {@link toolkit.optionsPage}.
      * @param {object} labelTranslations An object with two keys:
      * \code{'name'} is the display text for this title,
      * \code{'help'} (optional) is the tooltip text.
@@ -1361,7 +1364,7 @@ var toolkit = function() {
      * Returns a Toolkit widget for displaying controls vertically.
      *
      * Returns a Toolkit widget with a \code{makeSubElement} method that
-     * adds elements vertically. This differs from {@link stack} in that the
+     * adds elements vertically. This differs from {@link toolkit.stack} in that the
      * labels will be aligned on the left and the controls will be aligned on the
      * right. It would make a nice options page, for example.
      * @returns A Toolkit widget for displaying elements vertically.
@@ -1420,9 +1423,10 @@ var toolkit = function() {
      * of a nullary function. This function will be called on completion
      * of the work (which will be used to remove the button's 'click'
      * animation). If the function want to use as a callback does not take
-     * an argument, you can wrap it in {@link withTimeout}. You might
-     * also want to use {@link withTimeout} if your function returns too
-     * quickly, otherwise the user might not see the button click.
+     * an argument, you can wrap it in {@link toolkit.withTimeout}. You
+     * might also want to use {@link toolkit.withTimeout} if your
+     * function returns too quickly, otherwise the user might not see
+     * the button click.
      * @param {object} translations An object with a key \code{id}
      * having a value that is an object having a key \code{'name'}
      * with value the display name of the button, and optionally a key
@@ -1448,10 +1452,11 @@ var toolkit = function() {
      * Adds a fake callback argument to a nullary function.
      * 
      * Perhaps you have a nullary function that you want called
-     * when the user clicks a button, but the {@link button} function
-     * wants a unary function that has a completion callback so that
-     * the button knows when to pop back up again. In this situation
-     * you might wrap your function with a call to {@link withTimeout}.
+     * when the user clicks a button, but the {@link toolkit.button}
+     * function wants a unary function that has a completion callback
+     * so that the button knows when to pop back up again. In this
+     * situation you might wrap your function with a call to
+     * {@link toolkit.withTimeout}.
      * @param {function} fn Nullary function to wrap.
      * @returns {function} Unary function (taking one function as
      * an argument) that simply calls \code{fn} immediately then
@@ -1483,12 +1488,13 @@ var toolkit = function() {
      * @param {object} pageElements: dictionary of pageIds to elements
      * (that will be added to the return value of this function). These
      * elements each need methods \code{show}, \code{hide} and
-     * \code{setData} (like the ones returned by {@link image},
-     * {@link dataTable}, {@link stack}, {@link staticText},
-     * {@link optionsPage}; that is to say, Toolkit widgets)
-     * if they are to be output pages. Only \code{show} and \code{hide}
-     * if they are to be available permanently and not be set through the
-     * \code{setData} call.
+     * \code{setData} (like the ones returned by {@link toolkit.image},
+     * {@link toolkit.scrollingWrapper},
+     * {@link toolkit.nonScrollingWrapper}, {@link toolkit.stack},
+     * {@link toolkit.staticText}, {@link toolkit.optionsPage}; that is
+     * to say, Toolkit widgets) if they are to be output pages. Only
+     * \code{show} and \code{hide} if they are to be available
+     * permanently and not be set through the \code{setData} call.
      * @param {object} labelTranslations dictionary of pageIds to objects
      * with keys \code{name} (for the label text) and \code{help} (for
      * tooltip help HTML)

@@ -3,7 +3,7 @@ globals <- new.env(parent=emptyenv())
 #' Sends a progress update to the client.
 #'
 #' During a slow remote procedure call, call this to inform the client of progress.
-#' @param numerator The progress, out of [denominator]
+#' @param numerator The progress, out of \code{denominator}
 #' @param denominator What the progress is out of. You could use this for the
 #' number of known items to be completed so that each call increases either
 #' the numerator (for more items done) and/or the denominator (for more items
@@ -84,11 +84,12 @@ rrpc <- function(interface) { function(ws) {
 #'
 #' @param interface List of functions to be served. The names of the elements
 #' are the names that the client will use to call them.
-#' @param host Interface to listen on (default is '0.0.0.0', that is, all interfaces)
+#' @param host Interface to listen on (default is \code{'0.0.0.0'}, that
+#' is, all interfaces)
 #' @param port Port to listen on
 #' @param appDirs List of directories in which to find static files to serve
 #' @param root Root of the app on the server (with trailing slash)
-#' @return The server object, can be passed to [slStop]
+#' @return The server object, can be passed to \code{\link{slStop}}
 #' @export
 rrpcServer <- function(
     interface,
@@ -138,8 +139,9 @@ rrpcServer <- function(
 }
 
 #' Obtains the address that the server is listening on
-#' 
-#' @return protocol://address:port
+#' @param server The server (returned by \code{\link{slServer}}
+#' or \code{\link{slRunRServer}})
+#' @return The HTTP address as \code{protocol://address:port}
 getAddress <- function(server) {
   host <- server$getHost()
   port <- server$getPort()
@@ -159,17 +161,16 @@ browseTo <- function(server) {
 
 #' Renders a plot as a base64-encoded image
 #'
-#' @param device Graphics device function, such as [grDevices::png]
-#'   or [grDevices::pdf]
-#' @param mimeType Mime type for the data produced by `device`
-#' @param width Width of the plot in units applicable to `device`
-#' @param height Height of the plot in units applicable to `device`
+#' @param device Graphics device function, such as
+#' \code{\link[grDevices:png]{grDevices::png}} or
+#' \code{\link[grDevices:pdf]{grDevices::pdf}}
+#' @param mimeType Mime type for the data produced by \code{device}
+#' @param width Width of the plot in units applicable to \code{device}
+#' @param height Height of the plot in units applicable to \code{device}
 #' @param plotFn Function to call to perform the plot
 #' @return list with two keys, whose values can each be NULL:
-#' 'plot' is a plot in HTML img src form and 'data' is a data frame or other
-#' non-plot result.
-#' @seealso [encodePlotAsPng()]
-#' @seealso [encodePlotAsPdf()]
+#' \code{'plot'} is a plot in HTML img src form and \code{'data'} is a
+#' data frame or other non-plot result.
 #' @export
 encodePlot <- function(device, mimeType, width, height, plotFn) {
   tempFilename <- tempfile(pattern='plot', fileext='.tmp')
@@ -210,16 +211,18 @@ validateAndEncodePlotAs <- function(format, plotFn) {
 
 #' Renders a plot as a base64-encoded PNG
 #'
-#' The result can be set as the `src` attribute of an `img` element in HTML.
+#' The result can be set as the \code{src} attribute of an \code{<img>}
+#' element in HTML.
 #'
 #' @param format An object specifying the output, with the following members:
-#' format$type is "png", "pdf" or "csv", and format$width and format$height are
+#' format$type is \code{"png"}, \code{"pdf"} or \code{"csv"}, and
+#' \code{format$width} and \code{format$height} are
 #' the dimensions of the PDF (in inches) or PNG (in pixels) if appropriate.
 #' @param plotFn Function to call to perform the plot
 #' @return list with two keys, whose values can each be NULL:
-#' 'plot' is a plot in HTML img src form and 'data' is a data frame or other
-#' non-plot result.
-#' @seealso [rrpcServer()]
+#' \code{'plot'} is a plot in HTML img src form and \code{'data'} is a
+#' data frame or other non-plot result.
+#' @seealso \code{\link{rrpcServer}}
 #' @export
 encodePlotAs <- function(format, plotFn) {
   type <- format$type
@@ -243,6 +246,7 @@ encodePlotAs <- function(format, plotFn) {
 }
 
 #' Encodes a data frame as a CSV file to be downloaded
+#' @param results Data frame to be returned
 #' @export
 downloadCsv <- function(results) {
     forJson <- list()
@@ -295,13 +299,12 @@ sanitizeCommand <- function(command, symbolList, callback) {
 #' Returns a function that runs an R command
 #'
 #' If you set this as a part of your interface, like:
-#' \code{runR=shinylight::runR(c("+", "plot", "c", "x", "y"))}
+#' `runR=shinylight::runR(c("+", "plot", "c", "x", "y"))`
 #' then you can call it from Javascript like this:
-#'
+#' ```
 #' rrpc.call("runR", {
 #'  Rcommand:"2+2"
 #' }, function(x) {console.log(x);});
-#'
 #' rrpc.call("runR", {
 #'  Rcommand:"y<-c(2,0,1);plot(c(1,2,3),y);y",
 #'  'rrpc.resultformat': {
@@ -310,9 +313,10 @@ sanitizeCommand <- function(command, symbolList, callback) {
 #'    height: 300,
 #'  }
 #' }, function(x) {img.setAttribute('src', x.plot[0])});
-#'
+#' ```
 #' @param symbolList A list of permitted symbols in the R command
 #' @export
+#' @md
 runR <- function(symbolList) {
   function(data=NA, Rcommand, width=7, height=7, timeout=2000) {
     sanitizeCommand(Rcommand, symbolList, function(com) {
@@ -327,8 +331,8 @@ runR <- function(symbolList) {
 
 #' Stops a ShinyLight GUI
 #'
-#' @param server The server (returned by \code{\link{shinylight::slServer()}}
-#' or \code{\link{shinylight:slRunRServer}})
+#' @param server The server (returned by \code{\link{slServer}}
+#' or \code{\link{slRunRServer}})
 #' to stop. If not supplied all servers will be stopped.
 #' @export
 slStop <- function(server=NULL) {

@@ -1,3 +1,6 @@
+/**
+ * @namespace shinylight
+ */
 var shinylight = function () {
     function forEach(a, f) {
         var k = Object.keys(a), i = 0;
@@ -199,7 +202,7 @@ var shinylight = function () {
          * {@link runR}.
          * 
          * Normally you do not need to call this because to get
-         * {@link shinylight} to produce a plot you need to set the
+         * \code{shinylight} to produce a plot you need to set the
          * \code{plotElement} argument, and doing so will cause this
          * element to receive the plot automatically.
          *
@@ -293,8 +296,8 @@ var shinylight = function () {
          * the correct size even if no image (or an old image) has been set.
          * @param {object} [extra={}] An object whose keys can be:
          * "imgType": Type of image required, "png" (default) or "svg";
-         * "info": Funtion to be called if the R function [sendInfoText] is
-         * called; "progress": Function to be called if the R function
+         * "info": Funtion to be called if the R function {@link sendInfoText}
+         * is called; "progress": Function to be called if the R function
          * {@link sendProgress} is called.
          * @returns {Promise} Result object that might have a \code{plot}
          * property (giving a string that would work as the \code{src}

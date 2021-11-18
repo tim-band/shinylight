@@ -88,6 +88,36 @@ function linkifyRd(rd) {
     }
 }
 
+function getNamespaces(doclets) {
+    let namespaces = new Map;
+    doclets.each(doclet => {
+        if (doclet.kind === 'namespace') {
+            const filename = doclet.meta.filename;
+            const lineno = doclet.meta.lineno;
+            if (!(filename in namespaces)) {
+                namespaces[filename] = [];
+            }
+            namespaces[filename].push([lineno, doclet.name]);
+        }
+    });
+    namespaces.forEach(arr => { arr.sort((a,b) => b[0] < a[0]); });
+    return namespaces;
+}
+
+function findNamespace(namespaces, filename, lineno) {
+    const ns = namespaces[filename];
+    if (typeof(ns) === 'undefined') {
+        return null;
+    }
+    let name = null;
+    let i = 0;
+    while (i < ns.length && ns[i][0] < lineno) {
+        name = ns[i][1];
+        ++i;
+    }
+    return name;
+}
+
 /**
     @param {TAFFY} taffyData See <http://taffydb.com/>.
     @param {object} opts
@@ -125,8 +155,10 @@ exports.publish = (taffyData, opts, tutorials) => {
     helper.addEventListeners(data);
 
     fs.mkPath(outdir);
-    data().each(doclet => {
-        //console.log('DOCLET:', doclet.kind, doclet.name, doclet.longname);
+    const doclets = data();
+    const namespaces = getNamespaces(doclets);
+    doclets.each(doclet => {
+        //console.log('DOCLET:', doclet);
         //console.log('vars, scope:', doclet.vars, doclet.scope);
         for (let i in doclet.params) {
             const p = doclet.params[i];
@@ -135,8 +167,15 @@ exports.publish = (taffyData, opts, tutorials) => {
             const p = doclet.properties[i];
         }
         let rd = '';
+        let qualifiedName = doclet.longname;
         // 'package' and 'typedef' are other possibilities for kind
         if (doclet.kind === 'function' || doclet.kind === 'member') {
+            const namespace = findNamespace(
+                namespaces, doclet.meta.filename, doclet.meta.lineno
+            );
+            if (namespace) {
+                qualifiedName = namespace + '.' + qualifiedName;
+            }
             let title = doclet.name;
             let description = doclet.description;
             if (typeof(description) === 'undefined') {
@@ -150,7 +189,7 @@ exports.publish = (taffyData, opts, tutorials) => {
             rd = view.render('rd.tmpl', {
                 title: title,
                 filename: doclet.meta.filename,
-                name: doclet.longname,
+                name: qualifiedName,
                 description: description,
                 params: typeof(doclet.params) !== 'object'? [] : doclet.params,
                 properties: doclet.properties,
@@ -185,7 +224,7 @@ exports.publish = (taffyData, opts, tutorials) => {
         }
 
         if (rd) {
-            const outpath = path.join(outdir, doclet.name + '.Rd');
+            const outpath = path.join(outdir, qualifiedName + '.Rd');
             fs.writeFileSync(outpath, rd, 'utf8');
         }
 
