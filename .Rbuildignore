@@ -1,6 +1,7 @@
-^node_modules$
-^build.sh$
+^node_modules
+^build\.sh$
 ^jsdoc-r$
 ^jsdoc\.conf$
 ^package.*\.json$
-^Rplots.pdf$
+^Rplots\.pdf$
+^\.

@@ -186,12 +186,16 @@ exports.publish = (taffyData, opts, tutorials) => {
                 title = paragraphs.shift();
                 description = paragraphs.join('\n\n');
             }
+            let params = null;
+            if (typeof(doclet.params) === 'object' && 0 < doclet.params.length) {
+                params = doclet.params;
+            }
             rd = view.render('rd.tmpl', {
                 title: title,
                 filename: doclet.meta.filename,
                 name: qualifiedName,
                 description: description,
-                params: typeof(doclet.params) !== 'object'? [] : doclet.params,
+                params: params,
                 properties: doclet.properties,
             });
             rd = linkifyRd(rd);

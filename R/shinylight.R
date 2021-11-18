@@ -251,7 +251,7 @@ encodePlotAs <- function(format, plotFn) {
 downloadCsv <- function(results) {
     forJson <- list()
     forJson$action <- "download"
-    forJson$filename <- paste0(name, ".csv")
+    forJson$filename <- "results.csv"
     raw <- utils::capture.output(utils::write.csv(results, stdout()))
     forJson$data <- paste0(
         "data:text/csv;base64,",
@@ -371,7 +371,7 @@ slServer <- function(
   } else {
     appDirList <- list(appDir, slDir)
   }
-  s <- rrpcServer(host=host, port=port, appDir=appDirList, root="/",
+  s <- rrpcServer(host=host, port=port, appDirs=appDirList, root="/",
     interface=interface
   )
   extraMessage <- ""
@@ -411,7 +411,7 @@ slRunRServer <- function(
     daemonize=FALSE) {
   slServer(host=host, port=port, appDir=appDir, daemonize=daemonize,
     interface=list(
-      runR=shinylight::runR(permittedSymbols)
+      runR=runR(permittedSymbols)
     )
   )
 }
