@@ -21,6 +21,22 @@ test3 <- function(c1, c2) {
   r
 }
 
+test4 <- function(c1, c2) {
+  shinylight::sendProgress(0, 100);
+  Sys.sleep(0.3);
+  shinylight::sendInfoText("first information");
+  Sys.sleep(0.3);
+  shinylight::sendProgress(0.5, 1);
+  Sys.sleep(0.3);
+  shinylight::sendInfoText("second thing");
+  Sys.sleep(0.3);
+  shinylight::sendProgress(100, 100);
+  data.frame(
+    sum = c1+c2,
+    diff = c2-c1
+  )
+}
+
 functions <- list(
   test1=list(
     params=list(
@@ -40,6 +56,12 @@ functions <- list(
     optiongroups=c("adjust", "color")
   ),
   test3=list(
+    params=list(
+      c1="lengths",
+      c2="weights"
+    )
+  ),
+  test4=list(
     params=list(
       c1="lengths",
       c2="weights"
@@ -115,6 +137,7 @@ testServer <- function(port=NULL) {
       test1=test1,
       test2=test2,
       test3=test3,
+      test4=test4,
       getSchema=function() {
         list(functions=functions, params=params, types=types,
           data=examples, optiongroups=optiongroups)

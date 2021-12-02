@@ -168,14 +168,18 @@ exports.publish = (taffyData, opts, tutorials) => {
         }
         let rd = '';
         let qualifiedName = doclet.longname;
-        // 'package' and 'typedef' are other possibilities for kind
-        if (doclet.kind === 'function' || doclet.kind === 'member') {
+        if ('meta' in doclet) {
             const namespace = findNamespace(
                 namespaces, doclet.meta.filename, doclet.meta.lineno
             );
             if (namespace) {
                 qualifiedName = namespace + '.' + qualifiedName;
             }
+        }
+        // 'package' and 'typedef' are other possibilities for kind
+        if (doclet.kind === 'function'
+            || doclet.kind === 'member'
+            || doclet.kind === 'class') {
             let title = doclet.name;
             let description = doclet.description;
             if (typeof(description) === 'undefined') {

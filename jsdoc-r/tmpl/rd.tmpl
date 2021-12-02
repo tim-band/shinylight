@@ -5,10 +5,23 @@
 \title{<?js= title ?>}
 <?js if (params){ ?>\arguments{
 <?js params.forEach(function(param) {
-?>\item{<?js= param.name ?>}{<?js= param.description ?>}
+?>\item{<?js= param.name ?>}{<?js=
+param.type? '(\\code{'+param.type.names.join('}, \\code{')+'}) ':'' ?><?js=
+'optional' in param && param.optional? '[optional] ':'' ?><?js=
+param.description ?>}
 <?js });
 ?>}
 <?js }
 ?><?js if (description) { ?>\description{
-<?js= description ?>
-}<?js } ?>
+<?js= description?>
+}<?js }
+?><?js if (properties){ ?>
+\section{Properties}{\describe{
+<?js properties.forEach(function(property) {
+?>\item{<?js= property.name ?>}{<?js=
+property.type? '(\\code{'+property.type.names.join('}, \\code{')+'}) ':'' ?><?js=
+property.description ?>}
+<?js });
+?>}}
+<?js }
+?>

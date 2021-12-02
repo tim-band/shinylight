@@ -64,6 +64,14 @@ async function portIsOpen(port) {
     return await retry(10, 300, checkPort.bind(null, port));
 }
 
+async function getWidth(element) {
+    const w = await element.getCssValue('width');
+    if (w.endsWith('px')) {
+        return Number(w.slice(0, -2));
+    }
+    return Number(w);
+}
+
 async function startSelenium(tmpdir) {
     // Prevent Firefox from opening up a download dialog when a CSV file is requested
     let firefoxOptions = new Firefox.Options().
@@ -334,6 +342,46 @@ describe('shinylight framework', function() {
         assert.strictEqual(typeof(result.result.plot[0]), 'string');
         assert.ok(200 < result.result.plot[0].length);
         assert.deepStrictEqual(result.result.data, [2,0,1]);
+    });
+
+    it('receives progress and info reports', async function() {
+        this.timeout(10000);
+        await switchFunction(driver, 'test4');
+        await clickCalculate(driver);
+        const expectedInfos = [
+            { progress: 0, progressText: '0 / 100' },
+            { info: 'first information' },
+            { progress: 0.5, progressText: '50%' },
+            { info: 'second thing'}
+        ];
+        const progressBar = await driver.findElement(
+            By.css('#progress-bar .progress-bar-foreground')
+        );
+        const progressBarBackground = await driver.findElement(
+            By.css('#progress-bar')
+        );
+        const progressText = await driver.findElement(By.css('#progress-text .static-text'));
+        const progressStatus = await driver.findElement(By.css('#progress-info .static-text'));
+        for (let i in expectedInfos) {
+            const e = expectedInfos[i];
+            await driver.wait(async function() {
+                let r = true;
+                if ('info' in e) {
+                    const t = await progressStatus.getText();
+                    r = r && t === e.info;
+                }
+                if ('progressText' in e) {
+                    const pt = await progressText.getText();
+                    r = r && pt == e.progressText;
+                }
+                if ('progress' in e) {
+                    const expected = e.progress * await getWidth(progressBarBackground);
+                    const actual = await getWidth(progressBar);
+                    r = r && expected - 1 < actual && actual < expected + 1;
+                }
+                return r;
+            });
+        }
     });
 });
 

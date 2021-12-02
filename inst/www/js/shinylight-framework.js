@@ -150,6 +150,12 @@ function shinylightFrameworkStart() {
   var subheaderTypes = [];
   var top;
   var body;
+  // Called when the R function returns and we want to see the output
+  var endProgress = function() {};
+  // Sets the progress bar
+  var setProgress = function(numerator, denominator) {};
+  // Sets progress info text
+  var setProgressInfo = function(text) {};
 
   function getHttp(url, callback, errorCallback) {
     var xhr = new XMLHttpRequest();
@@ -320,14 +326,18 @@ function shinylightFrameworkStart() {
     var p = getParams();
     toolkit.forEach(p.parameters, function(k,v) { params[k] = v; });
     rrpc.call(p.fn, params, function(result, err) {
+      endProgress();
       if (err) {
         output.setData({
-          error: err,
+          error: { 'error-page': err },
           debug: prettyJson({ input: params })
         });
       } else if (result) {
         callback(result, params, p.fn);
       }
+    }, {
+      progress: setProgress,
+      info: setProgressInfo
     });
   };
 
@@ -668,7 +678,12 @@ function shinylightFrameworkStart() {
     output = document.createElement('div');
     output.id = 'output';
     var outputImg = toolkit.image(markPlotDirty);
-    var outputError = toolkit.staticText(translations(['framework', 'error']));
+    var outputErrorPage = toolkit.stack();
+    var outputError = toolkit.staticText(
+      'error-page',
+      outputErrorPage,
+      translations(['framework', 'error'])
+    );
     var outputTable = createDataEntryGrid(null, 5, 5);
     outputImg.id = 'output-plot';
     outputError.id = 'output-error';
@@ -726,8 +741,12 @@ function shinylightFrameworkStart() {
         translations(['framework', 'buttons'])
       )
     }, 'output-footer');
-    var outputDebug = toolkit.preformattedText(
-      translations(['framework', 'labels', 'debug-text']));
+    var outputDebugPage = toolkit.stack();
+    toolkit.preformattedText(
+      'debug-text',
+      outputDebugPage,
+      translations(['framework', 'labels', 'debug-text'])
+    );
     var debugJson = '';
     var debugFooter = toolkit.banner({
       downloadDebug: toolkit.button(
@@ -745,8 +764,8 @@ function shinylightFrameworkStart() {
     output = toolkit.pages({
       plot: toolkit.footer(plotFooter, outputImgWrapper),
       table: toolkit.footer(tableFooter, toolkit.scrollingWrapper(oTable)),
-      error: outputError,
-      debug: toolkit.footer(debugFooter, toolkit.scrollingWrapper(outputDebug))
+      error: outputErrorPage,
+      debug: toolkit.footer(debugFooter, toolkit.scrollingWrapper(outputDebugPage))
     }, translations(['framework', 'pages']), 'output-tab-');
     optionsPage = toolkit.optionsPage();
     var inputPane = toolkit.pages({
@@ -759,7 +778,52 @@ function shinylightFrameworkStart() {
       calculate: calculate1
     }, 'input-footer')
     var leftPane = toolkit.footer(leftFooter, inputPane);
-    var doc = toolkit.verticalDivide(null, leftPane, output);
+    var progressBar = toolkit.progressBar(20);
+    progressBar.id = 'progress-bar';
+    var progressPage = toolkit.optionsPage();
+    toolkit.staticText(
+      'progress-text',
+      progressPage,
+      translations(['framework', 'progressText'])
+    ).id = 'progress-text';
+    toolkit.staticText(
+      'progress-info',
+      progressPage,
+      translations(['framework', 'statusText'])
+    ).id = 'progress-info';
+    var progress = toolkit.nonScrollingWrapper(toolkit.header(
+      toolkit.nonScrollingWrapper(progressBar, 8, 13),
+      toolkit.nonScrollingWrapper(progressPage)
+    ), 12, 20);
+    progress.id = 'progress-page';
+    endProgress = function() {
+      progress.hide();
+      progressBar.setData(0);
+      progressPage.setData({
+        'progress-text': '',
+        'progress-info': ''
+      });
+    };
+    setProgress = function(numerator, denominator) {
+      progress.show();
+      if (denominator !== 0) {
+        progressBar.setData(numerator/denominator);
+      }
+      const text = denominator === 1?
+        Math.ceil(numerator * 100) + '%' : numerator + ' / ' + denominator;
+      progressPage.setData({
+        'progress-text': text
+      });
+    };
+    setProgressInfo = function(text) {
+      progress.show();
+      progressPage.setData({
+        'progress-info': text
+      });
+    };
+    progress.hide();
+    var outputAndProgress = toolkit.overlay(progress, output);
+    var doc = toolkit.verticalDivide(null, leftPane, outputAndProgress);
     top = toolkit.banner({}, 'top');
     var homelink = translations(['app', 'homelink']);
     var logo;

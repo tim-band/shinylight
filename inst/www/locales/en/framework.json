@@ -77,7 +77,14 @@
      "addColumnBefore": "Add column before",
      "addColumnAfter": "Add column after"
   },
-  "updating...": "updating",
+  "progressText": {
+    "name": "progress",
+    "help": "The number of calculation parts so far completed"
+  },
+  "statusText": {
+    "name": "status",
+    "help": "Information on the progress of the calculation"
+  },
   "options": "Options",
   "functions": "Select function",
   "functions-help": "Select the function you want to use"
