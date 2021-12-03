@@ -344,6 +344,8 @@ slStop <- function(server=NULL) {
 }
 
 #' Start a ShinyLight server
+#' @seealso slRunRServer
+#' @seealso slStop
 #' @param appDir Directory containing files to serve (for example
 #' system.file("www", package = "your-package"))
 #' @param interface List of functions you want to be able to call from
@@ -389,6 +391,8 @@ slServer <- function(
 }
 
 #' Start a ShinyLight server which runs R that it is sent
+#' @seealso slServer
+#' @seealso slStop
 #' @param appDir Directory containing files to serve (for example
 #' system.file("www", package = "your-package"))
 #' @param permittedSymbols List of symbols that are permitted in the R

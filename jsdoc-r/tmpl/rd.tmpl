@@ -24,4 +24,9 @@ property.description ?>}
 <?js });
 ?>}}
 <?js }
+?><?js= see.length?
+'\\seealso{\n'
++ see.join('\n\n')
++ '\n}'
+: ''
 ?>

@@ -201,6 +201,7 @@ exports.publish = (taffyData, opts, tutorials) => {
                 description: description,
                 params: params,
                 properties: doclet.properties,
+                see: 'see' in doclet? doclet.see : [],
             });
             rd = linkifyRd(rd);
         }
@@ -209,17 +210,9 @@ exports.publish = (taffyData, opts, tutorials) => {
 
         if (doclet.examples) {
             doclet.examples = doclet.examples.map(example => {
-                let caption;
-                let code;
-
-                if (example.match(/^\s*<caption>([\s\S]+?)<\/caption>(\s*[\n\r])([\s\S]+)$/i)) {
-                    caption = RegExp.$1;
-                    code = RegExp.$3;
-                }
-
                 return {
-                    caption: caption || '',
-                    code: code || example
+                    caption: '',
+                    code: example
                 };
             });
             doclet.examples.forEach(e => {
