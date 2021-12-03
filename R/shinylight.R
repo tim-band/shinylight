@@ -358,7 +358,7 @@ slStop <- function(server=NULL) {
 #' random free port will be chosen and the browser will be opened
 #' to show the GUI.
 #' @param daemonize If TRUE, keep serving forever without returning.
-#' This is useful when called from RScript, to keep
+#' This is useful when called from \code{RScript}, to keep
 #' @return server object, unless daemonize is TRUE.
 #' @export
 slServer <- function(
@@ -404,7 +404,7 @@ slServer <- function(
 #' random free port will be chosen and the browser will be opened
 #' to show the GUI.
 #' @param daemonize If TRUE, keep serving forever without returning.
-#' This is useful when called from RScript, to keep
+#' This is useful when called from \code{RScript}, to keep
 #' @return server object, unless daemonize is TRUE.
 #' @export
 slRunRServer <- function(

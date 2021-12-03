@@ -174,6 +174,8 @@ var shinylight = function () {
         },
 
         /**
+         * @function
+         * @description
          * Sets the text condent of an element (or its \code{value} as
          * appropriate).
          *
@@ -236,6 +238,8 @@ var shinylight = function () {
          * array of cell contents.
          */
         /**
+         * @function
+         * @description
          * Turns data received from R into a form that can be set into
          * dataentrygrid.js.
          * @param {object} data Data as returned from R

@@ -1167,6 +1167,8 @@ var toolkit = function() {
 
   return {
     /**
+     * @function
+     * @description
      * Calls a function for each member of an array or object.
      * 
      * @param {object} a Object or array to be iterated through.
@@ -1175,6 +1177,8 @@ var toolkit = function() {
      */
     forEach: forEach,
     /**
+     * @function
+     * @description
      * Dereferences an object or array through multiple indices.
      * 
      * \code{deref(o, [a,b,c], d)} is a safe way of doing
@@ -1189,6 +1193,8 @@ var toolkit = function() {
      */
     deref: deref,
     /**
+     * @function
+     * @description
      * Transforms a function that should not be called too often into
      * a function that can be called as often as you like.
      * 
@@ -1206,6 +1212,8 @@ var toolkit = function() {
      */
     whenQuiet: whenQuiet,
     /**
+     * @function
+     * @description
      * Replaces the \code{<main>} tag in the document with this element.
      * 
      * The element will have its \code{resize} event wired up. If \code{el}
@@ -1215,6 +1223,8 @@ var toolkit = function() {
      */
     setAsBody: setAsBody,
     /**
+     * @function
+     * @description
      * Returns a Positioned Element with a draggable vertical divider
      * bordering two other Positioned Elements.
      * @param {HTMLPositionedElement} container The container to divide.
@@ -1228,6 +1238,8 @@ var toolkit = function() {
      */
     verticalDivide: vDivide,
     /**
+     * @function
+     * @description
      * Returns a Positioned Element consisting of a header and a body.
      * @param {HTMLElement} hdr The header element.
      * @param {HTMLPositionedElement} main The body element.
@@ -1236,6 +1248,8 @@ var toolkit = function() {
      */
     header: header,
     /**
+     * @function
+     * @description
      * Returns a Positioned Element consisting of a body and a footer.
      * @param {HTMLElement} ftr The footer element.
      * @param {HTMLPositionedElement} main The body element.
@@ -1244,6 +1258,8 @@ var toolkit = function() {
      */
     footer: footer,
     /**
+     * @function
+     * @description
      * Returns a Container Element for displaying controls horizontally.
      * @param {Array.<HTMLControlElement>} elements Initial array of elements to be added.
      * @param {string} className HTML class for the returned banner.
@@ -1251,6 +1267,8 @@ var toolkit = function() {
      */
     banner: banner,
     /**
+     * @function
+     * @description
      * Returns a Positioned Element consisting of a left side bar and a body.
      * @param {HTMLElement} bar The side bar element.
      * @param {HTMLPositionedElement} main The body element.
@@ -1259,6 +1277,8 @@ var toolkit = function() {
      */
     leftSideBar: leftSideBar,
     /**
+     * @function
+     * @description
      * Returns a Positioned Element consisting of a right side bar and a body.
      * @param {HTMLElement} bar The side bar element.
      * @param {HTMLPositionedElement} main The body element.
@@ -1267,6 +1287,8 @@ var toolkit = function() {
      */
     rightSideBar: rightSideBar,
     /**
+     * @function
+     * @description
      * Returns a Positioned Element consisting of two elements
      * placed in the same position. To be able to see the lower (main)
      * element you must either call \code{hide()} on the overlay,
@@ -1279,6 +1301,8 @@ var toolkit = function() {
      */
      overlay: overlay,
      /**
+     * @function
+     * @description
      * Returns a Positioned Element just containing one element.
      * 
      * This element gains scrollbars if it is too large for this returned container.
@@ -1291,6 +1315,8 @@ var toolkit = function() {
      */
     scrollingWrapper: scrollingWrapper,
     /**
+     * @function
+     * @description
      * Returns a Positioned Element just containing one element.
      * 
      * This element does not gain scrollbars if it is too large for this returned
@@ -1304,7 +1330,8 @@ var toolkit = function() {
      */
     nonScrollingWrapper: nonScrollingWrapper,
     /**
-     * Makes a label suitable for labelling a control.
+     * @function
+     * @description Makes a label suitable for labelling a control.
      * @param {object} translations \code{translations[id].name} is the string
      * to use as label's text, \code{translations[id].help} is the string to use as
      * the label's tooltip. If \code{id} is undefined or null, \code{translations.name}
@@ -1318,10 +1345,11 @@ var toolkit = function() {
      */
     makeLabel: makeLabel,
     /**
-     * Returns a text input Toolkit Control.
+     * @function
+     * @description Returns a text input Toolkit Control.
      * 
      * Any text is permitted unless a \code{validate} function is supplied.
-     * @param {string} id: when \code{getData} or \code{setData} is
+     * @param {string} id when \code{getData} or \code{setData} is
      * called on the container, the value at \code{'id'} refers to this
      * selector. The HTML id is set to \code{'param-' + id}.
      * @param {HTMLContainerElement} [container] Where to put the control.
@@ -1338,11 +1366,13 @@ var toolkit = function() {
      */
     paramText: paramText,
     /**
+     * @function
+     * @description
      * Returns an integer input Toolkit Control.
      * 
      * Values outside the permitted range will gain the "invalid" class,
      * but there is no other effect.
-     * @param {string} id: when \code{getData} or \code{setData} is
+     * @param {string} id when \code{getData} or \code{setData} is
      * called on the container, the value at \code{'id'} refers to this
      * selector. The HTML id is set to \code{'param-' + id}.
      * @param {HTMLContainerElement} [container] Where to put the control.
@@ -1358,11 +1388,13 @@ var toolkit = function() {
      */
     paramInteger: paramInteger,
     /**
+     * @function
+     * @description
      * Returns a floating point input Toolkit Control.
      * 
      * Values outside the permitted range will gain the "invalid" class,
      * but there is no other effect.
-     * @param {string} id: when \code{getData} or \code{setData} is
+     * @param {string} id when \code{getData} or \code{setData} is
      * called on the container, the value at \code{'id'} refers to this
      * selector. The HTML id is set to \code{'param-' + id}.
      * @param {HTMLContainerElement} [container] Where to put the control.
@@ -1378,9 +1410,11 @@ var toolkit = function() {
      */
     paramFloat: paramFloat,
     /**
+     * @function
+     * @description
      * Returns a colour input Toolkit Control.
      * 
-     * @param {string} id: when \code{getData} or \code{setData} is
+     * @param {string} id when \code{getData} or \code{setData} is
      * called on the container, the value at \code{'id'} refers to this
      * selector. The HTML id is set to \code{'param-' + id}.
      * @param {HTMLContainerElement} [container] Where to put the control.
@@ -1394,9 +1428,11 @@ var toolkit = function() {
      */
     paramColor: paramColor,
     /**
+     * @function
+     * @description
      * Returns a checkbox input Toolkit Control.
      * 
-     * @param {string} id: when \code{getData} or \code{setData} is
+     * @param {string} id when \code{getData} or \code{setData} is
      * called on the container, the value at \code{'id'} refers to this
      * selector. The HTML id is set to \code{'param-' + id}.
      * @param {HTMLContainerElement} [container] Where to put the control.
@@ -1410,6 +1446,8 @@ var toolkit = function() {
      */
     paramBoolean: paramBoolean,
     /**
+     * @function
+     * @description
      * Returns a custom selection box Toolkit Control.
      *
      * This is different to a normal selection box because it allows
@@ -1420,23 +1458,25 @@ var toolkit = function() {
      * @param {HTMLContainerElement} [container] Where to put the control.
      * the container came from \code{optionsPage()} the new selection box
      * will be formatted as a table row.
-     * @param {object} labelTranslations: A dictionary with two optional keys;
+     * @param {object} labelTranslations A dictionary with two optional keys;
      * 'name' gives the label to display and 'help' gives HTML help text.
      * 'help' has no effect unless 'name' is also present.
-     * @param {Array<int>} values: An array of the IDs of the options
+     * @param {Array<int>} values An array of the IDs of the options
      * in the selection.
-     * @param {object} valueTranslations: A dictionary whose keys are the
+     * @param {object} valueTranslations A dictionary whose keys are the
      * IDs of the options in the selection, the values are more dictionaries.
      * These dictionaries have two optional keys; \code{'name'} (giving
      * the name to display for this option) and \code{'help'} (giving tooltip
      * HTML text).
-     * @param {string} initial: ID of the option to start selecting (optional)
-     * @param {function} callback: The (nullary) function to call when the
+     * @param {string} initial ID of the option to start selecting (optional)
+     * @param {function} callback The (nullary) function to call when the
      * value changes (optional)
      * @returns {HTMLControlElement} The selection box.
      */
     paramSelector: paramSelector,
     /**
+     * @function
+     * @description
      * Adds a group title to an {@link toolkit.optionsPage}.
      * 
      * @param {HTMLElement} container The container, preferably the
@@ -1447,6 +1487,8 @@ var toolkit = function() {
      */
     groupTitle: groupTitle,
     /**
+     * @function
+     * @description
      * Returns a Container Element for displaying controls vertically.
      *
      * Returns an element with a \code{makeSubElement} method that
@@ -1470,6 +1512,8 @@ var toolkit = function() {
       return collection(elements, 'div');
     },
     /**
+     * @function
+     * @description
      * An image element.
      *
      * @param {function} updateSizeFunction Nullary function called when
@@ -1483,6 +1527,8 @@ var toolkit = function() {
      */
     image: image,
     /**
+     * @function
+     * @description
      * A static text Toolkit Control.
      *
      * This element is like a control in that it has a label and actual
@@ -1499,6 +1545,8 @@ var toolkit = function() {
      */
     staticText: staticText,
     /**
+     * @function
+     * @description
      * A static text Toolkit Control in a preformatted style.
      *
      * This element is like a control in that it has a label and actual
@@ -1513,6 +1561,8 @@ var toolkit = function() {
      */
      preformattedText: preformattedText,
     /**
+     * @function
+     * @description
      * Returns a button.
      *
      * This button is an HTML element, but it is not an HTML button.
@@ -1536,6 +1586,8 @@ var toolkit = function() {
      */
     button: button,
     /**
+     * @function
+     * @description
      * Returns a button that uploads a file from the client.
      * 
      * This button is an HTML element, but it is not an HTML button.
@@ -1554,6 +1606,8 @@ var toolkit = function() {
      */
     loadFileButton: loadFileButton,
     /**
+     * @function
+     * @description
      * Adds a fake callback argument to a nullary function.
      * 
      * Perhaps you have a nullary function that you want called
@@ -1569,6 +1623,8 @@ var toolkit = function() {
      */
     withTimeout: withTimeout,
     /**
+     * @function
+     * @description
      * Returns a Positioned Element for displaying controls in
      * tabbed pages.
      * 
@@ -1576,7 +1632,7 @@ var toolkit = function() {
      * has \code{getData} and \code{setData} methods that take or
      * return (respectively) an object with keys that are the IDs of the
      * pages.
-     * @param {object} pageElements: dictionary of pageIds to elements
+     * @param {object} pageElements dictionary of pageIds to elements
      * (that will be added to the return value of this function). These
      * elements each need methods \code{show}, \code{hide} and
      * \code{setData} (like the ones returned by {@link toolkit.header},
@@ -1604,6 +1660,8 @@ var toolkit = function() {
      */
     pages: pages,
     /**
+     * @function
+     * @description
      * Returns a Positioned Element progress bar.
      * 
      * The progress is set by calling the \code{setData()} method.

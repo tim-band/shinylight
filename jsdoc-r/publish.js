@@ -104,11 +104,12 @@ function getNamespaces(doclets) {
     return namespaces;
 }
 
-function findNamespace(namespaces, filename, lineno) {
-    const ns = namespaces[filename];
-    if (typeof(ns) === 'undefined') {
+function findNamespace(namespaces, doclet) {
+    if (!('meta' in doclet && doclet.meta.filename in namespaces)) {
         return null;
     }
+    const ns = namespaces[doclet.meta.filename];
+    const lineno = doclet.meta.lineno;
     let name = null;
     let i = 0;
     while (i < ns.length && ns[i][0] < lineno) {
@@ -157,6 +158,18 @@ exports.publish = (taffyData, opts, tutorials) => {
     fs.mkPath(outdir);
     const doclets = data();
     const namespaces = getNamespaces(doclets);
+    // for all names, in namespaces or not:
+    // fully qualified name -> true
+    const fullyQualifiedNames = {};
+    doclets.each(doclet => {
+        const ns = findNamespace(namespaces, doclet);
+        if (ns) {
+            const fqn = ns + '.' + doclet.longname;
+            fullyQualifiedNames[fqn] = true;
+        } else {
+            fullyQualifiedNames[doclet.longname] = true;
+        }
+    });
     doclets.each(doclet => {
         //console.log('DOCLET:', doclet);
         //console.log('vars, scope:', doclet.vars, doclet.scope);
@@ -167,27 +180,21 @@ exports.publish = (taffyData, opts, tutorials) => {
             const p = doclet.properties[i];
         }
         let rd = '';
-        let qualifiedName = doclet.longname;
-        if ('meta' in doclet) {
-            const namespace = findNamespace(
-                namespaces, doclet.meta.filename, doclet.meta.lineno
-            );
-            if (namespace) {
-                qualifiedName = namespace + '.' + qualifiedName;
-            }
-        }
+        const namespace = findNamespace(namespaces, doclet);
+        const qualifiedName = namespace?
+            namespace + '.' + doclet.longname : doclet.longname;
         // 'package' and 'typedef' are other possibilities for kind
         if (doclet.kind === 'function'
             || doclet.kind === 'member'
             || doclet.kind === 'class') {
-            let title = doclet.name;
+            let title = 'JavaScript ' + doclet.kind;
             let description = doclet.description;
             if (typeof(description) === 'undefined') {
                 description = '';
             }
             const paragraphs = description.split(/(?:\n|\r|\r\n){2}/);
             if (1 < paragraphs.length) {
-                title = paragraphs.shift();
+                title = title + ': ' + paragraphs.shift();
                 description = paragraphs.join('\n\n');
             }
             let params = null;
@@ -202,6 +209,18 @@ exports.publish = (taffyData, opts, tutorials) => {
                 params: params,
                 properties: doclet.properties,
                 see: 'see' in doclet? doclet.see : [],
+                linkify: function(name) {
+                    if (name in fullyQualifiedNames) {
+                        return '\\code{\\link{' + name + '}}';
+                    }
+                    if (namespace) {
+                        const q = namespace + '.' + name;
+                        if (q in fullyQualifiedNames) {
+                            return '\\code{\\link{' + q + '}}';
+                        }
+                    }
+                    return '\\code{' + name + '}';
+                },
             });
             rd = linkifyRd(rd);
         }
