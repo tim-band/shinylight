@@ -1,6 +1,8 @@
 # ShinyLight
 
-A lightweight server for R calculations
+A lightweight server for R calculations.
+
+This project was funded by the Natural Environment Research Council (grant number 09 NE/T001518/1 ("Beyond Isoplot")).
 
 ## Building ShinyLight
 
