@@ -624,6 +624,18 @@ function shinylightFrameworkStart() {
     );
   }
 
+  function reconnect(error) {
+    console.log('Attempting to connect after error');
+    setTimeout(
+      rrpc.initialize,
+      2000,
+      function() {
+        console.log('Reconnected.')
+      },
+      reconnect
+    );
+  }
+
   loadTranslations(function(tr) {
     translationDict = tr;
     rrpc.initialize(function() {
@@ -640,7 +652,7 @@ function shinylightFrameworkStart() {
           setCalculateMode(calculateMode());
         });
       });
-    });
+    }, reconnect);
   });
 
   function removeTopParameters() {
