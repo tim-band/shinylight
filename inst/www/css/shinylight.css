@@ -168,6 +168,10 @@
   background-color: #248;
 }
 
+.param-selector .open .param-option.highlighted {
+  background-color: #248;
+}
+
 .param-selector .open .param-option:hover .option-tooltip {
   visibility: visible;
   opacity: 1;

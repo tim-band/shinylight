@@ -98,7 +98,7 @@ optiongroups <- list(
 types <- list(
   plot_type=list(
     kind="enum",
-    values=c("p", "l", "h")
+    values=list("p", l=c("a", "b", "c"), "h")
   ),
   length_column=list(
     kind="column",

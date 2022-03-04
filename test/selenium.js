@@ -127,6 +127,26 @@ describe('shinylight framework', function() {
         await assertParamIs(driver, 'a', null);
     });
 
+    it ('allows mouse control of cascading menus', async function() {
+        this.timeout(5000);
+        await clickId(driver, 'param-plot_param');
+        var param_b = await driver.findElements(By.id('param-b'));
+        assert(param_b.length === 0);
+        await assertParamIs(driver, 'plot_param', 'p');
+        await clickId(driver, 'plot_param-l');
+        await clickId(driver, 'plot_param-b');
+        await assertParamIs(driver, 'plot_param', 'b');
+    });
+
+    it ('allows keyboard control of cascading menus', async function() {
+        this.timeout(50000);
+        await assertParamIs(driver, 'plot_param', 'p');
+        var param = await driver.findElement(By.id('param-plot_param'));
+        var box = await param.findElement(By.xpath("./ancestor::*[contains(@class,'param-box')]"))
+        await box.sendKeys(Key.ENTER, Key.DOWN, Key.DOWN, Key.RIGHT, Key.DOWN, Key.TAB);
+        await assertParamIs(driver, 'plot_param', 'b');
+    });
+
     it('hides and shows the calculate button', async function() {
         this.timeout(15000);
         const calculateButton = await driver.findElement(By.id('button-calculate'));

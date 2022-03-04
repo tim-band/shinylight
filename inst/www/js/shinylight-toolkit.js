@@ -119,6 +119,26 @@ var toolkit = function() {
     return { left: el.offsetTop, top: el.offsetTop, width: el.offsetWidth, height: el.offsetHeight };
   }
 
+  // runs a function on each descendent element of e (not including e itself)
+  function forEachDescendent(e, fn) {
+    forEach(e.children, function(i, c) {
+      fn(c);
+      forEachDescendent(c, fn);
+    });
+  }
+
+  // Finds the nearest ancestor of e (including e itself) with class cls.
+  // Returns null if no such element.
+  function findAncestor(e, cls) {
+    while (e) {
+      if (e.classList.contains(cls)) {
+        return e;
+      }
+      e = e.parentElement;
+    }
+    return null;
+  }
+
   // Creates a container for existing header/footer/sideBar and main section.
   // When the container is resized, its reposition() method
   // should be called. This will set the main section to the same
@@ -618,10 +638,100 @@ var toolkit = function() {
     return table;
   }
 
+  function firstLeafValue(obj) {
+    var first = Object.keys(obj)[0];
+    var v = obj[first];
+    if (typeof(v) === 'object') {
+      return firstLeafValue(v);
+    }
+    return v;
+  }
+
+  function preventdefault(ev) {
+    ev.preventDefault();
+  }
+
+  /**
+   * Creates a dropdown for a selector box
+   * @param {object} values List of IDs in the list
+   * @param {string} selectorId ID of the container
+   * @param {object} valueTranslations Translation object, mapping
+   * value ids to {name:, help:} objects.
+   * @param {object} optionNames Object into which ID to names mappings are put
+   * @param {function} setData setData(id, text, elt) is to be called when the
+   * value id (with translated name 'text') is selected; elt is the element in the
+   * dropdown corresponding to this option.
+   * @return {HTMLElement} The dropdown created.
+   */
+  function selectorDropdown(values, selectorId, valueTranslations, optionNames, setData) {
+    var idPrefix = selectorId? selectorId + '-' : '';
+    var dropDown = document.createElement('table');
+    dropDown.classList.add('dropdown');
+    forEach(values, function(k, v) {
+      var id = v;
+      var postfix = '';
+      var cascade = false;
+      if (typeof(v) === 'object') {
+        if (v.length === 1) {
+          id = v[0];
+        } else {
+          id = k;
+          postfix = '\u25bc';
+          cascade = true;
+        }
+      }
+      var optr = document.createElement('tr');
+      optr.classList.add('param-option');
+      var opt = document.createElement('td');
+      opt.id = idPrefix + id;
+      opt.style.padding = '0px';
+      var trs = id in valueTranslations? valueTranslations[id] : {};
+      var name = 'name' in trs? trs.name : id;
+      opt.textContent = name + postfix;
+      optionNames[id] = name;
+      optr.appendChild(opt);
+      dropDown.appendChild(optr);
+      if ('help' in trs) {
+        var h = document.createElement('span')
+        h.className = "option-tooltip";
+        h.innerHTML = trs.help;
+        optr.appendChild(h);
+      }
+      optr.onmousedown = preventdefault;
+      optr.onmousemove = preventdefault;
+      optr.onmouseenter = preventdefault;
+      if (cascade) {
+        optr.classList.add('param-option-cascade');
+        opt.onmouseup = function(ev) {
+          if (dd.classList.contains('open')) {
+            dd.classList.remove('open');
+          } else {
+            dd.classList.add('open');
+          }
+          ev.preventDefault();
+        };
+        optr.optionId = null;
+        var dd = selectorDropdown(v, selectorId, valueTranslations, optionNames, setData);
+        optr.appendChild(dd);
+      } else {
+        optr.onmouseup = function(ev) {
+          setData(id, name, optr);
+          ev.preventDefault();
+        }
+        optr.optionId = id;
+      }
+    });
+    dropDown.style.position = 'absolute';
+    return dropDown;
+  }
+
   function paramSelector(id, container, labelTranslations, values,
       valueTranslations, initial, callback) {
     var box = typeof(container.makeSubElement) === 'function'?
       container.makeSubElement(id) : span(container);
+    if (typeof(initial) === 'undefined' || initial === null) {
+      initial = firstLeafValue(values);
+    }
     // The button is the area that can be clicked to open up the drop-down
     var button = document.createElement('div');
     button.className = 'param-selector';
@@ -637,55 +747,36 @@ var toolkit = function() {
     downArrow.textContent = '\u25bc';
     downArrow.className = 'select-down-arrow';
     button.appendChild(downArrow);
-    var dropDown = document.createElement('table');
-    var open = false;
+    var highlightedElement = null;
+    function closeDropDown() {
+      if (highlightedElement) {
+        highlightedElement.classList.remove('highlighted');
+        highlightedElement = null;
+      }
+      forEachDescendent(box, function(e) {
+        e.classList.remove('open');
+      });
+    };
     var selectedOption = null;
-    var options = {};
     var optionNames = {};
-    var idPrefix = id? id + '-' : '';
-    forEach(values, function(i,id) {
-      var optr = document.createElement('tr');
-      optr.classList.add('param-option');
-      var opt = document.createElement('td');
-      opt.id = idPrefix + id;
-      opt.style.padding = '0px';
-      var trs = id in valueTranslations? valueTranslations[id] : {};
-      var name = 'name' in trs? trs.name : id;
-      opt.textContent = name;
-      optionNames[id] = name;
-      options[id] = optr;
-      if (!initial && !selectedOption) {
-        initial = id;
+    var dropDown = selectorDropdown(
+      values,
+      id,
+      valueTranslations,
+      optionNames,
+      function(opt, text, elt) {
+        closeDropDown();
+        box.setData(opt);
+        buttonText.textContent = text;
+        highlightedElement = elt;
       }
-      optr.appendChild(opt);
-      dropDown.appendChild(optr);
-      if ('help' in trs) {
-        var h = document.createElement('span')
-        h.className = "option-tooltip";
-        h.innerHTML = trs.help;
-        optr.appendChild(h);
-      }
-      function preventdefault(ev) {
-        ev.preventDefault();
-      }
-      optr.onmousedown = preventdefault;
-      optr.onmousemove = preventdefault;
-      optr.onmouseenter = preventdefault;
-      optr.onmouseup = function(ev) {
-        dropDown.classList.remove('open');
-        open = false;
-        box.setData(id);
-        ev.preventDefault();
-      };
-    });
+    );
     buttonText.onmousedown = downArrow.onmousedown = function(ev) {
-      if (open) {
+      if (dropDown.classList.contains('open')) {
         dropDown.classList.remove('open');
-        open = false;
       } else {
         dropDown.classList.add('open');
         box.focus();
-        open = true;
       }
       ev.preventDefault();
     }
@@ -694,11 +785,10 @@ var toolkit = function() {
     }
     box.className = 'param-box';
     box.addElement(makeLabel(labelTranslations));
-    dropDown.style.position = 'absolute';
     button.appendChild(dropDown);
     box.addElement(button);
     function setSelected(value) {
-      if (selectedOption !== value && value in options) {
+      if (selectedOption !== value && value in optionNames) {
         selectedOption = value;
         buttonText.textContent = optionNames[selectedOption];
       }
@@ -717,21 +807,55 @@ var toolkit = function() {
     box.tabIndex = 0;
     box.onkeydown = function(ev) {
       var goTo = null;
-      if (ev.key === 'ArrowDown') {
-        goTo = findNext(options, selectedOption);
+      if (!highlightedElement) {
+        if (ev.key === 'ArrowDown' || ev.key === 'Space' || ev.key === 'Enter') {
+          goTo = dropDown.getElementsByClassName('param-option').item(0);
+          dropDown.classList.add('open');
+        }
+      } else if (ev.key === 'ArrowDown') {
+        goTo = highlightedElement.nextElementSibling;
       } else if (ev.key === 'ArrowUp') {
-        goTo = findPrevious(options, selectedOption);
+        goTo = highlightedElement.previousElementSibling;
+      } else if (ev.key === 'ArrowRight') {
+        if (highlightedElement && highlightedElement.classList.contains('param-option-cascade')) {
+          var dd = highlightedElement.getElementsByClassName('dropdown').item(0);
+          if (dd) {
+            dd.classList.add('open');
+            goTo = dd.getElementsByClassName('param-option').item(0);
+          }
+        }
+      } else if (ev.key === 'ArrowLeft') {
+        var e = findAncestor(highlightedElement.parentElement, 'dropdown');
+        if (e) {
+          e.classList.remove('open');
+        }
+        if (e === dropDown) {
+          highlightedElement.classList.remove('highlighted');
+          highlightedElement = null;
+        } else {
+          goTo = findAncestor(e, 'param-option');
+        }
+      } else if (ev.key === 'Space' || ev.key === 'Enter' || ev.key === 'Tab') {
+        var id = highlightedElement.optionId;
+        console.log(ev.key, id);
+        if (id) {
+          box.setData(id);
+        }
+        closeDropDown();
+      } else if (ev.key === 'Escape') {
+        closeDropDown();
       } else {
         return;
       }
-      dropDown.classList.remove('open');
-      open = false;
-      box.setData(goTo);
+      if (goTo) {
+        if (highlightedElement) {
+          highlightedElement.classList.remove('highlighted');
+        }
+        highlightedElement = goTo;
+        goTo.classList.add('highlighted');
+      }
     };
-    box.onblur = function() {
-      dropDown.classList.remove('open');
-      open = false;
-    };
+    box.onblur = closeDropDown;
     return box;
   }
 
