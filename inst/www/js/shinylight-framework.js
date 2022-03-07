@@ -669,6 +669,9 @@ function shinylightFrameworkStart() {
 
   function addFunctionSelectButton() {
     var fns = Object.keys(schema.functions);
+    if ('functiongroups' in schema) {
+      fns = schema.functiongroups;
+    }
     functionSelector = toolkit.paramSelector('function-selector', top,
       { name: translations(['framework','functions'], 'Function') },
       fns, translations(['app','functions']), null, setParameters);

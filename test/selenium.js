@@ -119,7 +119,7 @@ describe('shinylight framework', function() {
         this.timeout(5000);
         await assertParamIs(driver, 'plot_param', 'p');
         await assertParamIs(driver, 'a', null);
-        await switchFunction(driver, 'test2');
+        await switchFunction(driver, ['middles', 'test2']);
         await assertParamIs(driver, 'plot_param', null);
         await assertParamIs(driver, 'a', '');
         await switchFunction(driver, 'test1');
@@ -143,7 +143,7 @@ describe('shinylight framework', function() {
         await assertParamIs(driver, 'plot_param', 'p');
         var param = await driver.findElement(By.id('param-plot_param'));
         var box = await param.findElement(By.xpath("./ancestor::*[contains(@class,'param-box')]"))
-        await box.sendKeys(Key.ENTER, Key.DOWN, Key.DOWN, Key.RIGHT, Key.DOWN, Key.TAB);
+        await box.sendKeys(Key.ENTER, Key.DOWN, Key.RIGHT, Key.DOWN, Key.TAB);
         await assertParamIs(driver, 'plot_param', 'b');
     });
 
@@ -226,7 +226,7 @@ describe('shinylight framework', function() {
 
     it('displays the error', async function() {
         this.timeout(5000);
-        await switchFunction(driver, 'test2');
+        await switchFunction(driver, ['middles', 'test2']);
         await clickCalculate(driver);
         await driver.wait(until.elementLocated(By.css('#output-tab-error.active')));
         const text = await driver.findElement(By.css('#output-error')).getText();
@@ -235,7 +235,7 @@ describe('shinylight framework', function() {
 
     it('outputs unheadered tables', async function() {
         this.timeout(3000);
-        await switchFunction(driver, 'test3');
+        await switchFunction(driver, ['middles', 'test3']);
         const input = [['2', '3'], ['1', '1'], ['4', '3'], ['3', '1']];
         await enterCellText(driver, 0, 0, ...input);
         await clickCalculate(driver);
@@ -680,7 +680,10 @@ async function clickId(driver, id) {
 
 async function switchFunction(driver, funcName) {
     await driver.findElement(By.id('param-function-selector')).click();
-    await driver.findElement(By.id('function-selector-' + funcName)).click();
+    var names = typeof(funcName) === 'object' ? funcName : [funcName];
+    for (var i in names) {
+        await driver.findElement(By.id('function-selector-' + names[i])).click();
+    }
 }
 
 async function assertOutputCells(driver, r, c, rowCount, columnCount, expectedCells) {

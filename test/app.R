@@ -37,6 +37,12 @@ test4 <- function(c1, c2) {
   )
 }
 
+groups <- list(
+  a="test1",
+  middles=c("test2", "test3"),
+  c="test4"
+)
+
 functions <- list(
   test1=list(
     params=list(
@@ -98,7 +104,7 @@ optiongroups <- list(
 types <- list(
   plot_type=list(
     kind="enum",
-    values=list("p", l=c("a", "b", "c"), "h")
+    values=list(p="p", l=c("a", "b", "c"), h="h")
   ),
   length_column=list(
     kind="column",
@@ -139,7 +145,7 @@ testServer <- function(port=NULL) {
       test3=test3,
       test4=test4,
       getSchema=function() {
-        list(functions=functions, params=params, types=types,
+        list(functiongroups=groups, functions=functions, params=params, types=types,
           data=examples, optiongroups=optiongroups)
       },
       runR=shinylight::runR(symbolList)

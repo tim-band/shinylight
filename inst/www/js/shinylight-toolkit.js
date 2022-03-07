@@ -661,9 +661,13 @@ var toolkit = function() {
    * @param {function} setData setData(id, text, elt) is to be called when the
    * value id (with translated name 'text') is selected; elt is the element in the
    * dropdown corresponding to this option.
+   * @param {function} focus Function that focuses the whole control and sets
+   * the passed element as highlighted.
    * @return {HTMLElement} The dropdown created.
    */
-  function selectorDropdown(values, selectorId, valueTranslations, optionNames, setData) {
+  function selectorDropdown(
+    values, selectorId, valueTranslations, optionNames, setData, focus
+  ) {
     var idPrefix = selectorId? selectorId + '-' : '';
     var dropDown = document.createElement('table');
     dropDown.classList.add('dropdown');
@@ -707,11 +711,14 @@ var toolkit = function() {
             dd.classList.remove('open');
           } else {
             dd.classList.add('open');
+            focus(optr);
           }
           ev.preventDefault();
         };
         optr.optionId = null;
-        var dd = selectorDropdown(v, selectorId, valueTranslations, optionNames, setData);
+        var dd = selectorDropdown(
+          v, selectorId, valueTranslations, optionNames, setData, focus
+        );
         optr.appendChild(dd);
       } else {
         optr.onmouseup = function(ev) {
@@ -725,8 +732,10 @@ var toolkit = function() {
     return dropDown;
   }
 
-  function paramSelector(id, container, labelTranslations, values,
-      valueTranslations, initial, callback) {
+  function paramSelector(
+    id, container, labelTranslations, values,
+    valueTranslations, initial, callback
+  ) {
     var box = typeof(container.makeSubElement) === 'function'?
       container.makeSubElement(id) : span(container);
     if (typeof(initial) === 'undefined' || initial === null) {
@@ -769,6 +778,10 @@ var toolkit = function() {
         box.setData(opt);
         buttonText.textContent = text;
         highlightedElement = elt;
+      },
+      function(elt) {
+        highlightedElement = elt;
+        box.focus();
       }
     );
     buttonText.onmousedown = downArrow.onmousedown = function(ev) {
