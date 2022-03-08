@@ -11,6 +11,28 @@ var toolkit = function() {
     }
   }
 
+  function any(a, p) {
+    var k = Object.keys(a), i = 0;
+    for (; i !== k.length; ++i) {
+      var ki = k[i];
+      if (p(ki, a[ki])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function all(a, p) {
+    var k = Object.keys(a), i = 0;
+    for (; i !== k.length; ++i) {
+      var ki = k[i];
+      if (!p(ki, a[ki])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   function deref(object, path, defaultValue) {
     for (var i = 0; i !== path.length; ++i) {
       var p = path[i];
@@ -1307,7 +1329,7 @@ var toolkit = function() {
      * @function
      * @description
      * Calls a function for each member of an array or object.
-     * 
+     *
      * @param {object} a Object or array to be iterated through.
      * @param {function} f Function to call with two arguments: the key
      * of the element (or index in the case of an array) and the value.
@@ -1316,8 +1338,32 @@ var toolkit = function() {
     /**
      * @function
      * @description
+     * Calls a function for each member of an array or object until either
+     * one of them returns true (in which case `any` returns true) or
+     * we run out of elements (in which case `any` returns false).
+     * @param {object} a Object or array to be iterated through.
+     * @param {function} p Function to call with two arguments: the key
+     * of the element (or index in the case of an array) and the value;
+     * should return a boolean.
+     */
+     any: any,
+    /**
+     * @function
+     * @description
+     * Calls a function for each member of an array or object until either
+     * one of them returns false (in which case `any` returns false) or
+     * we run out of elements (in which case `any` returns true).
+     * @param {object} a Object or array to be iterated through.
+     * @param {function} p Function to call with two arguments: the key
+     * of the element (or index in the case of an array) and the value;
+     * should return a boolean.
+     */
+     all: all,
+     /**
+     * @function
+     * @description
      * Dereferences an object or array through multiple indices.
-     * 
+     *
      * \code{deref(o, [a,b,c], d)} is a safe way of doing
      * \code{o[a][b][c]}. If that path does not exist, d is returned.
      * If d is not supplied, null is returned. Any undefined values in
@@ -1334,7 +1380,7 @@ var toolkit = function() {
      * @description
      * Transforms a function that should not be called too often into
      * a function that can be called as often as you like.
-     * 
+     *
      * The returned function can be called as often as you like with
      * whatever arguments you like. If it is called again within
      * \code{ticks} ticks (a tick is 100ms), this call is ignored. If
@@ -1352,7 +1398,7 @@ var toolkit = function() {
      * @function
      * @description
      * Replaces the \code{<main>} tag in the document with this element.
-     * 
+     *
      * The element will have its \code{resize} event wired up. If \code{el}
      * is a Toolkit Positioned Element, it will be resized correctly when the
      * window is resized.
@@ -1441,7 +1487,7 @@ var toolkit = function() {
      * @function
      * @description
      * Returns a Positioned Element just containing one element.
-     * 
+     *
      * This element gains scrollbars if it is too large for this returned container.
      * @param {HTMLElement} element The element to be wrapped
      * @param {int} verticalPadding The number of extra pixels above the element's
@@ -1455,7 +1501,7 @@ var toolkit = function() {
      * @function
      * @description
      * Returns a Positioned Element just containing one element.
-     * 
+     *
      * This element does not gain scrollbars if it is too large for this returned
      * container, and it will try to take up its full size in the layout.
      * @param {HTMLElement} element The element to be wrapped
@@ -1484,7 +1530,7 @@ var toolkit = function() {
     /**
      * @function
      * @description Returns a text input Toolkit Control.
-     * 
+     *
      * Any text is permitted unless a \code{validate} function is supplied.
      * @param {string} id when \code{getData} or \code{setData} is
      * called on the container, the value at \code{'id'} refers to this
@@ -1506,7 +1552,7 @@ var toolkit = function() {
      * @function
      * @description
      * Returns an integer input Toolkit Control.
-     * 
+     *
      * Values outside the permitted range will gain the "invalid" class,
      * but there is no other effect.
      * @param {string} id when \code{getData} or \code{setData} is
@@ -1528,7 +1574,7 @@ var toolkit = function() {
      * @function
      * @description
      * Returns a floating point input Toolkit Control.
-     * 
+     *
      * Values outside the permitted range will gain the "invalid" class,
      * but there is no other effect.
      * @param {string} id when \code{getData} or \code{setData} is
@@ -1550,7 +1596,7 @@ var toolkit = function() {
      * @function
      * @description
      * Returns a colour input Toolkit Control.
-     * 
+     *
      * @param {string} id when \code{getData} or \code{setData} is
      * called on the container, the value at \code{'id'} refers to this
      * selector. The HTML id is set to \code{'param-' + id}.
@@ -1568,7 +1614,7 @@ var toolkit = function() {
      * @function
      * @description
      * Returns a checkbox input Toolkit Control.
-     * 
+     *
      * @param {string} id when \code{getData} or \code{setData} is
      * called on the container, the value at \code{'id'} refers to this
      * selector. The HTML id is set to \code{'param-' + id}.
@@ -1615,7 +1661,7 @@ var toolkit = function() {
      * @function
      * @description
      * Adds a group title to an {@link toolkit.optionsPage}.
-     * 
+     *
      * @param {HTMLElement} container The container, preferably the
      * return value from {@link toolkit.optionsPage}.
      * @param {object} labelTranslations An object with two keys:
@@ -1726,7 +1772,7 @@ var toolkit = function() {
      * @function
      * @description
      * Returns a button that uploads a file from the client.
-     * 
+     *
      * This button is an HTML element, but it is not an HTML button.
      * Styling and JavaScript provide the button-like look-and-feel.
      * @param {string} id The HTML id of the button will be
@@ -1746,7 +1792,7 @@ var toolkit = function() {
      * @function
      * @description
      * Adds a fake callback argument to a nullary function.
-     * 
+     *
      * Perhaps you have a nullary function that you want called
      * when the user clicks a button, but the {@link toolkit.button}
      * function wants a unary function that has a completion callback
@@ -1764,7 +1810,7 @@ var toolkit = function() {
      * @description
      * Returns a Positioned Element for displaying controls in
      * tabbed pages.
-     * 
+     *
      * Only one page will be visible at a time. The returned element
      * has \code{getData} and \code{setData} methods that take or
      * return (respectively) an object with keys that are the IDs of the
@@ -1800,7 +1846,7 @@ var toolkit = function() {
      * @function
      * @description
      * Returns a Positioned Element progress bar.
-     * 
+     *
      * The progress is set by calling the \code{setData()} method.
      * @return {HTMLPositionedElement} The progress bar element.
      */

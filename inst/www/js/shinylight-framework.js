@@ -529,6 +529,34 @@ function shinylightFrameworkStart() {
     return toolkit.paramText(elementId, container, tr, initial, callback);
   }
 
+  // Look into schema.optiondepends to see if any options need to be
+  // disabled or enabled.
+  // For now we are just hiding or showing it.
+  function enableDisableOptions() {
+    options = optionsPage.getData();
+    toolkit.forEach(optionGroups, function(groupId, group) {
+      toolkit.forEach(group, function(optionId, option) {
+        var dependOr = toolkit.deref(schema, ['optiondepends', optionId]);
+        if (dependOr) {
+          if (toolkit.any(dependOr, function(i, dependAnd) {
+            return toolkit.all(dependAnd, function(paramId, d) {
+              var p = toolkit.deref(options, [paramId]);
+              if (typeof(d) === 'object') {
+                return toolkit.any(d, function(i, v) { return v === p; });
+              }
+              return p === d;
+            });
+          })) {
+            // one of the dependency calculations succeeded
+            option.show();
+          } else {
+            option.hide();
+          }
+        }
+      });
+    });
+  }
+
   function setOptions() {
     if (typeof(schema.optiongroups) !== 'object') {
       return;
@@ -542,7 +570,7 @@ function shinylightFrameworkStart() {
       if (groupId !== 'framework') {
         groupTr = translations(['app', 'optiongroups', groupId, '@title'], groupTr);
       }
-    toolkit.groupTitle(optionsPage, groupTr);
+      toolkit.groupTitle(optionsPage, groupTr);
       toolkit.forEach(group, function(optionId, option) {
         var typeId = toolkit.deref(option, ['type', 0]);
         var tr = translations(['app', 'optiongroups', groupId, optionId], { name: optionId });
@@ -550,10 +578,17 @@ function shinylightFrameworkStart() {
           tr = translations(['framework', 'framework-options', optionId], tr);
         }
         var initial = toolkit.deref(option, ['initial', 0]);
-        var callback = toolkit.deref(optionCallbacks, [groupId, optionId], markPlotDirty);
+        var callback = toolkit.deref(
+          optionCallbacks, [groupId, optionId],
+          function() {
+            enableDisableOptions();
+            markPlotDirty();
+          }
+        );
         options[optionId] = addControl(typeId, optionId, optionsPage, tr, initial, callback);
       });
     });
+    enableDisableOptions();
   }
 
   function setParameters() {

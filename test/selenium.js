@@ -127,24 +127,29 @@ describe('shinylight framework', function() {
         await assertParamIs(driver, 'a', null);
     });
 
-    it ('allows mouse control of cascading menus', async function() {
-        this.timeout(5000);
-        await clickId(driver, 'param-plot_param');
-        var param_b = await driver.findElements(By.id('param-b'));
-        assert(param_b.length === 0);
-        await assertParamIs(driver, 'plot_param', 'p');
-        await clickId(driver, 'plot_param-l');
-        await clickId(driver, 'plot_param-b');
-        await assertParamIs(driver, 'plot_param', 'b');
-    });
+    describe('cascading menus', function() {
+        it('allow mouse control', async function() {
+            this.timeout(5000);
+            await clickId(driver, 'param-plot_param');
+            var param_b = await driver.findElements(By.id('param-b'));
+            assert(param_b.length === 0);
+            await assertParamIs(driver, 'plot_param', 'p');
+            await clickId(driver, 'plot_param-lines');
+            await clickId(driver, 'plot_param-b');
+            await assertParamIs(driver, 'plot_param', 'b');
+        });
 
-    it ('allows keyboard control of cascading menus', async function() {
-        this.timeout(50000);
-        await assertParamIs(driver, 'plot_param', 'p');
-        var param = await driver.findElement(By.id('param-plot_param'));
-        var box = await param.findElement(By.xpath("./ancestor::*[contains(@class,'param-box')]"))
-        await box.sendKeys(Key.ENTER, Key.DOWN, Key.RIGHT, Key.DOWN, Key.TAB);
-        await assertParamIs(driver, 'plot_param', 'b');
+        it('allow keyboard control', async function() {
+            this.timeout(50000);
+            await assertParamIs(driver, 'plot_param', 'p');
+            var box = await driver.findElement(By.xpath(
+                "//*[@id='param-plot_param']/ancestor::*[contains(@class,'param-box')]"
+            ))
+            await box.sendKeys(
+                Key.ENTER, Key.DOWN, Key.RIGHT, Key.DOWN, Key.DOWN, Key.TAB
+            );
+            await assertParamIs(driver, 'plot_param', 'b');
+        });
     });
 
     it('hides and shows the calculate button', async function() {
@@ -275,6 +280,16 @@ describe('shinylight framework', function() {
             [4.8, 1.5],
             [2.4, 2.5]
         ]);
+    });
+
+    it('respects option dependencies', async function() {
+        this.timeout(5000);
+        await clickInputTab(driver, 'options');
+        var bg = await driver.findElement(By.id('param-bg'));
+        await driver.wait(until.elementIsNotVisible(bg));
+        var pch = await driver.findElement(By.id('param-pch'));
+        await pch.sendKeys(Key.BACK_SPACE, '22', Key.RETURN);
+        await driver.wait(until.elementIsVisible(bg));
     });
 
     it('allows R code to be run from the client side', async function() {

@@ -80,7 +80,8 @@ params <- list(
   plot_param=list(type="plot_type", data="points"),
   test1_units=list(type="subheader", data="test1_units"),
   lengths=list(type="length_column", data="test1_length_inits"),
-  weights=list(type="weight_column", data="test1_weight_inits")
+  weights=list(type="weight_column", data="test1_weight_inits"),
+  lwd=list(type="u8", data=1)
 )
 
 optiongroups <- list(
@@ -101,10 +102,24 @@ optiongroups <- list(
   )
 )
 
+# when options are enabled
+optiondepends=list(
+  # bg has one situation in which it is enabled:
+  bg=list(
+    # pch is between 21 and 25
+    list(pch=c(21, 22, 23, 24, 25))
+  ),
+  # lty has one situation in which it is enabled:
+  lty=list(
+    # when the plot type is a line plot
+    list(type=c("l", "b", "c", "o", "s"))
+  )
+)
+
 types <- list(
   plot_type=list(
     kind="enum",
-    values=list(p="p", l=c("a", "b", "c"), h="h")
+    values=list(p="p", lines=c("l", "o", "b"), h="h")
   ),
   length_column=list(
     kind="column",
@@ -146,7 +161,7 @@ testServer <- function(port=NULL) {
       test4=test4,
       getSchema=function() {
         list(functiongroups=groups, functions=functions, params=params, types=types,
-          data=examples, optiongroups=optiongroups)
+          data=examples, optiongroups=optiongroups, optiondepends=optiondepends)
       },
       runR=shinylight::runR(symbolList)
     )
