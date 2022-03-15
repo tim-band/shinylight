@@ -872,7 +872,6 @@ var toolkit = function() {
         }
       } else if (ev.key === 'Space' || ev.key === 'Enter' || ev.key === 'Tab') {
         var id = highlightedElement.optionId;
-        console.log(ev.key, id);
         if (id) {
           box.setData(id);
         }

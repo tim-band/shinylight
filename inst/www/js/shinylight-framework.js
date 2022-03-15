@@ -146,8 +146,14 @@ function shinylightFrameworkStart() {
   // of column subheaders
   var subheaderParam;
   var calculateButtons = [];
-  var subheaderInitials = [];
-  var subheaderTypes = [];
+  // All the data for the columns that are currently disabled (i.e.
+  // valid for the current function but the settings the parameters
+  // currently have make irrelevant). These columns will be put
+  // back into the table if the columns become enabled again.
+  // It is a mapping of parameter IDs -> array of data
+  var hiddenColumns = null;
+  // subheader values for currently hidden columns
+  var hiddenSubheaders = null;
   var top;
   var body;
   // Called when the R function returns and we want to see the output
@@ -294,6 +300,13 @@ function shinylightFrameworkStart() {
       data);
   }
 
+  function addMainParams(params) {
+    toolkit.forEach(shownParameters, function(k, id) {
+      var e = allParameterSelectors[k];
+      params[id] = e.getData();
+    });
+  }
+
   function getParams() {
     var p = {};
     var fn = selectedFunction();
@@ -306,10 +319,7 @@ function shinylightFrameworkStart() {
       p[subheaderParam] = unitSettings();
     }
     // parameters from the main screen
-    toolkit.forEach(shownParameters, function(k, id) {
-      var e = allParameterSelectors[k];
-      p[id] = e.getData();
-    });
+    addMainParams(p);
     // relevant options
     var optionGroup = toolkit.deref(schema.functions[fn], ['optiongroups'], {});
     toolkit.forEach(optionGroup, function(i, groupId) {
@@ -399,12 +409,9 @@ function shinylightFrameworkStart() {
 
   function localizeHeaders(array) {
     var trs = translations(['app', 'params']);
-    if (!trs) {
-      return array;
-    }
     var h = [];
     toolkit.forEach(array, function(i, v) {
-      h[i] = v in trs && 'name' in trs[v]? trs[v].name : v;
+      h[i] = toolkit.deref(trs, [v, 'name'], v);
     });
     return h;
   }
@@ -412,7 +419,7 @@ function shinylightFrameworkStart() {
   // transposes an array of arrays so that
   // result[i][j] === arrays[j][i] for each i and j
   function transpose(arrays) {
-    var rows = 0;
+    var rows = 1;
     toolkit.forEach(arrays, function(i, a) {
       if (rows < a.length) rows = a.length;
     });
@@ -430,12 +437,16 @@ function shinylightFrameworkStart() {
     return result;
   }
 
-  function setInputGrid(headers, headerParams, units, data) {
+  // headers: Array of parameter IDs for the columns
+  // subheaderTypes: Array of type IDs for the subheaders
+  // units: Array of initial values for subheaders
+  // data: Array of rows; each row is an array of cell values.
+  function setInputGrid(headers, subheaderTypes, units, data) {
     var c = 0;
     var subheaderSpecs = [];
     var subheaderDefaults = [];
     var hasSubheaders = false;
-    toolkit.forEach(headerParams, function(k, paramKey) {
+    toolkit.forEach(subheaderTypes, function(k, paramKey) {
       if (paramKey in schema.types) {
         var type = schema.types[paramKey];
         if (type.kind[0] === 'enum') {
@@ -465,7 +476,7 @@ function shinylightFrameworkStart() {
     const trailingZeroes = /\.?0*$/;
     inputGrid.init(headers, rows, hasSubheaders? subheaderSpecs : null, subheaderDefaults);
     inputGrid.setReunittingFunction(function(index, currentValue, newValue, col) {
-      paramKey = headerParams[index];
+      paramKey = subheaderTypes[index];
       if (paramKey in schema.types) {
         var type = schema.types[paramKey];
         if (type.kind[0] === 'enum') {
@@ -529,32 +540,129 @@ function shinylightFrameworkStart() {
     return toolkit.paramText(elementId, container, tr, initial, callback);
   }
 
+  // taking a dependency declaration (from schema.optiondepends.<optionId>
+  // or schema.functions.<functionId>.paramdepends.<paramId>) and a
+  // dictionary of all relevant param or option IDs to their current values,
+  // returns whether or not the option is enabled.
+  function dependencyEnabled(depends, values) {
+    if (!depends) {
+      return true;
+    }
+    return toolkit.any(depends, function(i, dependAnd) {
+      return toolkit.all(dependAnd, function(paramId, d) {
+        var p = toolkit.deref(values, [paramId]);
+        if (typeof(d) === 'object') {
+          return toolkit.any(d, function(i, v) { return v === p; });
+        }
+        return p === d;
+      });
+    });
+  }
+
   // Look into schema.optiondepends to see if any options need to be
   // disabled or enabled.
   // For now we are just hiding or showing it.
   function enableDisableOptions() {
-    options = optionsPage.getData();
+    var depends = toolkit.deref(schema, ['optiondepends']);
+    if (!depends) {
+      return;
+    }
+    var options = optionsPage.getData();
     toolkit.forEach(optionGroups, function(groupId, group) {
       toolkit.forEach(group, function(optionId, option) {
-        var dependOr = toolkit.deref(schema, ['optiondepends', optionId]);
-        if (dependOr) {
-          if (toolkit.any(dependOr, function(i, dependAnd) {
-            return toolkit.all(dependAnd, function(paramId, d) {
-              var p = toolkit.deref(options, [paramId]);
-              if (typeof(d) === 'object') {
-                return toolkit.any(d, function(i, v) { return v === p; });
-              }
-              return p === d;
-            });
-          })) {
-            // one of the dependency calculations succeeded
-            option.show();
-          } else {
-            option.hide();
-          }
+        var dependOr = toolkit.deref(depends, [optionId]);
+        if (dependencyEnabled(dependOr, options)) {
+          option.show();
+        } else {
+          option.hide();
         }
       });
     });
+  }
+
+  // Look into schema.optiondepends to see if any options need to be
+  // disabled or enabled.
+  // For now we are just hiding or showing it.
+  function enableDisableParameters() {
+    var params = {};
+    addMainParams(params);
+    var fd = schema.functions[selectedFunction()];
+    var depends = toolkit.deref(fd, ['paramdepends']);
+    if (!depends) {
+      return;
+    }
+    var selected = selectedFunction();
+    var fd = schema.functions[selected];
+    var newHeaders = [];
+    var newHiddenHeaders = [];
+    var subheaderInitialArray = null;
+    var subheaderTypes = {};
+    forEachParam(fd, function(paramId, initial, paramKey) {
+      // normal parameters are easy: just show or hide
+      var e = allParameterSelectors[paramKey];
+      var dependOr = toolkit.deref(depends, [paramId]);
+      if (dependencyEnabled(dependOr, params)) {
+        if (!(paramKey in shownParameters)) {
+          shownParameters[paramKey] = paramId;
+          e.show();
+        }
+      } else if (paramKey in shownParameters) {
+        delete shownParameters[paramKey];
+        e.hide();
+      }
+    }, function(paramId, columnData, unitTypeName) {
+      subheaderTypes[paramId] = unitTypeName;
+      var dependOr = toolkit.deref(depends, [paramId]);
+      if (dependencyEnabled(dependOr, params)) {
+        newHeaders.push(paramId);
+      } else {
+        newHiddenHeaders.push(paramId);
+      }
+    }, function(paramId, dataUnits) {
+      subheaderInitialArray = dataUnits;
+    });
+    //if (newHiddenColumns.length === 0 && newShownColumns.length === 0) {
+    //  return;
+    //}
+    var currentData = inputGrid.getColumnArray();
+    var currentSubheaderValues = unitSettings();
+    var newColumns = [];
+    var subheaderValues = [];
+    var subheaderTypeArray = [];
+    toolkit.forEach(newHeaders, function(i, h) {
+      if (h in hiddenColumns) {
+        newColumns.push(hiddenColumns[h]);
+      } else {
+        var columnIndex = headerParams[h];
+        newColumns.push(currentData[columnIndex]);
+        if (subheaderInitialArray) {
+          subheaderValues.push(subheaderInitialArray[columnIndex]);
+          subheaderTypeArray.push(subheaderTypes[h]);
+        }
+      }
+    });
+    var newHiddenColumns = {};
+    var newHiddenSubheaders = {};
+    toolkit.forEach(newHiddenHeaders, function(i, h) {
+      if (h in hiddenColumns) {
+        newHiddenColumns[h] = hiddenColumns[h];
+        newHiddenSubheaders[h] = hiddenSubheaders[h];
+      } else {
+        var columnIndex = headerParams[h];
+        newHiddenColumns[h] = currentData[columnIndex];
+        newHiddenSubheaders[h] = currentSubheaderValues[columnIndex];
+      }
+    });
+    hiddenColumns = newHiddenColumns;
+    hiddenSubheaders = newHiddenSubheaders;
+    newHeaders.push('');
+    newColumns.push([]);
+    setInputGrid(newHeaders,
+      subheaderTypeArray,
+      subheaderValues,
+      [[]]);
+    inputGrid.setColumnArray(newColumns);
+    body.resize();
   }
 
   function setOptions() {
@@ -588,6 +696,7 @@ function shinylightFrameworkStart() {
         options[optionId] = addControl(typeId, optionId, optionsPage, tr, initial, callback);
       });
     });
+    body.resize();
     enableDisableOptions();
   }
 
@@ -595,15 +704,16 @@ function shinylightFrameworkStart() {
     toolkit.forEach(shownParameters, function(k,i) {
       allParameterSelectors[k].hide();
     });
-    shownParameters = {};
     var selected = selectedFunction();
-    subheaderParam = null;
     var fd = schema.functions[selected];
     var headers = [];
     var data = [];
-    subheaderInitials = [];
-    subheaderTypes = [];
     headerParams = {};
+    var subheaderInitials = [];
+    var subheaderTypes = [];
+    hiddenColumns = {};
+    hiddenSubheaders = {};
+    shownParameters = {};
     forEachParam(fd, function(paramId, initial, paramKey) {
       shownParameters[paramKey] = paramId;
       var e = allParameterSelectors[paramKey];
@@ -615,7 +725,6 @@ function shinylightFrameworkStart() {
       data.push(columnData);
       subheaderTypes.push(unitTypeName);
     }, function(paramId, dataUnits) {
-      subheaderParam = paramId;
       subheaderInitials = dataUnits;
     });
     headers.push('');
@@ -623,7 +732,7 @@ function shinylightFrameworkStart() {
       subheaderTypes,
       subheaderInitials,
       data);
-    body.resize();
+    enableDisableParameters();
   }
 
   function setCalculateMode(automatic) {
@@ -913,7 +1022,10 @@ function shinylightFrameworkStart() {
         top,
         translations(['app', 'params', paramKey]),
         toolkit.deref(schema.data, [p.data[0], 0], null),
-        markPlotDirty
+        function() {
+          markPlotDirty();
+          enableDisableParameters();
+        }
       );
       if (c) {
         allParameterSelectors[paramKey] = c;

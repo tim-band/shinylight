@@ -1,4 +1,4 @@
-test1 <- function(c1, c2, type, units, factor, offset, pch, bg, lwd) {
+test1 <- function(c1, c2, type, units, factor, offset, pch, bg, lwd=1.0) {
   c1f <- c1 * factor
   c2o <- c2 + offset
   plot(c1f, c2o, type=type, pch=pch, bg=bg, lwd=lwd)
@@ -49,9 +49,20 @@ functions <- list(
       c1="lengths",
       c2="weights",
       type="plot_param",
-      units="test1_units"
+      units="test1_units",
+      lwd="line_width"
     ),
-    optiongroups=c("adjust", "plot_points")
+    optiongroups=c("adjust", "plot_points"),
+    paramdepends=list(
+      # list of conditions ORed together
+      # for when lwd should be added to the 
+      lwd=list(
+        # list of conditions ANDed together
+        list(
+          type="l"
+        )
+      )
+    )
   ),
   test2=list(
     params=list(
@@ -77,11 +88,11 @@ functions <- list(
 
 params <- list(
   a=list(type="f", data="zero"),
-  plot_param=list(type="plot_type", data="points"),
+  plot_param=list(type="plot_type", data="p"),
   test1_units=list(type="subheader", data="test1_units"),
   lengths=list(type="length_column", data="test1_length_inits"),
   weights=list(type="weight_column", data="test1_weight_inits"),
-  lwd=list(type="u8", data=1)
+  line_width=list(type="u8", data=1)
 )
 
 optiongroups <- list(
@@ -94,8 +105,7 @@ optiongroups <- list(
   ),
   plot_points=list(
     pch=list(type="u8", initial=1),
-    bg=list(type="color", initial='#FFF'),
-    lwd=list(type="f", initial=1.0)
+    bg=list(type="color", initial='#FFF')
   ),
   framework=list(
     autorefresh=list(type="b", initial=FALSE)
