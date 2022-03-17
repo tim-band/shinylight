@@ -292,6 +292,40 @@ describe('shinylight framework', function() {
         await driver.wait(until.elementIsVisible(bg));
     });
 
+    it('respects column dependencies', async function() {
+        this.timeout(10000);
+        await switchFunction(driver, 'test5');
+        await clickIds(driver, ['param-dimensions', 'dimensions-3d']);
+        await assertInputHeaders(driver, ['lengths', 'depths', 'widths', '']);
+        await assertSubheaders(driver, ['mm', 'mm', 'mm', '']);
+        await selectSubheader(driver, 0, 'in');
+        await selectSubheader(driver, 1, 'in');
+        await assertSubheaders(driver, ['in', 'in', 'mm', '']);
+        const cells = [['2', '1', '0'], ['8', '7', '6']];
+        const cells02 = cells.map(function(row) {
+            return [row[0], row[2]];
+        });
+        await enterCellText(driver, 0, 0, cells[0], cells[1]);
+        await clickIds(driver, ['param-dimensions', 'dimensions-2d']);
+        await assertInputHeaders(driver, ['lengths', 'widths', '']);
+        await assertSubheaders(driver, ['in', 'mm', '']);
+        await assertInputCells(driver, 0, 0, 2, 2, cells02);
+        await clickIds(driver, ['param-dimensions', 'dimensions-3d']);
+        await assertInputCells(driver, 0, 0, 2, 3, cells);
+        await assertSubheaders(driver, ['in', 'in', 'mm', '']);
+        await selectSubheader(driver, 1, 'mm');
+        await clickIds(driver, ['param-dimensions', 'dimensions-2d']);
+        await assertInputHeaders(driver, ['lengths', 'widths', '']);
+        await clickId(driver, 'param-boolean');
+        await assertInputHeaders(driver, ['lengths', 'depths', 'widths', '']);
+        await clickIds(driver, ['param-dimensions', 'dimensions-2d']);
+        await assertInputHeaders(driver, ['lengths', 'depths', 'widths', '']);
+        await clickId(driver, 'param-boolean');
+        await assertInputHeaders(driver, ['lengths', 'widths', '']);
+        await clickId(driver, 'param-boolean');
+        await assertSubheaders(driver, ['in', 'mm', 'mm', '']);
+    });
+
     it('allows R code to be run from the client side', async function() {
         this.timeout(2000);
         const result = await executeRrpc(driver, "2+2");
@@ -693,12 +727,30 @@ async function clickId(driver, id) {
     await driver.findElement(By.id(id)).click();
 }
 
+async function clickIds(driver, ids) {
+    for (let i in ids) {
+        await clickId(driver, ids[i]);
+    }
+}
+
 async function switchFunction(driver, funcName) {
     await driver.findElement(By.id('param-function-selector')).click();
     var names = typeof(funcName) === 'object' ? funcName : [funcName];
     for (var i in names) {
         await driver.findElement(By.id('function-selector-' + names[i])).click();
     }
+}
+
+async function selectSubheader(driver, index, value) {
+    const e = await driver.findElement(By.css(`#input-table .subheader td:nth-of-type(${index+1})`));
+    await e.click();
+    await e.findElement(By.css(`option[value='${value}']`)).click();
+}
+
+async function assertSubheaders(driver, expectedValues) {
+    const es = await driver.findElements(By.css('#input-table .subheader select'));
+    const vs = await Promise.all(es.map(e => e.getAttribute('value')));
+    assert.deepStrictEqual(vs, expectedValues);
 }
 
 async function assertOutputCells(driver, r, c, rowCount, columnCount, expectedCells) {
@@ -710,13 +762,30 @@ async function assertOutputCells(driver, r, c, rowCount, columnCount, expectedCe
     }
 }
 
-async function assertOutputHeaders(driver, expected) {
+async function assertInputCells(driver, r, c, rowCount, columnCount, expectedCells) {
+    for (let i = 0; i !== rowCount; ++i) {
+        const row = expectedCells[i];
+        for (let j = 0; j !== columnCount; ++j) {
+            await assertElementText(driver, inputCell(r + i, c + j), '' + row[j]);
+        }
+    }
+}
+
+async function assertHeaders(driver, id, expected) {
     for (let i = 0; i !== expected.length; ++i) {
         const t = await driver.findElement(By.css(
-            `#output-table thead tr th:nth-child(${i+2})`
+            `#${id} thead tr th:nth-child(${i+2})`
         )).getText();
         assert.strictEqual(t, expected[i]);
     }
+}
+
+async function assertOutputHeaders(driver, expected) {
+    await assertHeaders(driver, 'output-table', expected);
+}
+
+async function assertInputHeaders(driver, expected) {
+    await assertHeaders(driver, 'input-table', expected);
 }
 
 async function outputHeaderIs(driver, index, expected) {

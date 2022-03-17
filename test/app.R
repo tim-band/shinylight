@@ -22,25 +22,34 @@ test3 <- function(c1, c2) {
 }
 
 test4 <- function(c1, c2) {
-  shinylight::sendProgress(0, 100);
-  Sys.sleep(0.3);
-  shinylight::sendInfoText("first information");
-  Sys.sleep(0.3);
-  shinylight::sendProgress(0.5, 1);
-  Sys.sleep(0.3);
-  shinylight::sendInfoText("second thing");
-  Sys.sleep(0.3);
-  shinylight::sendProgress(100, 100);
+  shinylight::sendProgress(0, 100)
+  Sys.sleep(0.3)
+  shinylight::sendInfoText("first information")
+  Sys.sleep(0.3)
+  shinylight::sendProgress(0.5, 1)
+  Sys.sleep(0.3)
+  shinylight::sendInfoText("second thing")
+  Sys.sleep(0.3)
+  shinylight::sendProgress(100, 100)
   data.frame(
     sum = c1+c2,
     diff = c2-c1
   )
 }
 
+test5 <- function(lengths, widths, depths=c(), type='2d', want_depth) {
+  result <- c()
+  if (type=='3d' || want_depth) {
+    return(lengths * widths * depths)
+  }
+  return(lengths * widths)
+}
+
 groups <- list(
   a="test1",
   middles=c("test2", "test3"),
-  c="test4"
+  c="test4",
+  d="test5"
 )
 
 functions <- list(
@@ -83,6 +92,26 @@ functions <- list(
       c1="lengths",
       c2="weights"
     )
+  ),
+  test5=list(
+    params=list(
+      lengths="lengths",
+      depths="depths",
+      widths="widths",
+      units="test5_units",
+      type="dimensions",
+      want_depth="boolean"
+    ),
+    paramdepends=list(
+      depths=list(
+        list(
+          type='3d'
+        ),
+        list(
+          want_depth=TRUE
+        )
+      )
+    )
   )
 )
 
@@ -90,7 +119,12 @@ params <- list(
   a=list(type="f", data="zero"),
   plot_param=list(type="plot_type", data="p"),
   test1_units=list(type="subheader", data="test1_units"),
+  test5_units=list(type="subheader", data="test5_units"),
   lengths=list(type="length_column", data="test1_length_inits"),
+  widths=list(type="length_column", data="test1_length_inits"),
+  depths=list(type="length_column", data="test1_length_inits"),
+  dimensions=list(type="dimensions", data="d2"),
+  boolean=list(type="b", data="false"),
   weights=list(type="weight_column", data="test1_weight_inits"),
   line_width=list(type="u8", data=1)
 )
@@ -150,12 +184,19 @@ types <- list(
     kind="enum",
     values=c("kg", "lb"),
     factors=c(0.454, 1)
+  ),
+  dimensions=list(
+    kind="enum",
+    values=c("2d", "3d")
   )
 )
 
 examples <- list(
   points="p",
+  false=FALSE,
+  d2="2d",
   test1_units=list("mm", "kg"),
+  test5_units=list("mm", "mm", "mm"),
   test1_length_inits=list(15.0,24.1,13.2,8.3),
   test1_weight_inits=list(4.4, 4.2, 6.1, 1.0)
 )
@@ -169,6 +210,7 @@ testServer <- function(port=NULL) {
       test2=test2,
       test3=test3,
       test4=test4,
+      test5=test5,
       getSchema=function() {
         list(functiongroups=groups, functions=functions, params=params, types=types,
           data=examples, optiongroups=optiongroups, optiondepends=optiondepends)

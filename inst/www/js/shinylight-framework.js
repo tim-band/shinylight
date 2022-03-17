@@ -353,6 +353,7 @@ function shinylightFrameworkStart() {
 
   var doPlot2 = noop;
   var dirtyPlot = noop;
+  var enableDisableParameters = noop;
 
   function doPlot(callback) {
     doPlot2(callback);
@@ -583,20 +584,18 @@ function shinylightFrameworkStart() {
   // Look into schema.optiondepends to see if any options need to be
   // disabled or enabled.
   // For now we are just hiding or showing it.
-  function enableDisableParameters() {
+  function doEnableDisableParameters() {
     var params = {};
     addMainParams(params);
     var fd = schema.functions[selectedFunction()];
     var depends = toolkit.deref(fd, ['paramdepends']);
-    if (!depends) {
-      return;
-    }
     var selected = selectedFunction();
     var fd = schema.functions[selected];
     var newHeaders = [];
     var newHiddenHeaders = [];
-    var subheaderInitialArray = null;
     var subheaderTypes = {};
+    var newHeaderParams = {};
+    var changed = false;
     forEachParam(fd, function(paramId, initial, paramKey) {
       // normal parameters are easy: just show or hide
       var e = allParameterSelectors[paramKey];
@@ -614,16 +613,22 @@ function shinylightFrameworkStart() {
       subheaderTypes[paramId] = unitTypeName;
       var dependOr = toolkit.deref(depends, [paramId]);
       if (dependencyEnabled(dependOr, params)) {
+        newHeaderParams[paramId] = newHeaders.length;
         newHeaders.push(paramId);
+        if (paramId in hiddenColumns) {
+          changed = true;
+        }
       } else {
         newHiddenHeaders.push(paramId);
+        if (!(paramId in hiddenColumns)) {
+          changed = true;
+        }
       }
     }, function(paramId, dataUnits) {
-      subheaderInitialArray = dataUnits;
     });
-    //if (newHiddenColumns.length === 0 && newShownColumns.length === 0) {
-    //  return;
-    //}
+    if (!changed) {
+      return;
+    }
     var currentData = inputGrid.getColumnArray();
     var currentSubheaderValues = unitSettings();
     var newColumns = [];
@@ -631,23 +636,26 @@ function shinylightFrameworkStart() {
     var subheaderTypeArray = [];
     toolkit.forEach(newHeaders, function(i, h) {
       if (h in hiddenColumns) {
+        // Column is newly shown
         newColumns.push(hiddenColumns[h]);
+        subheaderValues.push(hiddenSubheaders[h]);
       } else {
+        // Column is still shown
         var columnIndex = headerParams[h];
         newColumns.push(currentData[columnIndex]);
-        if (subheaderInitialArray) {
-          subheaderValues.push(subheaderInitialArray[columnIndex]);
-          subheaderTypeArray.push(subheaderTypes[h]);
-        }
+        subheaderValues.push(currentSubheaderValues[columnIndex]);
       }
+      subheaderTypeArray.push(subheaderTypes[h]);
     });
     var newHiddenColumns = {};
     var newHiddenSubheaders = {};
     toolkit.forEach(newHiddenHeaders, function(i, h) {
       if (h in hiddenColumns) {
+        // column is still hidden
         newHiddenColumns[h] = hiddenColumns[h];
         newHiddenSubheaders[h] = hiddenSubheaders[h];
       } else {
+        // column is newly hidden
         var columnIndex = headerParams[h];
         newHiddenColumns[h] = currentData[columnIndex];
         newHiddenSubheaders[h] = currentSubheaderValues[columnIndex];
@@ -655,6 +663,7 @@ function shinylightFrameworkStart() {
     });
     hiddenColumns = newHiddenColumns;
     hiddenSubheaders = newHiddenSubheaders;
+    headerParams = newHeaderParams;
     newHeaders.push('');
     newColumns.push([]);
     setInputGrid(newHeaders,
@@ -663,6 +672,19 @@ function shinylightFrameworkStart() {
       [[]]);
     inputGrid.setColumnArray(newColumns);
     body.resize();
+  }
+
+  function unsetEnableDisableParameters() {
+    enableDisableParameters = noop;
+  }
+
+  function setEnableDisableParameters() {
+    var fd = schema.functions[selectedFunction()];
+    if (toolkit.deref(fd, ['paramdepends'])) {
+      enableDisableParameters = doEnableDisableParameters;
+    } else {
+      unsetEnableDisableParameters();
+    }
   }
 
   function setOptions() {
@@ -701,19 +723,21 @@ function shinylightFrameworkStart() {
   }
 
   function setParameters() {
+    unsetEnableDisableParameters();
     toolkit.forEach(shownParameters, function(k,i) {
       allParameterSelectors[k].hide();
+      console.log(k, i);
     });
+    headerParams = {};
+    hiddenColumns = {};
+    hiddenSubheaders = {};
+    shownParameters = {};
     var selected = selectedFunction();
     var fd = schema.functions[selected];
     var headers = [];
     var data = [];
-    headerParams = {};
     var subheaderInitials = [];
     var subheaderTypes = [];
-    hiddenColumns = {};
-    hiddenSubheaders = {};
-    shownParameters = {};
     forEachParam(fd, function(paramId, initial, paramKey) {
       shownParameters[paramKey] = paramId;
       var e = allParameterSelectors[paramKey];
@@ -732,6 +756,7 @@ function shinylightFrameworkStart() {
       subheaderTypes,
       subheaderInitials,
       data);
+    setEnableDisableParameters();
     enableDisableParameters();
   }
 
