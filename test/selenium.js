@@ -78,7 +78,8 @@ async function startSelenium(tmpdir) {
         setPreference('browser.download.folderList', 2).  // do not use default download directory
         setPreference('browser.download.manager.showWhenStarting', false).  // do not show download progress
         setPreference('browser.download.dir', tmpdir).
-        setPreference('browser.helperApps.neverAsk.saveToDisk', 'text/csv');
+        setPreference('browser.helperApps.neverAsk.saveToDisk', 'text/*').
+        setPreference('browser.download.alwaysOpenPanel', false);
     let chromeOptions = new Chrome.Options().setUserPreferences({
         'profile.default_content_settings.popups': 0,
         'download.prompt_for_download': 'false',
@@ -112,7 +113,7 @@ describe('shinylight framework', function() {
     beforeEach(async function() {
         this.timeout(20000);
         await portIsOpen(8000);
-        await driver.get('http://localhost:8000');
+        await driver.get('http://localhost:8000/test.html');
     });
 
     it('selects parameters based on function chosen', async function() {
@@ -324,6 +325,44 @@ describe('shinylight framework', function() {
         await assertInputHeaders(driver, ['lengths', 'widths', '']);
         await clickId(driver, 'param-boolean');
         await assertSubheaders(driver, ['in', 'mm', 'mm', '']);
+    });
+
+    it('saves and restores input data', async function() {
+        this.timeout(8000);
+        const file = path.join(os.tmpdir(), 'params.json');
+        if (fs.existsSync(file)) {
+            fs.unlinkSync(file);
+        }
+        await switchFunction(driver, 'test5');
+        await clickIds(driver, ['param-dimensions', 'dimensions-3d']);
+        const input1 = [['4', '3', '5'], ['2', '1', '8.9'], ['3', '3', '1'], ['1', '-4', '0.2']];
+        await enterCellText(driver, 0, 0, ...input1);
+        await clickId(driver, 'button-savedata');
+        await driver.wait(async function() {
+            return fs.existsSync(file);
+        });
+        const contents1 = fs.readFileSync(file).toString('utf8');
+        fs.unlinkSync(file);
+        await clickIds(driver, ['param-dimensions', 'dimensions-2d']);
+        const input2 = [['1.1', '-9'], ['4.2', '9'], ['4.3', '11'], ['-1', '10.5']];
+        await enterCellText(driver, 0, 0, ...input2);
+        await clickId(driver, 'button-savedata');
+        await driver.wait(async function() {
+            return fs.existsSync(file);
+        });
+        const contents2 = fs.readFileSync(file).toString('utf8');
+        fs.unlinkSync(file);
+        async function loadAndAssert(fileContents, expectedData) {
+            await clickId(driver, 'button-loaddata');
+            var loaddata = await driver.findElement(By.id('load-file'));
+            for (var i = 0; i < fileContents.length; i += 100) {
+                await loaddata.sendKeys(fileContents.slice(i, i+100));
+            }
+            await loaddata.sendKeys(Key.ENTER);
+            await assertInputCells(driver, 0, 0, expectedData.length, expectedData[0].length, expectedData);
+        }
+        await loadAndAssert(contents1, input1);
+        await loadAndAssert(contents2, input2);
     });
 
     it('allows R code to be run from the client side', async function() {
@@ -735,7 +774,7 @@ async function clickIds(driver, ids) {
 
 async function switchFunction(driver, funcName) {
     await driver.findElement(By.id('param-function-selector')).click();
-    var names = typeof(funcName) === 'object' ? funcName : [funcName];
+    const names = typeof(funcName) === 'object' ? funcName : [funcName];
     for (var i in names) {
         await driver.findElement(By.id('function-selector-' + names[i])).click();
     }

@@ -1113,19 +1113,32 @@ var toolkit = function() {
     return b;
   }
 
-  function loadFileButton(id, fn, translations) {
-    var b = makeLabel(translations, null, id);
-    b.classList.add('button');
-    b.tabIndex = 0;
-    setShowHide(b, 'inline-block');
+  function defaultCreateFileInput(uploaded, done) {
     var input = document.createElement('input');
     input.type = 'file';
     input.style.display = 'none';
+    input.show = noop;
     input.onchange = function(ev) {
-      b.classList.add('pressed');
-      fn(input.files[0], function() {
-        b.classList.remove('pressed');
-      });
+      uploaded(input.files[0], done);
+    }
+    return input;
+  }
+
+  function loadFileButton(id, fn, translations, createFileInput) {
+    if (typeof(createFileInput) !== 'function') {
+      createFileInput = defaultCreateFileInput;
+    }
+    var b = makeLabel(translations, null, id);
+    b.id = 'button-' + id;
+    b.classList.add('button');
+    b.tabIndex = 0;
+    setShowHide(b, 'inline-block');
+    var input = createFileInput(fn, function() {
+      b.classList.remove('pressed');
+    });
+    input.id = 'load-file';
+    b.onclick = function(ev) {
+      input.show();
     };
     b.appendChild(input);
     return b;
@@ -1784,6 +1797,17 @@ var toolkit = function() {
      * having a value that is an object having a key \code{'name'}
      * with value the display name of the button, and optionally a key
      * \code{'help'} with value of the tooltip text.
+     * @param {function} [createFileInput] A function to create an element that
+     * uploads a file. By default this is a normal \code{<input type="file">}
+     * with an extra \code{show} member function that does nothing.
+     * The function takes two parameters: \code{uploadFn} and \code{doneFn}.
+     * \code{uploadFn} must be called when a file has been chosen for upload;
+     * it takes two parameters: a File object and a callback function that is
+     * called on completion. You should either pass \code{doneFn} as this
+     * second parameter, or a function that performs some actions then
+     * calls \code{doneFn()} itself. The return value of \code{createFileInput}
+     * should be the element itself, monkey-patched to include a \code{show()}
+     * method that will be called when the Load button is clicked.
      * @returns {HTMLElement} The button.
      */
     loadFileButton: loadFileButton,

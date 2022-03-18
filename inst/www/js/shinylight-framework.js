@@ -123,8 +123,15 @@
  *  \item{\code{name}}{A short name}
  *  \item{\code{help}}{Tooltip text}
  * }
+ * @param {object} [options] An optional object containing options
+ * to modify the behaviour of the framework.
+ * @param {function} [options.createFileInput] A function to create
+ * an element that uploads a file, as required for
+ * \code{toolkit.loadFileButton}.
+ * @see toolkit.loadFileButton
  */
-function shinylightFrameworkStart() {
+function shinylightFrameworkStart(options) {
+  var userOptions = typeof(options) === 'object'? options : {};
   var inputGrid;
   var optionGroups = {};
   var outputImgWrapper;
@@ -142,9 +149,6 @@ function shinylightFrameworkStart() {
   var shownParameters = {};
   // paramId -> column index in input table
   var headerParams = {};
-  // The name of the parameter (if required) that takes the list
-  // of column subheaders
-  var subheaderParam;
   var calculateButtons = [];
   // All the data for the columns that are currently disabled (i.e.
   // valid for the current function but the settings the parameters
@@ -270,17 +274,41 @@ function shinylightFrameworkStart() {
       console.error('did not understand parameter file format');
       return;
     }
+    unsetEnableDisableParameters();
     // the function itself
     if (data.fn in schema.functions) {
       functionSelector.setData(data.fn);
     } else {
       console.error('no such function', data.fn);
     }
+    headerParams = {};
+    hiddenColumns = {};
+    hiddenSubheaders = {};
+    var units = null;
+    var columns = [];
+    var headers = [];
+    var subheaderTypes = {};
     var p = data.parameters;
-    // parameters from the main screen
-    toolkit.forEach(shownParameters, function(k, id) {
-      var e = allParameterSelectors[k];
-      e.setData(p[id]);
+    console.log(data.fn, schema.functions[data.fn]);
+    var fd = schema.functions[data.fn];
+    forEachParam(fd, function(paramId, initial, paramKey) {
+      // parameters from the main screen
+      var e = allParameterSelectors[paramKey];
+      e.setData(p[paramId]);
+    }, function(paramId, columnData, unitTypeName) {
+      // a column for the input table
+      if (paramId in p) {
+        subheaderTypes[paramId] = unitTypeName;
+        headerParams[paramId] = headers.length;
+        columns[headers.length] = p[paramId];
+        headers.push(paramId);
+      } else {
+        hiddenColumns[paramId] = [];
+        hiddenSubheaders[paramId] = '';
+      }
+    }, function(paramId, dataUnits) {
+      // subheader parameter
+      units = toolkit.deref(p, [paramId]);
     });
     // options
     var optionGroup = toolkit.deref(schema.functions[data.fn], ['optiongroups'], {});
@@ -289,15 +317,9 @@ function shinylightFrameworkStart() {
         e.setData(p[id]);
       });
     });
-    // construct data to set into the input table
-    var data = [];
-    toolkit.forEach(headerParams, function(id, columnIndex) {
-      data[columnIndex] = p[id];
-    });
-    setInputGrid(inputGrid.getColumnHeaders(),
-      subheaderTypes,
-      subheaderParam && subheaderParam in p? p[subheaderParam] : null,
-      data);
+    setInputGrid(inputGrid.getColumnHeaders(), subheaderTypes, units, columns);
+    setEnableDisableParameters();
+    enableDisableParameters();
   }
 
   function addMainParams(params) {
@@ -310,14 +332,18 @@ function shinylightFrameworkStart() {
   function getParams() {
     var p = {};
     var fn = selectedFunction();
+    forEachParam(
+      schema.functions[fn],
+      noop,
+      noop,
+      function(subheaderParamId, dataUnits) {
+        p[subheaderParamId] = unitSettings();
+      }
+    );
     // data from columns
     toolkit.forEach(headerParams, function(id, columnIndex) {
       p[id] = getColumn(columnIndex);
     });
-    // subheaders (units)
-    if (subheaderParam) {
-      p[subheaderParam] = unitSettings();
-    }
     // parameters from the main screen
     addMainParams(p);
     // relevant options
@@ -590,12 +616,13 @@ function shinylightFrameworkStart() {
     var fd = schema.functions[selectedFunction()];
     var depends = toolkit.deref(fd, ['paramdepends']);
     var selected = selectedFunction();
-    var fd = schema.functions[selected];
     var newHeaders = [];
     var newHiddenHeaders = [];
     var subheaderTypes = {};
     var newHeaderParams = {};
+    var subheaderParam = null;
     var changed = false;
+    var fd = schema.functions[selected];
     forEachParam(fd, function(paramId, initial, paramKey) {
       // normal parameters are easy: just show or hide
       var e = allParameterSelectors[paramKey];
@@ -625,6 +652,7 @@ function shinylightFrameworkStart() {
         }
       }
     }, function(paramId, dataUnits) {
+      subheaderParam = paramId;
     });
     if (!changed) {
       return;
@@ -668,7 +696,7 @@ function shinylightFrameworkStart() {
     newColumns.push([]);
     setInputGrid(newHeaders,
       subheaderTypeArray,
-      subheaderValues,
+      subheaderParam? subheaderValues : null,
       [[]]);
     inputGrid.setColumnArray(newColumns);
     body.resize();
@@ -726,7 +754,6 @@ function shinylightFrameworkStart() {
     unsetEnableDisableParameters();
     toolkit.forEach(shownParameters, function(k,i) {
       allParameterSelectors[k].hide();
-      console.log(k, i);
     });
     headerParams = {};
     hiddenColumns = {};
@@ -736,7 +763,7 @@ function shinylightFrameworkStart() {
     var fd = schema.functions[selected];
     var headers = [];
     var data = [];
-    var subheaderInitials = [];
+    var subheaderInitials = null;
     var subheaderTypes = [];
     forEachParam(fd, function(paramId, initial, paramKey) {
       shownParameters[paramKey] = paramId;
@@ -893,6 +920,7 @@ function shinylightFrameworkStart() {
     var saveData = toolkit.button('savedata', toolkit.withTimeout(function() {
       downloadJsonText('params.json', JSON.stringify(getParams()));
     }), buttonTranslations);
+    const createFileInput = toolkit.deref(userOptions, ['createFileInput']);
     var loadData = toolkit.loadFileButton('loaddata', function(file, done) {
       if (20000 < file.size) {
         console.error('file too large!', file.size);
@@ -910,7 +938,7 @@ function shinylightFrameworkStart() {
         }
       };
       reader.readAsText(file);
-    }, buttonTranslations);
+    }, buttonTranslations, createFileInput);
     var plotFooter = toolkit.banner({
       downloadPlot: toolkit.button('download-pdf',
         downloadPdf, translations(['framework', 'buttons']))
