@@ -244,9 +244,9 @@ function shinylightFrameworkStart(options) {
     var imgSize = outputImgWrapper.getSize();
     doPlotNow({
       'rrpc.resultformat': {
-        type: 'png',
-        width: imgSize.width,
-        height: imgSize.height
+        type: 'svg',
+        width: 12,
+        height: 12
       }
     }, function(result, params, fn) {
       var data = {};
