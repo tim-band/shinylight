@@ -134,6 +134,7 @@ function shinylightFrameworkStart(options) {
   var userOptions = typeof(options) === 'object'? options : {};
   var inputGrid;
   var optionGroups = {};
+  var optionGroupTitle = {};
   var outputImgWrapper;
   var output;
   var optionsPage;
@@ -478,7 +479,7 @@ function shinylightFrameworkStart(options) {
         var type = schema.types[paramKey];
         if (type.kind[0] === 'enum') {
           hasSubheaders = true;
-          subheaderDefaults.push(units[c]);
+          subheaderDefaults.push(units? units[c] : null);
           var spec = {};
           var ts = translations(['app', 'types', paramKey], {});
           toolkit.forEach(type.values, function(i, value) {
@@ -715,42 +716,84 @@ function shinylightFrameworkStart(options) {
     }
   }
 
+  function ensureCallable(fn) {
+    return typeof(fn) === 'function'? fn : noop;
+  }
+
+  function forEachOptionGroup(groupFn, optionFn) {
+    if (typeof(schema.optiongroups) !== 'object') {
+      return;
+    }
+    groupFn = ensureCallable(groupFn);
+    optionFn = ensureCallable(optionFn);
+    toolkit.forEach(schema.optiongroups, function(groupId, group) {
+      groupFn(groupId, group);
+      toolkit.forEach(group, function(optionId, option) {
+        optionFn(optionId, option, groupId);
+      });
+    });
+  }
+
+  function enableDisableOptionGroups() {
+    var selected = selectedFunction();
+    var wantedGroups = toolkit.deref(
+      schema, ['functions', selected, 'optiongroups'], {}
+    );
+    var wanted = false;
+    forEachOptionGroup(function(groupId) {
+      wanted = groupId == 'framework' ||
+        toolkit.any(wantedGroups, function(i, g) {
+          return g === groupId;
+        });
+      if (wanted) {
+        optionGroupTitle[groupId].show();
+      } else {
+        optionGroupTitle[groupId].hide();
+      }
+    }, function(optionId, option, groupId) {
+      if (wanted) {
+        optionGroups[groupId][optionId].show();
+      } else {
+        optionGroups[groupId][optionId].hide();
+      }
+    });
+  }
+
   function setOptions() {
     if (typeof(schema.optiongroups) !== 'object') {
       return;
     }
-    toolkit.forEach(schema.optiongroups, function(groupId, group) {
+    forEachOptionGroup(function(groupId) {
       if (!(groupId in optionGroups)) {
         optionGroups[groupId] = {};
       }
-      var options = optionGroups[groupId];
       var groupTr = translations(['framework', 'framework-options', '@title'], { name: groupId });
       if (groupId !== 'framework') {
         groupTr = translations(['app', 'optiongroups', groupId, '@title'], groupTr);
       }
-      toolkit.groupTitle(optionsPage, groupTr);
-      toolkit.forEach(group, function(optionId, option) {
-        var typeId = toolkit.deref(option, ['type', 0]);
-        var tr = translations(['app', 'optiongroups', groupId, optionId], { name: optionId });
-        if (groupId === 'framework') {
-          tr = translations(['framework', 'framework-options', optionId], tr);
+      optionGroupTitle[groupId] = toolkit.groupTitle(optionsPage, groupTr);
+    }, function(optionId, option, groupId) {
+      var typeId = toolkit.deref(option, ['type', 0]);
+      var tr = translations(['app', 'optiongroups', groupId, optionId], { name: optionId });
+      if (groupId === 'framework') {
+        tr = translations(['framework', 'framework-options', optionId], tr);
+      }
+      var initial = toolkit.deref(option, ['initial', 0]);
+      var callback = toolkit.deref(
+        optionCallbacks, [groupId, optionId],
+        function() {
+          enableDisableOptions();
+          markPlotDirty();
         }
-        var initial = toolkit.deref(option, ['initial', 0]);
-        var callback = toolkit.deref(
-          optionCallbacks, [groupId, optionId],
-          function() {
-            enableDisableOptions();
-            markPlotDirty();
-          }
-        );
-        options[optionId] = addControl(typeId, optionId, optionsPage, tr, initial, callback);
-      });
+      );
+      optionGroups[groupId][optionId] = addControl(typeId, optionId, optionsPage, tr, initial, callback);
     });
     body.resize();
     enableDisableOptions();
   }
 
   function setParameters() {
+    enableDisableOptionGroups();
     unsetEnableDisableParameters();
     toolkit.forEach(shownParameters, function(k,i) {
       allParameterSelectors[k].hide();
@@ -842,8 +885,8 @@ function shinylightFrameworkStart(options) {
         removeTopParameters();
         addFunctionSelectButton();
         addParamSelectors();
-        setParameters();
         setOptions();
+        setParameters();
         displayPlotNow(function() {
           setCalculateMode(calculateMode());
         });
