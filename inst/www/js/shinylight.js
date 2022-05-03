@@ -231,6 +231,39 @@ var shinylight = function () {
         },
 
         /**
+         * Sets a \code{dataentrygrid} object to the result of
+         * {@link runR}. The object will have fixed rows, with
+         * names derived from the row names in the original
+         * data frame.
+         * 
+         * @param {DataEntryGrid} grid Table that receives the result
+         * @param {object} result Return value promised by {@link runR}
+         */
+        setGridResultWithNamedRows: function(grid, result) {
+            if (!result.data || result.data.length === 0) {
+                return null;
+            }
+            const headers = Object.keys(result.data[0]).filter(function(c) {
+                return c !== '_row';
+            });
+    		const data = [];
+    		const rowHeaders = [];
+            forEach(result.data, function(rowIndex, row) {
+    			const rowData = [];
+                forEach(row, function(colName, cell) {
+                    if (colName !== '_row') {
+                        rowData.push(cell);
+                    }
+                });
+    			const rowName = '_row' in row? row._row : rowIndex;
+    			rowHeaders.push(rowName);
+    			data.push(rowData);
+    		});
+    		grid.init(headers, rowHeaders);
+    		grid.putCells(0, rowHeaders.length, 0, headers.length, data);
+        },
+
+        /**
          * @typedef TableData
          * @property {string[]|number} headers Array of strings to become the new
          * column headers, or the number of columns to create
