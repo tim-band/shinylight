@@ -465,6 +465,26 @@ function shinylightFrameworkStart(options) {
     return result;
   }
 
+  function setSubheaderTooltips(grid, tooltipArray) {
+    toolkit.forEach(tooltipArray, function(i, text) {
+      if (text) {
+        grid.setSubheaderTooltip(i, text);
+      }
+    });
+  }
+
+  function setSubheaderOptionsTooltips(grid, tooltipMapArray) {
+    toolkit.forEach(tooltipMapArray, function(col, opts) {
+      if (opts) {
+        toolkit.forEach(opts, function(opt, text) {
+          if (text) {
+            grid.setSubheaderOptionTooltip(col, opt, text);
+          }
+        });
+      }
+    });
+  }
+
   // headers: Array of parameter IDs for the columns
   // subheaderTypes: Array of type IDs for the subheaders
   // units: Array of initial values for subheaders
@@ -472,6 +492,8 @@ function shinylightFrameworkStart(options) {
   function setInputGrid(headers, subheaderTypes, units, data) {
     var c = 0;
     var subheaderSpecs = [];
+    var subheaderHelp = [];
+    var subheaderOptionsHelp = [];
     var subheaderDefaults = [];
     var hasSubheaders = false;
     toolkit.forEach(subheaderTypes, function(k, paramKey) {
@@ -480,14 +502,20 @@ function shinylightFrameworkStart(options) {
         if (type.kind[0] === 'enum') {
           hasSubheaders = true;
           subheaderDefaults.push(units? units[c] : null);
-          var spec = {};
           var ts = translations(['app', 'types', paramKey], {});
+          subheaderHelp.push(toolkit.deref(ts, ['@title', 'help']));
+          var spec = {};
+          var optionsHelp = {};
           toolkit.forEach(type.values, function(i, value) {
             spec[value] = toolkit.deref(ts, [value, 'name'], value);
+            optionsHelp[value] = toolkit.deref(ts, [value, 'help'], value);
           });
           subheaderSpecs.push(spec);
+          subheaderOptionsHelp.push(optionsHelp);
         } else {
           subheaderSpecs.push(null);
+          subheaderOptionsHelp.push(null);
+          subheaderHelp.push(null);
           subheaderDefaults.push(null);
         }
       } else {
@@ -503,6 +531,8 @@ function shinylightFrameworkStart(options) {
     var rows = transpose(data);
     const trailingZeroes = /\.?0*$/;
     inputGrid.init(headers, rows, hasSubheaders? subheaderSpecs : null, subheaderDefaults);
+    setSubheaderTooltips(inputGrid, subheaderHelp);
+    setSubheaderOptionsTooltips(inputGrid, subheaderOptionsHelp);
     inputGrid.setReunittingFunction(function(index, currentValue, newValue, col) {
       paramKey = subheaderTypes[index];
       if (paramKey in schema.types) {

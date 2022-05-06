@@ -1,0 +1,31 @@
+{
+    "title": "Test Framework App",
+    "types": {
+        "length_unit": {
+            "@title": {
+                "help": "length units"
+            },
+            "mm": {
+                "name": "mm",
+                "help": "milimeters"
+            },
+            "in" : {
+                "name": "in",
+                "help": "inches"
+            }
+        },
+        "weight_unit": {
+            "@title": {
+                "help": "mass units"
+            },
+            "kg": {
+                "name": "kg",
+                "help": "kilograms"
+            },
+            "lb": {
+                "name": "lb",
+                "help": "pounds"
+            }
+        }
+    }
+}
