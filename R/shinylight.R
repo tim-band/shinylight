@@ -80,6 +80,65 @@ rrpc <- function(interface) { function(ws) {
   })
 }}
 
+#' Returns a response to a request to /lang/
+getLocaleResponse <- function(req, langs) {
+  al <- req$HTTP_ACCEPT_LANGUAGE
+  als <- strsplit(al, ",", fixed=TRUE)[[1]]
+  langPath <- c(sub(";.*", "", als), "en", langs[1])
+  lang <- intersect(langPath, langs)[1]
+  host <- req$HTTP_HOST
+  path <- sub("^/lang/", paste0("/locales/", lang, "/"), req$PATH_INFO)
+  list(
+    status=307L,
+    headers=list("Location"=paste0(
+      req$rook.url_scheme, "://", host, req$HTTP_SCRIPT_NAME, path
+    )),
+    body=""
+  )
+}
+
+# Split xs into a list of lists
+# Each member of xs that equals sep is discarded,
+# and a new member of the output list is started.
+splitVector <- function(xs, sep) {
+  ps <- xs == sep
+  indices <- cumsum(ps)+1
+  indicesNa <- ifelse(ps, NA, indices)
+  split(xs, indicesNa)
+}
+
+# Turns a vector of lines into a paragraph
+unlines <- function(lines) paste(lines, collapse="\n")
+
+# Gets form data from request as a list
+getFormData <- function(req) {
+  boundary <- '--'
+  for (cte in strsplit(req$CONTENT_TYPE,'; *')[[1]]) {
+    kv <- strsplit(cte,'=')[[1]]
+    if (1 < length(kv) && kv[[1]] == 'boundary') {
+      boundary <- paste0('--', kv[[2]])
+    }
+  }
+  endboundary <- paste0(boundary, '--')
+  lines <- req$rook.input$read_lines()
+  lines <- splitVector(lines, endboundary)[[1]]
+  sections <- list()
+  for (section in splitVector(lines, boundary)) {
+    s <- splitVector(section, '')
+    if (1 < length(s)) {
+      headers <- s[[1]]
+      name_headers <- headers[grep('; *name="', headers)]
+      if (0 < name_headers) {
+        name <- sub('^.*; *name="([^""]*)".*$', "\\1", name_headers[1])
+        paragraphs <- lapply(s[2:length(s)], unlines)
+        body <- paste(paragraphs, collapse="\n\n")
+        sections[[name]] <- body
+      }
+    }
+  }
+  sections
+}
+
 #' Makes and starts a server for serving R calculations
 #'
 #' @param interface List of functions to be served. The names of the elements
@@ -99,6 +158,7 @@ rrpcServer <- function(
     root="/") {
   paths <- list()
   paths[[paste0(root, "lang")]] <- httpuv::excludeStaticPath()
+  paths[[paste0(root, "init")]] <- httpuv::excludeStaticPath()
   existingFiles <- list()
   for(appDir in appDirs) {
     files <- list.files(appDir, recursive=TRUE)
@@ -118,18 +178,28 @@ rrpcServer <- function(
   )
   lang <- 'en'
   app$call <- function(req) {
-    al <- req$HTTP_ACCEPT_LANGUAGE
-    als <- strsplit(al, ",", fixed=TRUE)[[1]]
-    langPath <- c(sub(";.*", "", als), "en", langs[1])
-    lang <- intersect(langPath, langs)[1]
-    host <- req$HTTP_HOST
-    path <- sub("^/lang/", paste0("/locales/", lang, "/"), req$PATH_INFO)
-    list(
-      status=307L,
-      headers=list("Location"=paste0(
-        req$rook.url_scheme, "://", host, req$HTTP_SCRIPT_NAME, path
-      )),
-      body=""
+    first <- strsplit(req$PATH_INFO, '/', fixed=T)[[1]][2]
+    if (first == 'lang') {
+      return (getLocaleResponse(req, langs))
+    } else if (first == 'init') {
+      # take post data and fire it back as a cookie
+      sections <- getFormData(req)
+      if (is.null(sections$data)) {
+        return (list(
+          status=400L,
+          headers=list(),
+          body="Need a POST request with a 'data' form parameter"
+        ))
+      }
+      return(list(
+        status=200L,
+        headers=list("Set-Cookie:"=paste0("init=", sections$data)),
+        body=paste(readLines(paths[["/index.html"]]), collapse="\n")
+      ))
+    }
+    list (
+      status=404L,
+      body="Unknown"
     )
   }
   if (is.null(port)) {
