@@ -191,10 +191,20 @@ rrpcServer <- function(
           body="Need a POST request with a 'data' form parameter"
         ))
       }
+      escaped <- gsub("\\", "\\\\", sections$data, fixed=TRUE)
+      escaped <- gsub("\n", "\\n\\\n", escaped, fixed=TRUE)
+      escaped <- gsub("'", "\\'", escaped, fixed=TRUE)
+      escaped <- paste0("var shinylight_initial_data='\\\n", escaped, "';")
+      body <- readLines(paths[["/index.html"]])
+      body <- ifelse(
+        grepl("\\bshinylight_initial_data[ \\t]*=", body),
+        escaped,
+        body
+      )
       return(list(
         status=200L,
-        headers=list("Set-Cookie:"=paste0("init=", sections$data)),
-        body=paste(readLines(paths[["/index.html"]]), collapse="\n")
+        headers=list(),
+        body=paste(body, collapse="\n")
       ))
     }
     list (
