@@ -110,13 +110,12 @@ splitVector <- function(xs, sep) {
 # Turns a vector of lines into a paragraph
 unlines <- function(lines) paste(lines, collapse="\n")
 
-# Gets form data from request as a list
-getFormData <- function(req) {
-  boundary <- '--'
-  for (cte in strsplit(req$CONTENT_TYPE,'; *')[[1]]) {
-    kv <- strsplit(cte,'=')[[1]]
-    if (1 < length(kv) && kv[[1]] == 'boundary') {
-      boundary <- paste0('--', kv[[2]])
+getMultipartFormData <- function(req, ctes) {
+  boundary <- "--"
+  for (cte in ctes) {
+    kv <- strsplit(cte, "=")[[1]]
+    if (1 < length(kv) && kv[[1]] == "boundary") {
+      boundary <- paste0("--", kv[[2]])
     }
   }
   endboundary <- paste0(boundary, '--')
@@ -139,8 +138,44 @@ getFormData <- function(req) {
   sections
 }
 
+# Gets form data from request as a list
+getFormData <- function(req) {
+  ctes <- strsplit(req$CONTENT_TYPE, "; *")[[1]]
+  if (ctes[[1]] == "multipart/form-data") {
+    return(getMultipartFormData(req, ctes[2:length(ctes)]))
+  }
+  input <- intToUtf8(req$rook.input$read())
+  sections <- list()
+  for (kv in strsplit(input, "&")[[1]]) {
+    kve <- strsplit(kv, "=")[[1]]
+    if (1 < length(kve)) {
+      k <- kve[[1]]
+      v <- URLdecode(kve[[2]])
+      sections[[k]] <- v
+    }
+  }
+  sections
+}
+
 #' Makes and starts a server for serving R calculations
 #'
+#' It will serve files from the app directories specified by appDirs.
+#' If a file is requested that is not in one of those directories, the
+#' files in Shinylight's own inst/www directory will be served.
+#' Some paths have special meanings: \code{/} returns
+#' \code{/index.html}, \code{/lang/} is redirected to
+#' \code{/locales/<language-code>/} depending
+#' on the language selected in the request's Accept-Language
+#' header (that is, the browser's language setting) and the
+#' availability of the file requested. A POST request to \code{/init}
+#' with a \code{data} parameter will return \code{/index.html}, except
+#' that if the file has a line containing \code{shinylight_initial_data =}
+#' then this line with be replaced with a line initializing
+#' \code{shinylight_initial_data} to the data passed. This is used in
+#' \code{shinylight-framework} to permit linking to a framework app
+#' with specific data preloaded -- the text should be as is downloaded
+#' with the "Save Data" button. Of course, this is available to
+#' non-framework apps, too.
 #' @param interface List of functions to be served. The names of the elements
 #' are the names that the client will use to call them.
 #' @param host Interface to listen on (default is \code{'0.0.0.0'}, that
@@ -176,7 +211,6 @@ rrpcServer <- function(
     full.names=FALSE,
     recursive=FALSE
   )
-  lang <- 'en'
   app$call <- function(req) {
     first <- strsplit(req$PATH_INFO, '/', fixed=T)[[1]][2]
     if (first == 'lang') {

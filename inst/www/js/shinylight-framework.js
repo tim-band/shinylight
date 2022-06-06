@@ -917,6 +917,9 @@ function shinylightFrameworkStart(options) {
         addParamSelectors();
         setOptions();
         setParameters();
+        if (typeof(shinylight_initial_data) === 'string') {
+          setParams(JSON.parse(shinylight_initial_data));
+        }
         displayPlotNow(function() {
           setCalculateMode(calculateMode());
         });
