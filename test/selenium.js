@@ -491,6 +491,39 @@ describe('shinylight framework', function() {
             });
         }
     });
+
+    describe('preinitialization', function() {
+        it('sets the grid appropriately', async function() {
+            this.timeout(5000);
+            const cells = [[10, 4], [9, 5], [8, 6], [7, 7]];
+            const c1 = cells.map(row => row[0]);
+            const c2 = cells.map(row => row[1]);
+            const settings = `{"fn":"test1","parameters":{"units":["mm","kg",""],"c1":[${c1}],"c2":[${c2}],"type":"p","factor":1,"offset":0,"pch":1,"bg":"#000000"}}`;
+            await preinitialze(driver, settings);
+            await assertInputCells(driver, 0, 0, cells.length, 2, cells);
+        });
+        it('sets the units appropriately', async function() {
+            this.timeout(5000);
+            const headers = ["kg", "mm", ""];
+            const settings = `{"fn":"test1","parameters":{"units":[${headers}],"c1":[1,2,3],"c2":[6,5,4],"type":"p","factor":1,"offset":0,"pch":1,"bg":"#000000"}}`;
+            await preinitialze(driver, settings);
+            await assertSubheaders(driver, headers);
+        });
+        it('sets the parameters appropriately', async function() {
+            this.timeout(5000);
+            const plotType = "o";
+            const settings = `{"fn":"test1","parameters":{"units":["mm","kg",""],"c1":[1,2,3],"c2":[6,5,4],"type":"${plotType}","factor":1,"offset":0,"pch":1,"bg":"#000000"}}`;
+            await preinitialze(driver, settings);
+            await assertParamIs(driver, "plot_param", plotType);
+        });
+        it('sets the options appropriately', async function() {
+            this.timeout(5000);
+            const pch = "21";
+            const settings = `{"fn":"test1","parameters":{"units":["mm","kg",""],"c1":[1,2,3],"c2":[6,5,4],"type":"p","factor":1,"offset":0,"pch":${pch},"bg":"#000000"}}`;
+            await preinitialze(driver, settings);
+            await assertOptionIs(driver, 'param-pch', pch);
+        });
+    });
 });
 
 describe('freeform shinylight', function() {
@@ -727,6 +760,13 @@ async function setValue(driver, id, text) {
     );
 }
 
+function getValue(driver, id) {
+    return driver.executeScript(
+        `var id=arguments[0];return document.getElementById(id).value;`,
+        id
+    );
+}
+
 async function assertElementText(driver, by, text) {
     await driver.wait(async function() {
         try {
@@ -849,6 +889,13 @@ async function assertParamIs(driver, id, value) {
             return v === t;
         }, 500, `Parameter ${id} should have value '${v}'`);
     }
+}
+
+async function assertOptionIs(driver, id, value) {
+    await clickInputTab(driver, 'options');
+    driver.sleep(100);
+    const actual = await getValue(driver, id);
+    assert.strictEqual(actual, value);
 }
 
 function colourFromIndex(png, index) {
@@ -1004,4 +1051,11 @@ function getAxes(png) {
         topTick: floor(topTick / row),
         bottomTick: floor(bottomTick / row)
     };
+}
+
+async function preinitialze(driver, text) {
+    await driver.get('http://localhost:8000/test_init.html');
+    const box = await driver.findElement(By.id('data'));
+    await box.sendKeys(text);
+    await driver.findElement(By.id('submit')).click();
 }

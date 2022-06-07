@@ -157,6 +157,33 @@ getFormData <- function(req) {
   sections
 }
 
+getInitResponse <- function(req, path) {
+  # take post data and fire it back as a cookie
+  sections <- getFormData(req)
+  if (is.null(sections$data)) {
+    return (list(
+      status=400L,
+      headers=list(),
+      body="Need a POST request with a 'data' form parameter"
+    ))
+  }
+  escaped <- gsub("\\", "\\\\", sections$data, fixed=TRUE)
+  escaped <- gsub("\n", "\\n\\\n", escaped, fixed=TRUE)
+  escaped <- gsub("'", "\\'", escaped, fixed=TRUE)
+  escaped <- paste0("var shinylight_initial_data='\\\n", escaped, "';")
+  body <- readLines(path)
+  body <- ifelse(
+    grepl("\\bshinylight_initial_data[ \\t]*=", body),
+    escaped,
+    body
+  )
+  return(list(
+    status=200L,
+    headers=list(),
+    body=paste(body, collapse="\n")
+  ))
+}
+
 #' Makes and starts a server for serving R calculations
 #'
 #' It will serve files from the app directories specified by appDirs.
@@ -216,30 +243,7 @@ rrpcServer <- function(
     if (first == 'lang') {
       return (getLocaleResponse(req, langs))
     } else if (first == 'init') {
-      # take post data and fire it back as a cookie
-      sections <- getFormData(req)
-      if (is.null(sections$data)) {
-        return (list(
-          status=400L,
-          headers=list(),
-          body="Need a POST request with a 'data' form parameter"
-        ))
-      }
-      escaped <- gsub("\\", "\\\\", sections$data, fixed=TRUE)
-      escaped <- gsub("\n", "\\n\\\n", escaped, fixed=TRUE)
-      escaped <- gsub("'", "\\'", escaped, fixed=TRUE)
-      escaped <- paste0("var shinylight_initial_data='\\\n", escaped, "';")
-      body <- readLines(paths[["/index.html"]])
-      body <- ifelse(
-        grepl("\\bshinylight_initial_data[ \\t]*=", body),
-        escaped,
-        body
-      )
-      return(list(
-        status=200L,
-        headers=list(),
-        body=paste(body, collapse="\n")
-      ))
+      return (getInitResponse(req, paths[["/index.html"]]))
     }
     list (
       status=404L,
@@ -267,7 +271,7 @@ getAddress <- function(server) {
 }
 
 #' Opens a browser to look at the server
-#' 
+#'
 #' @param server The server to browse to
 browseTo <- function(server) {
   utils::browseURL(getAddress(server))
