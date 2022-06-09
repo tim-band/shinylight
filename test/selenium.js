@@ -504,8 +504,8 @@ describe('shinylight framework', function() {
         });
         it('sets the units appropriately', async function() {
             this.timeout(5000);
-            const headers = ["kg", "mm", ""];
-            const settings = `{"fn":"test1","parameters":{"units":[${headers}],"c1":[1,2,3],"c2":[6,5,4],"type":"p","factor":1,"offset":0,"pch":1,"bg":"#000000"}}`;
+            const headers = ["in", "lb", ""];
+            const settings = `{"fn":"test1","parameters":{"units":${JSON.stringify(headers)},"c1":[1,2,3],"c2":[6,5,4],"type":"p","factor":1,"offset":0,"pch":1,"bg":"#000000"}}`;
             await preinitialze(driver, settings);
             await assertSubheaders(driver, headers);
         });

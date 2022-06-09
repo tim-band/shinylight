@@ -241,13 +241,19 @@ function shinylightFrameworkStart(options) {
     return JSON.stringify(j, null, 2);
   }
 
-  function displayPlotNow(done) {
+  var dotsPerUnit = {
+    png: 1,
+    svg: 75
+  };
+
+  function displayPlotNow(done, plotFormat='svg') {
     var imgSize = outputImgWrapper.getSize();
+    var dpu = dotsPerUnit[plotFormat];
     doPlotNow({
       'rrpc.resultformat': {
-        type: 'svg',
-        width: 12,
-        height: 12
+        type: plotFormat,
+        width: imgSize.width / dpu,
+        height: imgSize.height / dpu
       }
     }, function(result, params, fn) {
       var data = {};
@@ -290,7 +296,6 @@ function shinylightFrameworkStart(options) {
     var headers = [];
     var subheaderTypes = {};
     var p = data.parameters;
-    console.log(data.fn, schema.functions[data.fn]);
     var fd = schema.functions[data.fn];
     forEachParam(fd, function(paramId, initial, paramKey) {
       // parameters from the main screen
@@ -819,7 +824,6 @@ function shinylightFrameworkStart(options) {
       optionGroups[groupId][optionId] = addControl(typeId, optionId, optionsPage, tr, initial, callback);
     });
     body.resize();
-    enableDisableOptions();
   }
 
   function setParameters() {
@@ -918,8 +922,14 @@ function shinylightFrameworkStart(options) {
         setOptions();
         setParameters();
         if (typeof(shinylight_initial_data) === 'string') {
-          setParams(JSON.parse(shinylight_initial_data));
+          try {
+            setParams(JSON.parse(shinylight_initial_data));
+          } catch (e) {
+            console.error(e);
+            console.error('Failing JSON data:', shinylight_initial_data);
+          }
         }
+        enableDisableOptions();
         displayPlotNow(function() {
           setCalculateMode(calculateMode());
         });

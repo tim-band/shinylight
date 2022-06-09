@@ -300,7 +300,8 @@ var toolkit = function() {
       cursor: 'col-resize',
       width: dimensions.gripWidth + 'px',
       top: dimensions.top + 'px',
-      height: dimensions.height + 'px'
+      height: dimensions.height + 'px',
+      zIndex: -1
     });
     setAll(divider, {
       onmousedown: function(ev) {

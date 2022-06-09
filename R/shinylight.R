@@ -277,6 +277,14 @@ browseTo <- function(server) {
   utils::browseURL(getAddress(server))
 }
 
+closeAllDevices <- function() {
+  cur <- grDevices::dev.cur()
+  while (cur != 1) {
+    grDevices::dev.off(which = cur)
+    cur <- grDevices::dev.cur()
+  }
+}
+
 #' Renders a plot as a base64-encoded image
 #'
 #' @param device Graphics device function, such as
@@ -292,14 +300,23 @@ browseTo <- function(server) {
 #' @export
 encodePlot <- function(device, mimeType, width, height, plotFn) {
   tempFilename <- tempfile(pattern='plot', fileext='.tmp')
-  device(file=tempFilename, width=as.numeric(width), height=as.numeric(height))
+  closeAllDevices()
+  options(device = function() {
+    device(
+      file = tempFilename,
+      width = as.numeric(width),
+      height = as.numeric(height)
+    )
+  })
   data <- plotFn()
   plot <- NULL
-  grDevices::dev.off()
-  fileSize <- file.size(tempFilename)
-  if (!is.na(fileSize)) {
-    raw <- readBin(tempFilename, what="raw", n=fileSize)
-    plot <- paste0("data:", mimeType, ";base64,", jsonlite::base64_enc(raw))
+  if (grDevices::dev.cur() != 1) {
+    grDevices::dev.off()
+    fileSize <- file.size(tempFilename)
+    if (!is.na(fileSize)) {
+      raw <- readBin(tempFilename, what="raw", n=fileSize)
+      plot <- paste0("data:", mimeType, ";base64,", jsonlite::base64_enc(raw))
+    }
   }
   list(plot=plot, data=data)
 }
