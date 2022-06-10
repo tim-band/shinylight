@@ -182,27 +182,25 @@ describe('shinylight framework', function() {
         await setValue(driver, 'param-pch', '22');
         await setValue(driver, 'param-bg', '#ffff00');
         await clickId(driver, 'button-calculate');
-        let png = null;
+        let img = null;
         let axes = null;
         await driver.wait(async function() {
-            png = await getPng(driver, By.css('img#output-plot'));
-            if (!png) {
+            img = await getImg(driver, By.css('img#output-plot'));
+            if (!img) {
                 return false;
             }
-            axes = getAxes(png);
-            return isPoint(png, 'Y', axes.leftTick, axes.bottomTick); // 1,1
+            axes = img.getAxes();
+            return img.isPoint(axes.leftTick, axes.bottomTick); // 1,1
         });
-        assert(isPoint(
-            png, 'Y',
+        assert(img.isPoint(
             floor((axes.leftTick * 2 + axes.rightTick)/3),
             floor((axes.bottomTick * 2 + axes.topTick)/3),
         )); // 2,2
-        assert(isPoint(
-            png, 'Y',
+        assert(img.isPoint(
             floor((axes.leftTick + axes.rightTick * 2)/3),
             floor((axes.bottomTick + axes.topTick * 2)/3),
         )); // 3,3
-        assert(isPoint(png, 'Y', axes.rightTick, axes.topTick)); // 4,4
+        assert(img.isPoint(axes.rightTick, axes.topTick)); // 4,4
     });
 
     it('downloads a csv of the results', async function() {
@@ -440,15 +438,14 @@ describe('shinylight framework', function() {
         });
         assert.strictEqual(result.error, null);
         assert.strictEqual(typeof(result.result.plot), 'object');
-        const imgBuffer = Buffer.from(result.result.plot[0].split(',')[1], 'base64');
-        const png = PNG.sync.read(imgBuffer);
-        const axes = getAxes(png);
+        assert.strictEqual(typeof(result.result.plot[0]), 'string');
+        assert.ok(200 < result.result.plot[0].length);
+        const img = getImgFromData(result.result.plot[0]);
+        const axes = img.getAxes();
         assert.strictEqual(axes.left, 58);
         assert.strictEqual(axes.width, 111);
         assert.strictEqual(axes.bottom, 226);
         assert.strictEqual(axes.height, 167);
-        assert.strictEqual(typeof(result.result.plot[0]), 'string');
-        assert.ok(200 < result.result.plot[0].length);
         assert.deepStrictEqual(result.result.data, [2,0,1]);
     });
 
@@ -564,22 +561,21 @@ describe('freeform shinylight', function() {
         this.timeout(10000);
         await enterCellText(driver, 0, 0, ['1', '3'], ['2', '2'], ['3', '1']);
         await clickId(driver, 'button-plot');
-        let png = null;
+        let img = null;
         let axes = null;
         await driver.wait(async function() {
-            png = await getPng(driver, By.css('img#plot'));
-            if (!png) {
+            img = await getImg(driver, By.css('img#plot'));
+            if (!img) {
                 return false;
             }
-            axes = getAxes(png);
-            return isPoint(png, 'Y', axes.leftTick, axes.topTick); // 1,3
+            axes = img.getAxes();
+            return img.isPoint(axes.leftTick, axes.topTick); // 1,3
         });
-        assert(isPoint(
-            png, 'Y',
+        assert(img.isPoint(
             floor((axes.leftTick + axes.rightTick)/2),
             floor((axes.bottomTick + axes.topTick)/2),
         )); // 2,2
-        assert(isPoint(png, 'Y', axes.rightTick, axes.bottomTick)); // 3,3
+        assert(img.isPoint(axes.rightTick, axes.bottomTick)); // 3,3
     });
 
     it('receives progress and info reports', async function() {
@@ -673,37 +669,239 @@ describe('minimal shinylight', function() {
         await clickId(driver, 'headers_button');
         await typeIn(driver, 'command_param', 'plot(x=c(1,2,3), y=c(3,2,1), pch=22, bg="#ffff00")');
         await clickId(driver, 'plot_button');
-        let png = null;
+        let img = null;
         let axes = null;
         await driver.wait(async function() {
-            png = await getPng(driver, By.css('img#plot'));
-            if (!png) {
+            img = await getImg(driver, By.css('img#plot'));
+            if (!img) {
                 return false;
             }
-            axes = getAxes(png);
-            return isPoint(png, 'Y', axes.leftTick, axes.topTick); // 1,3
+            axes = img.getAxes();
+            return img.isPoint(axes.leftTick, axes.topTick); // 1,3
         });
-        assert(isPoint(
-            png, 'Y',
+        assert(img.isPoint(
             floor((axes.leftTick + axes.rightTick)/2),
             floor((axes.bottomTick + axes.topTick)/2),
         )); // 2,2
-        assert(isPoint(png, 'Y', axes.rightTick, axes.bottomTick)); // 3,3
+        assert(img.isPoint(axes.rightTick, axes.bottomTick)); // 3,3
     });
 });
 
-async function getPng(driver, locator) {
+async function getImg(driver, locator) {
     const img = await driver.findElement(locator);
     if (!img) {
         return null;
     }
     const imgSrc = decodeURIComponent(await img.getAttribute('src'));
-    const imgB64 = imgSrc.split(',')[1];
-    if (typeof(imgB64) !== 'string') {
+    return getImgFromData(imgSrc);
+}
+
+function getImgFromData(data) {
+    const colon = data.split(':');
+    if (colon[0] !== 'data') {
         return null;
     }
-    const imgBuffer = Buffer.from(imgB64, 'base64');
-    return PNG.sync.read(imgBuffer);
+    const semicolon = colon[1].split(';');
+    const comma = semicolon[1].split(',');
+    if (comma[0] === 'base64') {
+        const imgB64 = comma[1];
+        if (typeof(imgB64) !== 'string') {
+            return null;
+        }
+        const imgBuffer = Buffer.from(imgB64, 'base64');
+        const mimeType = semicolon[0];
+        if (mimeType === 'image/svg+xml') {
+            return getSvg(imgBuffer.toString());
+        } else if (mimeType === 'image/png') {
+            return getPng(imgBuffer);
+        }
+    }
+    return null;
+}
+
+function getPng(data) {
+    const png = PNG.sync.read(data);
+    return {
+        getAxes: function() {
+            const originX = findLeftLine(png);
+            const originY = findBottomLine(png);
+            const row = png.width * 4;
+            const originRowStart = originY * row;
+            const originIndex = originRowStart + originX * 4;
+            const topIndex = lineEndIndex(png, originIndex, -row);
+            const rightIndex = lineEndIndex(png, originIndex, 4);
+            const height = originY - floor(topIndex / row);
+            const width = floor((rightIndex - originRowStart) / 4) - originX;
+            // find ticks
+            let bottomTick = originIndex - 8;
+            bottomTick = findDot(png, bottomTick, -row, height, bottomTick);
+            let topTick = topIndex - 8;
+            topTick = findDot(png, topTick, row, height, topTick);
+            const tickRow = originRowStart + 2 * row;
+            let leftTick = tickRow + originX * 4;
+            let rightTick = leftTick + width * 4;
+            leftTick = findDot(png, leftTick, 4, width, leftTick);
+            rightTick = findDot(png, rightTick, -4, width, rightTick);
+            return {
+                bottom: originY,
+                left: originX,
+                height: height,
+                width: width,
+                leftTick: floor((leftTick - tickRow) / 4),
+                rightTick: floor((rightTick - tickRow) / 4),
+                topTick: floor(topTick / row),
+                bottomTick: floor(bottomTick / row)
+            };
+        },
+        isPoint: function(x, y) {
+            return isPointInPng(png, 'Y', x, y);
+        }
+    };
+}
+
+// isAbove(x, y, x0, y0, x1, y1) returns true if and only if
+// a line drawn directly down (increasing y) from y would intersect
+// the line from (x0,y0) to (x1,y1), including the point on the left
+// but not on the right.
+function isAbove(x, y, x0, y0, x1, y1) {
+    // (x0,y0) should be the left hand point
+    if (x1 <= x0) {
+        if (x0 === x1) {
+            // special case -- vertical line must never be hit
+            return false;
+        }
+        const xt = x0;
+        x0 = x1;
+        x1 = xt;
+        const yt = y0;
+        y0 = y1;
+        y1 = yt;
+    }
+    if (x1 <= x) {
+        // missed to the right
+        return false;
+    }
+    if (x < x0) {
+        // missed to the left
+        return false;
+    }
+    // find y value of intersection of vertical line through (x,y)
+    const py = y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+    return y < py;
+}
+
+// cs is alternating x and y co-ordinates of the vertices of a polygon.
+// Returns true if and only if (x,y) is within that polygon.
+function isWithin(x, y, cs) {
+    let aboveCount = 0;
+    let x0 = cs[cs.length - 2];
+    let y0 = cs[cs.length - 1];
+    for (let j = 0; j < cs.length; j += 2) {
+        const x1 = cs[j];
+        const y1 = cs[j + 1];
+        if (isAbove(x, y, x0, y0, x1, y1)) {
+            ++aboveCount;
+        }
+        x0 = x1;
+        y0 = y1;
+    }
+    return (aboveCount & 1) == 1;
+}
+
+function getSvg(data) {
+    const quads = data.match(/<path\b[^>]+\bd="M *[0-9\.]+ +[0-9\.]+ +L *[0-9\.]+ +[0-9\.]+ +L *[0-9\.]+ +[0-9\.]+ +L *[0-9\.]+ +[0-9\.]+/mg);
+    if (!quads) {
+        return null;
+    }
+    let plotArea = 0;
+    let plotLeft = null;
+    let plotRight = null;
+    let plotTop = null;
+    let plotBottom = null;
+    quads.forEach(quad => {
+        const qs = quad.match(/\bd="M *([0-9\.]+) +([0-9\.]+) +L *([0-9\.]+) +([0-9\.]+) +L *([0-9\.]+) +([0-9\.]+) +L *([0-9\.]+) +([0-9\.]+)/m);
+        // biggest polygon is probably the plot area
+        if (qs) {
+            const vs = [];
+            for (let i = 1; i !== qs.length; ++i) {
+                vs.push(Number(qs[i]));
+            }
+            const xmin = Math.min(vs[0], vs[2], vs[4], vs[6]);
+            const xmax = Math.max(vs[0], vs[2], vs[4], vs[6]);
+            const ymin = Math.min(vs[1], vs[3], vs[5], vs[7]);
+            const ymax = Math.max(vs[1], vs[3], vs[5], vs[7]);
+            const area = (xmax - xmin) * (ymax - ymin);
+            if (plotArea < area) {
+                plotArea = area;
+                plotLeft = xmin;
+                plotRight = xmax;
+                plotTop = ymin;
+                plotBottom = ymax;
+            }
+        }
+    });
+    const width = plotRight - plotLeft;
+    const height = plotBottom - plotTop;
+    const maxTickProportion = 0.02;
+    const potentialTicks = data.match(/<path [^>]*\bd="M *[0-9\.]+ +[0-9\.]+ +L *[0-9\.]+ +[0-9\.]+ *"/mg);
+    let xTicks = [];
+    let yTicks = [];
+    potentialTicks.forEach(pt => {
+        const gs = pt.match(/\bd="M *([0-9\.]+) +([0-9\.]+) +L *([0-9\.]+) +([0-9\.]+) *"/m);
+        let x0 = Number(gs[1]);
+        let x1 = Number(gs[3]);
+        let y0 = Number(gs[2]);
+        let y1 = Number(gs[4]);
+        if (gs && x0 === x1 && Math.abs(y1 - y0) < maxTickProportion * height) {
+            xTicks.push(x0);
+        }
+        if (gs && y0 === y1 && Math.abs(x1 - x0) < maxTickProportion * width) {
+            yTicks.push(y0);
+        }
+    });
+    xTicks.sort((x,y) => x - y);
+    yTicks.sort((x,y) => x - y);
+    let potentialPoints = data.match(/<path [^>]*style="([^";]+;)*\bfill: *rgb[^>]*>/mg);
+    if (!potentialPoints) {
+        potentialPoints = [];
+    }
+    const coords = [];
+    potentialPoints.forEach(pp => {
+        const rgb = pp.match(/\bstyle="[^"]*\bfill: *rgb\(([0-9]+)%,([0-9]+)%,([0-9]+)%\)/m);
+        if (rgb && 40 < Number(rgb[1]) && 40 < Number(rgb[2]) && Number(rgb[3]) < 40) {
+            const d = pp.match(/\bd="([^"]*)"/m);
+            if (d) {
+                const xytexts = d[1].match(/[0-9.]+/mg);
+                const xys = xytexts.map(t => Number(t));
+                coords.push(xys);
+            }
+        }
+    });
+    if (xTicks.length ===0 || yTicks.length === 0) {
+        return null;
+    }
+    return {
+        getAxes: function() {
+            return {
+                bottom: plotBottom,
+                left: plotLeft,
+                height: height,
+                width: width,
+                leftTick: xTicks[0],
+                rightTick: xTicks[xTicks.length - 1],
+                topTick: yTicks[0],
+                bottomTick: yTicks[yTicks.length - 1]
+            }
+        },
+        isPoint: function(x, y) {
+            for (let i = 0; i !== coords.length; ++i) {
+                if (isWithin(x, y, coords[i])) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    };
 }
 
 async function executeRrpc(driver, code, extraOpts) {
@@ -929,7 +1127,12 @@ function colourPatchSize(png, col, x, y) {
     }
 }
 
-function isPoint(png, col, x, y) {
+// returns true if the colour beneath the point (x,y) is
+// the colour col (from 'R', 'G', 'B', 'C', 'M', 'Y', 'W' or 'K')
+// and is from a patch no wider than 9 pixels and no
+// taller than 9 pixels. This is used for detecting points
+// on a graph that have a 'background' colour.
+function isPointInPng(png, col, x, y) {
     const p = colourPatchSize(png, col, x, y);
     const w = p.right - p.left;
     const h = p.bottom - p.top;
@@ -1019,38 +1222,6 @@ function findDot(png, index, d, count, defaultReturn) {
         }
     }
     return defaultReturn;
-}
-
-function getAxes(png) {
-    const originX = findLeftLine(png);
-    const originY = findBottomLine(png);
-    const row = png.width * 4;
-    const originRowStart = originY * row;
-    const originIndex = originRowStart + originX * 4;
-    const topIndex = lineEndIndex(png, originIndex, -row);
-    const rightIndex = lineEndIndex(png, originIndex, 4);
-    const height = originY - floor(topIndex / row);
-    const width = floor((rightIndex - originRowStart) / 4) - originX;
-    // find ticks
-    let bottomTick = originIndex - 8;
-    bottomTick = findDot(png, bottomTick, -row, height, bottomTick);
-    let topTick = topIndex - 8;
-    topTick = findDot(png, topTick, row, height, topTick);
-    const tickRow = originRowStart + 2 * row;
-    let leftTick = tickRow + originX * 4;
-    let rightTick = leftTick + width * 4;
-    leftTick = findDot(png, leftTick, 4, width, leftTick);
-    rightTick = findDot(png, rightTick, -4, width, rightTick);
-    return {
-        bottom: originY,
-        left: originX,
-        height: height,
-        width: width,
-        leftTick: floor((leftTick - tickRow) / 4),
-        rightTick: floor((rightTick - tickRow) / 4),
-        topTick: floor(topTick / row),
-        bottomTick: floor(bottomTick / row)
-    };
 }
 
 async function preinitialze(driver, text) {
