@@ -203,9 +203,10 @@ examples <- list(
 
 symbolList <- c('<-', 'c', 'plot', 'data.frame', '+', '-', '*', '/', 'x', 'y', 'data', '$', 'one', 'two')
 
-testServer <- function(port=NULL) {
+testServer <- function(port=NULL, initialize=NULL) {
   appDir <- R.utils::getAbsolutePath("test/www_framework")
   shinylight::slServer(host='127.0.0.1', port=port, daemonize=TRUE, appDir=appDir,
+    initialize=initialize,
     interface=list(
       test1=test1,
       test2=test2,

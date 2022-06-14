@@ -157,6 +157,35 @@ getFormData <- function(req) {
   sections
 }
 
+#' Get index.html with (potentially) the JSON data in `text`
+#' inserted.
+#'
+#' @param text The text to insert as shinylight_initial_data
+#' @param path File system path to the index.html file
+#' @return The updated text
+indexWithInit <- function(text, path) {
+  if (typeof(text) != "character") {
+    text <- jsonlite::toJSON(text)
+  }
+  escaped <- gsub("\\", "\\\\", text, fixed=TRUE)
+  escaped <- gsub("\n", "\\n\\\n", escaped, fixed=TRUE)
+  escaped <- gsub("'", "\\'", escaped, fixed=TRUE)
+  escaped <- paste0("var shinylight_initial_data='\\\n", escaped, "';")
+  body <- readLines(path)
+  unlines(ifelse(
+    grepl("\\bshinylight_initial_data[ \\t]*=", body),
+    escaped,
+    body
+  ))
+}
+
+#' Get the response to a POST to /init
+#' This is index.html with (potentially) the JSON data
+#' from the 'data' parameter inserted.
+#'
+#' @param req The httpuv request object
+#' @param path File system path to the index.html file
+#' @return The httpuv response object
 getInitResponse <- function(req, path) {
   # take post data and fire it back as a cookie
   sections <- getFormData(req)
@@ -167,20 +196,10 @@ getInitResponse <- function(req, path) {
       body="Need a POST request with a 'data' form parameter"
     ))
   }
-  escaped <- gsub("\\", "\\\\", sections$data, fixed=TRUE)
-  escaped <- gsub("\n", "\\n\\\n", escaped, fixed=TRUE)
-  escaped <- gsub("'", "\\'", escaped, fixed=TRUE)
-  escaped <- paste0("var shinylight_initial_data='\\\n", escaped, "';")
-  body <- readLines(path)
-  body <- ifelse(
-    grepl("\\bshinylight_initial_data[ \\t]*=", body),
-    escaped,
-    body
-  )
   return(list(
     status=200L,
     headers=list(),
-    body=paste(body, collapse="\n")
+    body=indexWithInit(sections$data, path)
   ))
 }
 
@@ -210,6 +229,12 @@ getInitResponse <- function(req, path) {
 #' @param port Port to listen on
 #' @param appDirs List of directories in which to find static files to serve
 #' @param root Root of the app on the server (with trailing slash)
+#' @param initialize A json string or list (that will be converted to a
+#' JSON string) to be passed to the JavaScript as initial data. For
+#' non-framework apps, the index.html must contain a line containing
+#' \code{var shinylight_initial_data=}, which will be replaced with
+#' code that sets \code{shinylight_initial_data} to this supplied JSON
+#' string.
 #' @return The server object, can be passed to \code{\link{slStop}}
 #' @export
 rrpcServer <- function(
@@ -217,7 +242,8 @@ rrpcServer <- function(
     host='0.0.0.0',
     port=NULL,
     appDirs=NULL,
-    root="/") {
+    root="/",
+    initialize=NULL) {
   paths <- list()
   paths[[paste0(root, "lang")]] <- httpuv::excludeStaticPath()
   paths[[paste0(root, "init")]] <- httpuv::excludeStaticPath()
@@ -226,9 +252,6 @@ rrpcServer <- function(
     files <- list.files(appDir, recursive=TRUE)
     for (file in setdiff(files, existingFiles)) {
       paths[[paste0(root,file)]] <- file.path(appDir, file)
-      if (file == "index.html" && !(root %in% names(paths))) {
-        paths[[root]] <- file.path(appDir, file)
-      }
     }
     existingFiles <- union(existingFiles, files)
   }
@@ -239,7 +262,18 @@ rrpcServer <- function(
     recursive=FALSE
   )
   app$call <- function(req) {
-    first <- strsplit(req$PATH_INFO, '/', fixed=T)[[1]][2]
+    path.elements <- strsplit(req$PATH_INFO, '/', fixed=T)[[1]]
+    if (length(path.elements) < 2) {
+      index.path <- paths[["/index.html"]]
+      return(list(
+        status=200L,
+        headers=list(),
+        body=if (is.null(initialize))
+          unlines(readLines(index.path))
+          else indexWithInit(initialize, index.path)
+      ))
+    }
+    first = path.elements[2]
     if (first == 'lang') {
       return (getLocaleResponse(req, langs))
     } else if (first == 'init') {
@@ -494,6 +528,12 @@ slStop <- function(server=NULL) {
 #' to show the GUI.
 #' @param daemonize If TRUE, keep serving forever without returning.
 #' This is useful when called from \code{RScript}, to keep
+#' @param initialize A json string or list (that will be converted to a
+#' JSON string) to be passed to the JavaScript as initial data. For
+#' non-framework apps, the index.html must contain a line containing
+#' \code{var shinylight_initial_data=}, which will be replaced with
+#' code that sets \code{shinylight_initial_data} to this supplied JSON
+#' string.
 #' @return server object, unless daemonize is TRUE.
 #' @export
 slServer <- function(
@@ -501,7 +541,8 @@ slServer <- function(
     appDir=NULL,
     host='127.0.0.1',
     port=NULL,
-    daemonize=FALSE) {
+    daemonize=FALSE,
+    initialize=NULL) {
   slDir <- system.file("www", package = "shinylight")
   if (is.null(appDir)) {
     appDirList <- list(slDir)
@@ -509,7 +550,7 @@ slServer <- function(
     appDirList <- list(appDir, slDir)
   }
   s <- rrpcServer(host=host, port=port, appDirs=appDirList, root="/",
-    interface=interface
+    interface=interface, initialize=initialize
   )
   extraMessage <- ""
   if (is.null(port)) {
@@ -541,14 +582,26 @@ slServer <- function(
 #' @param daemonize If TRUE, keep serving forever without returning.
 #' This is useful when called from \code{RScript}, to keep
 #' @return server object, unless daemonize is TRUE.
+#' @param initialize A json string or list (that will be converted to a
+#' JSON string) to be passed to the JavaScript as initial data. For
+#' non-framework apps, the index.html must contain a line containing
+#' \code{var shinylight_initial_data=}, which will be replaced with
+#' code that sets \code{shinylight_initial_data} to this supplied JSON
+#' string.
 #' @export
 slRunRServer <- function(
     permittedSymbols,
     appDir=NULL,
     host='127.0.0.1',
     port=NULL,
-    daemonize=FALSE) {
-  slServer(host=host, port=port, appDir=appDir, daemonize=daemonize,
+    daemonize=FALSE,
+    initialize=NULL) {
+  slServer(
+    host=host,
+    port=port,
+    appDir=appDir,
+    daemonize=daemonize,
+    initialize=initialize,
     interface=list(
       runR=runR(permittedSymbols)
     )
