@@ -24,8 +24,9 @@ function getBrowser() {
     return 'firefox';
 }
 
-function spawnR(script) {
-    return spawn('Rscript', [script], { stdio: [ 'ignore', 'inherit', 'inherit' ] });
+function spawnR() {
+    const args = Array.prototype.slice.apply(arguments);
+    return spawn('Rscript', args, { stdio: [ 'ignore', 'inherit', 'inherit' ] });
 }
 
 function kill(process) {
@@ -520,6 +521,39 @@ describe('shinylight framework', function() {
             await preinitialze(driver, settings);
             await assertOptionIs(driver, 'param-pch', pch);
         });
+    });
+});
+
+describe('shinylight framework with preinitialization from R', function() {
+    let rProcess;
+    let driver;
+
+    before(async function() {
+        this.timeout(15000);
+        rProcess = spawnR('test/run.R', 'test/init1.json');
+        const tmp = os.tmpdir();
+        driver = await startSelenium(tmp);
+    });
+
+    after(async function() {
+        this.timeout(3000);
+        await kill(rProcess);
+        await driver.quit();
+    });
+
+    beforeEach(async function() {
+        await portIsOpen(8000);
+        await driver.get('http://localhost:8000/');
+    });
+
+    it('sets the input grid', async function() {
+        this.timeout(3000);
+        await assertInputCells(driver, 0, 0, 4, 2, [
+            [1, 2],
+            [4, 5],
+            [7, 8],
+            [20, 22]
+        ]);
     });
 });
 

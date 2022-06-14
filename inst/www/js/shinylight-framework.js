@@ -277,10 +277,6 @@ function shinylightFrameworkStart(options) {
   }
 
   function setParams(data) {
-    if (!('fn' in data && 'parameters' in data)) {
-      console.error('did not understand parameter file format');
-      return;
-    }
     unsetEnableDisableParameters();
     // the function itself
     if (data.fn in schema.functions) {
