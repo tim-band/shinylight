@@ -576,8 +576,8 @@ describe('freeform shinylight', function() {
 
     beforeEach(async function() {
         this.timeout(20000);
-        await portIsOpen(8000);
-        await driver.get('http://localhost:8000');
+        await portIsOpen(8001);
+        await driver.get('http://localhost:8001');
     });
 
     it('calls R that returns a data frame', async function() {
@@ -631,6 +631,46 @@ describe('freeform shinylight', function() {
                 return t === e;
             });
         }
+    });
+
+    describe('pass data to framework mechanism', function() {
+        var frameworkProcess = null;
+
+        before(async function() {
+            this.timeout(10000);
+            frameworkProcess = spawnR('test/run.R');
+            await portIsOpen(8000);
+        });
+
+        after(async function() {
+            await kill(frameworkProcess);
+        });
+
+        it('works', async function() {
+            this.timeout(99910000);
+            await enterCellText(driver, 0, 0, ['2', '0'], ['3', '4'], ['10', '11'], ['21', '2']);
+            await clickId(driver, 'button-plot');
+            await assertOutputCells(driver, 0, 0, 4, 1, [
+                [2, 2], [7, -1], [21, -1], [23, 19]
+            ]);
+            const firstTab = await driver.getWindowHandle();
+            var allTabs = null;
+            await clickId(driver, 'send-to-framework');
+            await driver.wait(async function() {
+                allTabs = await driver.getAllWindowHandles();
+                return 1 < allTabs.length;
+            });
+            var secondTab = null;
+            allTabs.forEach(id => {
+                if (id !== firstTab) {
+                    secondTab = id;
+                }
+            });
+            await driver.switchTo().window(secondTab);
+            await assertInputCells(driver, 0, 0, 4, 1, [
+                [2, 2], [7, -1], [21, -1], [23, 19]
+            ]);
+        });
     });
 });
 

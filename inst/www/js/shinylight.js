@@ -350,6 +350,35 @@ var shinylight = function () {
                 data: data,
             };
             return callServer('runR', params, plotElement, extra);
+        },
+
+        /**
+         * Open another tab with another (possibly remote from this one)
+         * instance of shinylight, initializing it with our own data.
+         *
+         * @param {string} url The URL of the other shinylight instance
+         * @param {any} data The JSON to send. If a string is passed, this
+         * is assumed to be JSON and sent as-is. Otherwise it is stringified
+         * into JSON before being sent.
+         */
+        passToOther: function (url, data) {
+            const form = document.createElement('form');
+            const url2 = url[url.length - 1] === '/'? url + 'init' : url + '/init';
+            form.style.visibility = 'hidden';
+            form.action = url2;
+            form.method = 'post';
+            const textInput = document.createElement('input');
+            textInput.type = 'text';
+            textInput.name = 'data';
+            textInput.value = typeof(data) === 'string'?
+                data
+                : JSON.stringify(data);
+            form.appendChild(textInput);
+            document.body.appendChild(form);
+            // open in new tab
+            form.target = '_blank';
+            form.submit();
+            document.body.removeChild(form);
         }
     }
 }();

@@ -85,6 +85,17 @@ function plot(callback) {
         callback();
     });
 }
+function send() {
+    var c1 = outputTable.getColumn(0);
+    var c2 = outputTable.getColumn(1);
+    shinylight.passToOther("http://localhost:8000", {
+        fn: "test1",
+        parameters: {
+            c1: c1,
+            c2: c2
+        }
+    });
+}
 </script>
 </head>
 <main>
@@ -100,6 +111,7 @@ function plot(callback) {
     <table id="output-table">
     </table>
     <textarea rows="5" cols="80" id="error"></textarea>
+    <button id="send-to-framework" onclick="send()">Send to framework</button>
 </body>
 </main>
 </html>
