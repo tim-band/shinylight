@@ -147,6 +147,20 @@ var shinylight = function () {
                         height: plotElement.clientHeight
                     };
                 }
+            } else {
+                if ('imgType' in extra) {
+                    var f = {
+                        type: extra.imgType
+                    };
+                    params['rrpc.resultformat'] = f;
+                    if (extra.imgType === 'png') {
+                        f.width = 300;
+                        f.height = 400;
+                    } else {
+                        f.width = 7;
+                        f.height = 7;
+                    }
+                }
             }
             rrpc.call(fn, params, function (result, error) {
                 if (error) {
@@ -176,7 +190,7 @@ var shinylight = function () {
         /**
          * @function
          * @description
-         * Sets the text condent of an element (or its \code{value} as
+         * Sets the text content of an element (or its \code{value} as
          * appropriate).
          *
          * @param {string|HTMLElement} elementOrId The element (or its id)
@@ -186,7 +200,7 @@ var shinylight = function () {
         setElementText: setElementText,
 
         /**
-         * Sets the text condent of an element (or its \code{value} as
+         * Sets the text content of an element (or its \code{value} as
          * appropriate) to the JSON representation of an object.
          *
          * @param {string|HTMLElement} elementOrId The element (or its id)
@@ -332,7 +346,7 @@ var shinylight = function () {
          * element already has, so ensure that it is styled in a way that it has
          * the correct size even if no image (or an old image) has been set.
          * @param {object} [extra={}] An object whose keys can be:
-         * "imgType": Type of image required, "png" (default) or "svg";
+         * "imgType": Type of image required, "png" (default), "svg" or "pdf";
          * "info": Funtion to be called if the R function {@link sendInfoText}
          * is called; "progress": Function to be called if the R function
          * {@link sendProgress} is called.
