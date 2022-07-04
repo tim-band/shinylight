@@ -73,6 +73,7 @@ rrpc <- function(interface) { function(ws) {
           list(error=e$message, result=NULL)
         }
       )
+      r$result$headers <- colnames(r$result$data)
       envelope$result <- r$result
       envelope$error <- r$error
     }

@@ -319,10 +319,11 @@ var shinylight = function () {
          * @returns {Promise} Result object that might have a \code{plot}
          * property (giving a string that would work as the \code{src}
          * attribute of an \code{img} element, representing graphics
-         * drawn by the command) and a \code{data} property (giving
-         * the value returned by the command). If the promise resolves
-         * to an error, the argument to the error function is a string
-         * representing the cause of the error.
+         * drawn by the command), a \code{data} property (giving
+         * the value returned by the command) and a \code{headers}
+         * property (giving the column names in the data returned if any).
+         * If the promise resolves to an error, the argument to the error
+         * function is a string representing the cause of the error.
          */
         call: function (fn, data, plotElement, extra) {
             var params = {};
