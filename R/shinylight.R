@@ -1,83 +1,108 @@
-globals <- new.env(parent=emptyenv())
+globals <- new.env(parent = emptyenv())
 
 #' Sends a progress update to the client.
 #'
-#' During a slow remote procedure call, call this to inform the client of progress.
-#' @param numerator The progress, out of \code{denominator}
+#' During a slow remote procedure call, call this to inform the client of
+#' progress.
+#' @param numerator The progress, out of [denominator]
 #' @param denominator What the progress is out of. You could use this for the
 #' number of known items to be completed so that each call increases either
 #' the numerator (for more items done) and/or the denominator (for more items
-#' discovered that need to be done). However, it is not necessary to do this, you
-#' can reduce the numerator if you want.
+#' discovered that need to be done). However, it is not necessary to do this,
+#' you can reduce the numerator if you want.
 #' @export
 sendProgress <- function(numerator, denominator=1) {
   globals$ws$send(jsonlite::toJSON(list(
-    type="progress",
-    id=globals$id,
-    numerator=numerator,
-    denominator=denominator
+    type = "progress",
+    id = globals$id,
+    numerator = numerator,
+    denominator = denominator
   )))
 }
 
 #' Sends informational text to the client.
 #'
-#' During a slow remote procedure call, call this to inform the client of progress.
+#' During a slow remote procedure call, call this to inform the client of
+#' progress.
 #' @param text The text to send
 #' @export
 sendInfoText <- function(text) {
   globals$ws$send(jsonlite::toJSON(list(
-    type="info",
-    id=globals$id,
-    text=text
+    type = "info",
+    id = globals$id,
+    text = text
   )))
+}
+
+# Calls fn with parameters params. rparams is a list of
+# parameters that are not passed to fn (like controlling
+# the plot format).
+processMessage <- function(fn, params, rparams) {
+  tryCatch({
+    if ("rrpc.resultformat" %in% names(rparams)) {
+      validateAndEncodePlotAs(rparams$rrpc.resultformat, function() {
+        do.call(fn, params)
+      })
+    } else {
+      list(
+        error = NULL,
+        result = list(
+          data = do.call(fn, params),
+          plot = NULL
+        )
+      )
+    }
+  },
+  error = function(e) {
+    print(paste("Error:", e$message))
+    print(paste("call:", format(e$call)))
+    list(
+      error = list(message = e$message, code = -32000),
+      result = NULL
+    )
+  })
 }
 
 rrpc <- function(interface) { function(ws) {
   ws$onMessage(function(binary, message) {
-    df <- jsonlite::fromJSON(message);
-    method <- df$method
-    params <- df$params
-    pnames <- names(params)
-    rnames <- pnames[grep("^rrpc\\.", pnames)]
-    # all parameters whos names begin with "rrpc."
-    rparams <- params[rnames]
-    # remove names beginning "rrpc." from params
-    params[rnames] <- NULL
-    envelope <- list()
-    envelope$jsonrpc <- "2.0"
-    envelope$id <- df$id
-    if (is.null(interface[[method]])) {
-      envelope$error <- "no such method"
-      envelope$result <- NULL
-    } else {
-      globals$ws <- ws
-      globals$id <- df$id
-      r <- tryCatch(
-        {
-          if ("rrpc.resultformat" %in% rnames) {
-            validateAndEncodePlotAs(rparams$rrpc.resultformat, function() {
-              do.call(interface[[method]], params)
-            })
-          } else {
-            list(error=NULL,
-              result=list(
-                data=do.call(interface[[method]], params),
-                plot=NULL
-              )
-            )
-          }
-        },
-        error=function(e) {
-          print(paste("Error:", e$message))
-          print(paste("call:", format(e$call)))
-          list(error=e$message, result=NULL)
-        }
+    envelope <- tryCatch({
+      df <- jsonlite::fromJSON(message)
+      method <- df$method
+      params <- df$params
+      pnames <- names(params)
+      rnames <- pnames[grep("^rrpc\\.", pnames)]
+      # all parameters whos names begin with "rrpc."
+      rparams <- params[rnames]
+      # remove names beginning "rrpc." from params
+      params[rnames] <- NULL
+      fn <- interface[[method]]
+      if (is.null(fn)) {
+        list(
+          jsonrpc = "2.0",
+          id = df$id,
+          error <- list(message = "no such method", code = -32601)
+        )
+      } else {
+        globals$ws <- ws
+        globals$id <- df$id
+        r <- processMessage(fn, params, rparams)
+        env <- list(
+          jsonrpc = "2.0",
+          id = df$id,
+          error = r$error
+        )
+        # Set result only if r$result is not NULL
+        env$result <- r$result
+        env
+      }
+    }, error = function(e) {
+      list(
+        jsonrpc = "2.0",
+        id = NA,
+        error = list(message = "JSON parse error", code = -32700)
       )
-      r$result$headers <- colnames(r$result$data)
-      envelope$result <- r$result
-      envelope$error <- r$error
-    }
-    ws$send(jsonlite::toJSON(envelope, force=TRUE, digits=NA))
+    })
+    ws$send(jsonlite::toJSON(envelope, force = TRUE, digits = NA))
   })
 }}
 
