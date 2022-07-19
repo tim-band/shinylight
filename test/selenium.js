@@ -647,7 +647,7 @@ describe('freeform shinylight', function() {
         });
 
         it('works', async function() {
-            this.timeout(99910000);
+            this.timeout(10000);
             await enterCellText(driver, 0, 0, ['2', '0'], ['3', '4'], ['10', '11'], ['21', '2']);
             await clickId(driver, 'button-plot');
             await assertOutputCells(driver, 0, 0, 4, 1, [
