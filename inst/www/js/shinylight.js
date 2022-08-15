@@ -134,7 +134,7 @@ var shinylight = function () {
             plotElement = getElement(plotElement);
             if (plotElement) {
                 if ('imgType' in extra && extra.imgType === 'svg') {
-                    const dpi = 96 * window.devicePixelRatio;
+                    const dpi = 96;
                     params['rrpc.resultformat'] = {
                         type: 'svg',
                         width: plotElement.clientWidth / dpi,
