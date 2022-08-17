@@ -14,15 +14,15 @@ label.
 \item{show}{\code{function} makes the element visible and (potentially) interactive}
 }}
 \seealso{
-toolkit.paramBoolean
+\code{\link{toolkit.paramBoolean}}
 
-toolkit.paramColor
+\code{\link{toolkit.paramColor}}
 
-toolkit.paramFloat
+\code{\link{toolkit.paramFloat}}
 
-toolkit.paramInteger
+\code{\link{toolkit.paramInteger}}
 
-toolkit.paramSelector
+\code{\link{toolkit.paramSelector}}
 
-toolkit.paramText
+\code{\link{toolkit.paramText}}
 }

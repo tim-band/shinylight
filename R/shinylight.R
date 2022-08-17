@@ -1,3 +1,4 @@
+#' @importFrom utils URLdecode
 globals <- new.env(parent=emptyenv())
 
 #' Sends a progress update to the client.
@@ -7,8 +8,10 @@ globals <- new.env(parent=emptyenv())
 #' @param denominator What the progress is out of. You could use this for the
 #' number of known items to be completed so that each call increases either
 #' the numerator (for more items done) and/or the denominator (for more items
-#' discovered that need to be done). However, it is not necessary to do this, you
-#' can reduce the numerator if you want.
+#' discovered that need to be done). However, it is not necessary to be so
+#' precise; you can set the numerator and denominator however you like on
+#' each call as long as it makes sense to the user.
+#' @seealso \code{\link{sendInfoText}} for sending text to the user.
 #' @export
 sendProgress <- function(numerator, denominator=1) {
   globals$ws$send(jsonlite::toJSON(list(
@@ -23,6 +26,8 @@ sendProgress <- function(numerator, denominator=1) {
 #'
 #' During a slow remote procedure call, call this to inform the client of progress.
 #' @param text The text to send
+#' @seealso \code{\link{sendProgress}} for sending a progress completion
+#' ratio to the user.
 #' @export
 sendInfoText <- function(text) {
   globals$ws$send(jsonlite::toJSON(list(
@@ -81,7 +86,12 @@ rrpc <- function(interface) { function(ws) {
   })
 }}
 
-#' Returns a response to a request to /lang/
+# Returns a response to a request to /lang/.
+# req is the httpuv request object.
+# langs is a list containing the acceptable language subfolders.
+# Each element is a standard two-character language code.
+# Returns an httpuv response object (which will be a redirect to the
+# appropriate resource)
 getLocaleResponse <- function(req, langs) {
   al <- req$HTTP_ACCEPT_LANGUAGE
   als <- strsplit(al, ",", fixed=TRUE)[[1]]
@@ -140,6 +150,9 @@ getMultipartFormData <- function(req, ctes) {
 }
 
 # Gets form data from request as a list
+# req is the httpuv request
+# returns a list of sections in the Form data, each element is named according
+# to the parameter described by the section.
 getFormData <- function(req) {
   ctes <- strsplit(req$CONTENT_TYPE, "; *")[[1]]
   if (ctes[[1]] == "multipart/form-data") {
@@ -180,13 +193,12 @@ indexWithInit <- function(text, path) {
   ))
 }
 
-#' Get the response to a POST to /init
-#' This is index.html with (potentially) the JSON data
-#' from the 'data' parameter inserted.
-#'
-#' @param req The httpuv request object
-#' @param path File system path to the index.html file
-#' @return The httpuv response object
+# Gets the response to a POST to /init
+# This is index.html with (potentially) the JSON data
+# from the 'data' parameter inserted.
+# req is the httpuv request object
+# path is the file system path to the index.html file
+# returns the httpuv response object
 getInitResponse <- function(req, path) {
   # take post data and fire it back as a cookie
   sections <- getFormData(req)
@@ -514,16 +526,16 @@ slStop <- function(server=NULL) {
 }
 
 #' Start a ShinyLight server
-#' @seealso slRunRServer
-#' @seealso slStop
+#' @seealso \code{\link{slStop}} to stop a running server, and
+#' \code{\link{slRunRServer}} to run a server that just accepts R code.
 #' @param appDir Directory containing files to serve (for example
 #' system.file("www", package = "your-package"))
 #' @param interface List of functions you want to be able to call from
 #' the browser. If you want to use the Shinylight Framework, this should
 #' have one member \code{getSchema}. For details of this, see the
 #' documentation for [shinylightFrameworkStart].
-#' @param host IP address to listen on, default is '127.0.0.1'
-#' (localhost). Use '0.0.0.0' to run in a docker container.
+#' @param host IP address to listen on, default is \code{\link{"127.0.0.1"}}
+#' (localhost). Use \code{\link{"0.0.0.0"}} to run in a docker container.
 #' @param port Internet port of the virtual server. If not defined, a
 #' random free port will be chosen and the browser will be opened
 #' to show the GUI.
@@ -539,11 +551,11 @@ slStop <- function(server=NULL) {
 #' @export
 slServer <- function(
     interface,
-    appDir=NULL,
-    host='127.0.0.1',
-    port=NULL,
-    daemonize=FALSE,
-    initialize=NULL) {
+    appDir = NULL,
+    host = "127.0.0.1",
+    port = NULL,
+    daemonize = FALSE,
+    initialize = NULL) {
   slDir <- system.file("www", package = "shinylight")
   if (is.null(appDir)) {
     appDirList <- list(slDir)
@@ -568,15 +580,17 @@ slServer <- function(
 }
 
 #' Start a ShinyLight server which runs R that it is sent
-#' @seealso slServer
-#' @seealso slStop
+#' @seealso \code{\link{slServer}} for the more general form of this
+#' function, or \code{\link{slStop}} to stop a running server.
+#' \code{\link{shinylight.runR}} is the JavaScript function you need
+#' to call to pass R code from the browser to the server.
 #' @param appDir Directory containing files to serve (for example
 #' system.file("www", package = "your-package"))
 #' @param permittedSymbols List of symbols that are permitted in the R
 #' commands passed. Remember to include \code{data}, \code{$} and
 #' \code{<-}.
-#' @param host IP address to listen on, default is '127.0.0.1'
-#' (localhost). Use '0.0.0.0' to run in a docker container.
+#' @param host IP address to listen on, default is \code{\link{"127.0.0.1"}}
+#' (localhost). Use \code{\link{"0.0.0.0"}} to run in a docker container.
 #' @param port Internet port of the virtual server. If not defined, a
 #' random free port will be chosen and the browser will be opened
 #' to show the GUI.
@@ -584,27 +598,27 @@ slServer <- function(
 #' This is useful when called from \code{RScript}, to keep
 #' @return server object, unless daemonize is TRUE.
 #' @param initialize A json string or list (that will be converted to a
-#' JSON string) to be passed to the JavaScript as initial data. For
-#' non-framework apps, the index.html must contain a line containing
+#' JSON string) to be passed to the JavaScript as initial data. The
+#' index.html must contain a line containing
 #' \code{var shinylight_initial_data=}, which will be replaced with
 #' code that sets \code{shinylight_initial_data} to this supplied JSON
 #' string.
 #' @export
 slRunRServer <- function(
     permittedSymbols,
-    appDir=NULL,
-    host='127.0.0.1',
-    port=NULL,
-    daemonize=FALSE,
-    initialize=NULL) {
+    appDir = NULL,
+    host = "127.0.0.1",
+    port = NULL,
+    daemonize = FALSE,
+    initialize = NULL) {
   slServer(
-    host=host,
-    port=port,
-    appDir=appDir,
-    daemonize=daemonize,
-    initialize=initialize,
-    interface=list(
-      runR=runR(permittedSymbols)
+    host = host,
+    port = port,
+    appDir = appDir,
+    daemonize = daemonize,
+    initialize = initialize,
+    interface = list(
+      runR = runR(permittedSymbols)
     )
   )
 }

@@ -15,5 +15,7 @@ The returned function can be called as often as you like with
 whatever arguments you like. If it is called again within
 \code{ticks} ticks (a tick is 100ms), this call is ignored. If
 it is not called again within this time, the arguments are passed
-on to the delegate function.
+on to the delegate function. In other words, in a string of calls
+less than \code{ticks} x 100ms apart from each other, only
+the last of these calls actually happens.
 }

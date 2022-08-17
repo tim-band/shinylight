@@ -21,8 +21,8 @@ commands passed. Remember to include \code{data}, \code{$} and
 \item{appDir}{Directory containing files to serve (for example
 system.file("www", package = "your-package"))}
 
-\item{host}{IP address to listen on, default is '127.0.0.1'
-(localhost). Use '0.0.0.0' to run in a docker container.}
+\item{host}{IP address to listen on, default is \code{\link{"127.0.0.1"}}
+(localhost). Use \code{\link{"0.0.0.0"}} to run in a docker container.}
 
 \item{port}{Internet port of the virtual server. If not defined, a
 random free port will be chosen and the browser will be opened
@@ -32,8 +32,8 @@ to show the GUI.}
 This is useful when called from \code{RScript}, to keep}
 
 \item{initialize}{A json string or list (that will be converted to a
-JSON string) to be passed to the JavaScript as initial data. For
-non-framework apps, the index.html must contain a line containing
+JSON string) to be passed to the JavaScript as initial data. The
+index.html must contain a line containing
 \code{var shinylight_initial_data=}, which will be replaced with
 code that sets \code{shinylight_initial_data} to this supplied JSON
 string.}
@@ -45,7 +45,8 @@ server object, unless daemonize is TRUE.
 Start a ShinyLight server which runs R that it is sent
 }
 \seealso{
-slServer
-
-slStop
+\code{\link{slServer}} for the more general form of this
+function, or \code{\link{slStop}} to stop a running server.
+\code{\link{shinylight.runR}} is the JavaScript function you need
+to call to pass R code from the browser to the server.
 }

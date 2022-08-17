@@ -1,6 +1,9 @@
-..Rcheck
+/..Rcheck
+/..pdf
 .RData
 .Rhistory
 Rplots.pdf
 /node_modules
 /.vscode
+/shinylight.Rcheck
+/shinylight_*.tar.gz

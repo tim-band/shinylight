@@ -1,9 +1,9 @@
 Package: shinylight
 Title: Web Interface to R functions
-Version: 0.6
-Date: 2021-07-16
+Version: 0.7
+Date: 2022-08-17
 Authors@R: c(person("Tim", "Band", email = "p.vermeesch@ucl.ac.uk", role = c("aut", "cre")))
-Description: Front end for your R functions producing plots or tables.
+Description: Web front end for your R functions producing plots or tables.
 Author: Tim Band [aut, cre]
 Maintainer: Tim Band <t.band@ucl.ac.uk>
 Depends: R (>= 3.0.0)
@@ -13,5 +13,5 @@ Imports: grDevices (>= 3.6.2),
     later (>= 1.0)
 License: GPL-3
 LazyData: true
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.1
 Encoding: UTF-8

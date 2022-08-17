@@ -1352,8 +1352,8 @@ var toolkit = function() {
      * @function
      * @description
      * Calls a function for each member of an array or object until either
-     * one of them returns true (in which case `any` returns true) or
-     * we run out of elements (in which case `any` returns false).
+     * one of them returns true (in which case \code{any} returns true) or
+     * we run out of elements (in which case \code{any} returns false).
      * @param {object} a Object or array to be iterated through.
      * @param {function} p Function to call with two arguments: the key
      * of the element (or index in the case of an array) and the value;
@@ -1364,8 +1364,8 @@ var toolkit = function() {
      * @function
      * @description
      * Calls a function for each member of an array or object until either
-     * one of them returns false (in which case `any` returns false) or
-     * we run out of elements (in which case `any` returns true).
+     * one of them returns false (in which case \code{all} returns false) or
+     * we run out of elements (in which case \code{all} returns true).
      * @param {object} a Object or array to be iterated through.
      * @param {function} p Function to call with two arguments: the key
      * of the element (or index in the case of an array) and the value;
@@ -1398,7 +1398,9 @@ var toolkit = function() {
      * whatever arguments you like. If it is called again within
      * \code{ticks} ticks (a tick is 100ms), this call is ignored. If
      * it is not called again within this time, the arguments are passed
-     * on to the delegate function.
+     * on to the delegate function. In other words, in a string of calls
+     * less than \code{ticks} x 100ms apart from each other, only
+     * the last of these calls actually happens.
      * @param {int} ticks Duration (x 100ms) to wait until calling the
      * delgate function.
      * @param {function} f Delegate function to be called
@@ -1918,9 +1920,9 @@ var toolkit = function() {
  * A monkey-patched \code{HTMLElement}.
  * 
  * A Container Element is an element for displaying a set of controls and their labels.
- * @see toolkit.stack
- * @see toolkit.banner
- * @see toolkit.optionsPage
+ * @see \code{\link{toolkit.stack}}
+ * @see \code{\link{toolkit.banner}}
+ * @see \code{\link{toolkit.optionsPage}}
  */
 
 /**
@@ -1930,7 +1932,7 @@ var toolkit = function() {
  * again with the control itself.
  * @description
  * A container for a single control.
- * @see toolkit.HTMLContainerElement
+ * @see \code{\link{toolkit.HTMLContainerElement}}
  */
 
 /**
@@ -1944,10 +1946,10 @@ var toolkit = function() {
  * @description
  * A monkey-patched \code{HTMLElement} representing a control with its
  * label.
- * @see toolkit.paramBoolean
- * @see toolkit.paramColor
- * @see toolkit.paramFloat
- * @see toolkit.paramInteger
- * @see toolkit.paramSelector
- * @see toolkit.paramText
+ * @see \code{\link{toolkit.paramBoolean}}
+ * @see \code{\link{toolkit.paramColor}}
+ * @see \code{\link{toolkit.paramFloat}}
+ * @see \code{\link{toolkit.paramInteger}}
+ * @see \code{\link{toolkit.paramSelector}}
+ * @see \code{\link{toolkit.paramText}}
  */

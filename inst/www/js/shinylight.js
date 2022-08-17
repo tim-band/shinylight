@@ -312,9 +312,10 @@ var shinylight = function () {
          * element already has, so ensure that it is styled in a way that it has
          * the correct size even if no image (or an old image) has been set.
          * @param {object} [extra={}] An object whose keys can be:
-         * "imgType": Type of image required, "png" (default) or "svg";
-         * "info": Funtion to be called if the R function {@link sendInfoText}
-         * is called; "progress": Function to be called if the R function
+         * \code{"imgType"}: Type of image required, \code{"png"}
+         * (default) or \code{"svg"}; \code{"info"}: Function to be called
+         * if the R function {@link sendInfoText} is called;
+         * \code{"progress"}: Function to be called if the R function
          * {@link sendProgress} is called.
          * @returns {Promise} Result object that might have a \code{plot}
          * property (giving a string that would work as the \code{src}
@@ -347,9 +348,10 @@ var shinylight = function () {
          * element already has, so ensure that it is styled in a way that it has
          * the correct size even if no image (or an old image) has been set.
          * @param {object} [extra={}] An object whose keys can be:
-         * "imgType": Type of image required, "png" (default), "svg" or "pdf";
-         * "info": Funtion to be called if the R function {@link sendInfoText}
-         * is called; "progress": Function to be called if the R function
+         * \code{"imgType"}: Type of image required, \code{"png"}
+         * (default) or \code{"svg"}; \code{"info"}: Function to be called
+         * if the R function {@link sendInfoText} is called;
+         * \code{"progress"}: Function to be called if the R function
          * {@link sendProgress} is called.
          * @returns {Promise} Result object that might have a \code{plot}
          * property (giving a string that would work as the \code{src}

@@ -12,7 +12,9 @@ runR(symbolList)
 \description{
 If you set this as a part of your interface, like:
 \code{runR=shinylight::runR(c("+", "plot", "c", "x", "y"))}
-then you can call it from Javascript like this:\preformatted{rrpc.call("runR", \{
+then you can call it from Javascript like this:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{rrpc.call("runR", \{
  Rcommand:"2+2"
 \}, function(x) \{console.log(x);\});
 rrpc.call("runR", \{
@@ -23,5 +25,5 @@ rrpc.call("runR", \{
    height: 300,
  \}
 \}, function(x) \{img.setAttribute('src', x.plot[0])\});
-}
+}\if{html}{\out{</div>}}
 }

@@ -13,9 +13,10 @@ plot output (if any). The plot returned will be the size that this
 element already has, so ensure that it is styled in a way that it has
 the correct size even if no image (or an old image) has been set.}
 \item{extra}{\code{object} [optional] An object whose keys can be:
-"imgType": Type of image required, "png" (default) or "svg";
-"info": Funtion to be called if the R function \code{\link{sendInfoText}}
-is called; "progress": Function to be called if the R function
+\code{"imgType"}: Type of image required, \code{"png"}
+(default) or \code{"svg"}; \code{"info"}: Function to be called
+if the R function \code{\link{sendInfoText}} is called;
+\code{"progress"}: Function to be called if the R function
 \code{\link{sendProgress}} is called.}
 }
 \description{

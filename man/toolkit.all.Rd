@@ -11,6 +11,6 @@ should return a boolean.}
 }
 \description{
 Calls a function for each member of an array or object until either
-one of them returns false (in which case `any` returns false) or
-we run out of elements (in which case `any` returns true).
+one of them returns false (in which case \code{all} returns false) or
+we run out of elements (in which case \code{all} returns true).
 }

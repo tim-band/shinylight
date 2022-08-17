@@ -18,9 +18,9 @@ of the contained controls. \code{data} is a mapping from the IDs of
 the contained controls to the data that should be set on them.}
 }}
 \seealso{
-toolkit.stack
+\code{\link{toolkit.stack}}
 
-toolkit.banner
+\code{\link{toolkit.banner}}
 
-toolkit.optionsPage
+\code{\link{toolkit.optionsPage}}
 }

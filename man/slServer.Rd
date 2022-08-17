@@ -22,8 +22,8 @@ documentation for [shinylightFrameworkStart].}
 \item{appDir}{Directory containing files to serve (for example
 system.file("www", package = "your-package"))}
 
-\item{host}{IP address to listen on, default is '127.0.0.1'
-(localhost). Use '0.0.0.0' to run in a docker container.}
+\item{host}{IP address to listen on, default is \code{\link{"127.0.0.1"}}
+(localhost). Use \code{\link{"0.0.0.0"}} to run in a docker container.}
 
 \item{port}{Internet port of the virtual server. If not defined, a
 random free port will be chosen and the browser will be opened
@@ -46,7 +46,6 @@ server object, unless daemonize is TRUE.
 Start a ShinyLight server
 }
 \seealso{
-slRunRServer
-
-slStop
+\code{\link{slStop}} to stop a running server, and
+\code{\link{slRunRServer}} to run a server that just accepts R code.
 }

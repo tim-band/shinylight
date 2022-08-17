@@ -11,5 +11,5 @@ A container for a single control.
 again with the control itself.}
 }}
 \seealso{
-toolkit.HTMLContainerElement
+\code{\link{toolkit.HTMLContainerElement}}
 }

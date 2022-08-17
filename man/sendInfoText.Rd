@@ -10,6 +10,9 @@ sendInfoText(text)
 \item{text}{The text to send}
 }
 \description{
-During a slow remote procedure call, call this to inform the client of
-progress.
+During a slow remote procedure call, call this to inform the client of progress.
+}
+\seealso{
+\code{\link{sendProgress}} for sending a progress completion
+ratio to the user.
 }
