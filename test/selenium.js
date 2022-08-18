@@ -1,6 +1,6 @@
 "use strict";
 
-const fs = require('fs');
+const fscb = require('fs');
 const net = require('net');
 const os = require('os');
 const path = require('path');
@@ -12,6 +12,55 @@ const { PNG } = require("pngjs");
 const Chrome = require('selenium-webdriver/chrome');
 const Firefox = require('selenium-webdriver/firefox');
 const floor = Math.floor;
+
+// hand-rolled "fs/promises" module
+const fs = {
+    mkdtemp: function(path) {
+        return new Promise(resolve => {
+            fscb.mkdtemp(path, (err, folder) => {
+                if (err) throw err;
+                resolve(folder);
+            });
+        });
+    },
+    exists: function(path) {
+        return new Promise(resolve => {
+            fscb.exists(path, resolve);
+        });
+    },
+    unlink: function(path) {
+        return new Promise(resolve => {
+            fscb.unlink(path, err => {
+                if (err) throw err;
+                resolve()
+            });
+        });
+    },
+    readFile: function(path) {
+        return new Promise(resolve => {
+            fscb.readFile(path, (err, contents) => {
+                if (err) throw err;
+                resolve(contents);
+            });
+        });
+    },
+
+};
+
+// We will remove all files in the directory and delete the directory
+// We will not worry about directories within directories
+function rmrf(dir) {
+    return new Promise(resolve => {
+        fscb.readdir(dir, (err, files) => {
+            if (err) throw err;
+            files.forEach(fname => {
+                fscb.unlinkSync(path.join(dir, fname));
+            });
+            fscb.rmdirSync(dir);
+            resolve();
+        });
+    });
+}
 
 function getBrowser() {
     const br = /--browser=(.*)/;
@@ -31,7 +80,7 @@ function spawnR() {
 
 function kill(process) {
     return new Promise(resolve => {
-        process.on('exit', () => resolve());
+        process.on('exit', resolve);
         process.kill('SIGHUP');
     });
 }
@@ -73,19 +122,29 @@ async function getWidth(element) {
     return Number(w);
 }
 
+async function makeTempDir() {
+    // In case Firefox is running as a snap, we need to make
+    // the temporary directory in the user's home directory :-(
+    return await fs.mkdtemp(path.join(os.homedir(), 'tmp'));
+}
+
 async function startSelenium(tmpdir) {
-    // Prevent Firefox from opening up a download dialog when a CSV file is requested
-    let firefoxOptions = new Firefox.Options().
-        setPreference('browser.download.folderList', 2).  // do not use default download directory
-        setPreference('browser.download.manager.showWhenStarting', false).  // do not show download progress
-        setPreference('browser.download.dir', tmpdir).
-        setPreference('browser.helperApps.neverAsk.saveToDisk', 'text/*').
-        setPreference('browser.download.alwaysOpenPanel', false);
-    let chromeOptions = new Chrome.Options().setUserPreferences({
-        'profile.default_content_settings.popups': 0,
-        'download.prompt_for_download': 'false',
-        'download.default_directory': tmpdir,
-    });
+    let firefoxOptions = new Firefox.Options();
+    let chromeOptions = new Chrome.Options();
+        if (typeof(tmpdir) === 'string') {
+        // Prevent Firefox from opening up a download dialog when a CSV file is requested
+        firefoxOptions.
+            setPreference('browser.download.folderList', 2).  // do not use default download directory
+            setPreference('browser.download.manager.showWhenStarting', false).  // do not show download progress
+            setPreference('browser.download.dir', tmpdir).
+            setPreference('browser.helperApps.neverAsk.saveToDisk', 'text/*').
+            setPreference('browser.download.alwaysOpenPanel', false);
+        chromeOptions.setUserPreferences({
+            'profile.default_content_settings.popups': 0,
+            'download.prompt_for_download': 'false',
+            'download.default_directory': tmpdir,
+        });
+    }
     const driver = new Builder().forBrowser(getBrowser()).
         setFirefoxOptions(firefoxOptions).
         setChromeOptions(chromeOptions).
@@ -97,16 +156,18 @@ async function startSelenium(tmpdir) {
 describe('shinylight framework', function() {
     let rProcess;
     let driver;
+    let tmpdir;
 
     before(async function() {
         this.timeout(15000);
         rProcess = spawnR('test/run.R');
-        const tmp = os.tmpdir();
-        driver = await startSelenium(tmp);
+        tmpdir = await makeTempDir();
+        driver = await startSelenium(tmpdir);
     });
 
     after(async function() {
         this.timeout(4000);
+        await rmrf(tmpdir);
         await kill(rProcess);
         await driver.quit();
     });
@@ -206,9 +267,9 @@ describe('shinylight framework', function() {
 
     it('downloads a csv of the results', async function() {
         this.timeout(8000);
-        const downloadFile = path.join(os.tmpdir(), 'output.csv');
-        if (fs.existsSync(downloadFile)) {
-            fs.unlinkSync(downloadFile);
+        const downloadFile = path.join(tmpdir, 'output.csv');
+        if (await fs.exists(downloadFile)) {
+            await fs.unlink(downloadFile);
         }
         const input = [['4', '3'], ['2', '1'], ['3', '3'], ['1', '4']];
         await enterCellText(driver, 0, 0, ...input);
@@ -216,9 +277,9 @@ describe('shinylight framework', function() {
         await clickOutputTab(driver, 'table')
         await clickId(driver, 'button-download-csv');
         await driver.wait(async function() {
-            return fs.existsSync(downloadFile);
+            return await fs.exists(downloadFile);
         });
-        const csvBuffer = fs.readFileSync(downloadFile);
+        const csvBuffer = await fs.readFile(downloadFile);
         const csv = csvBuffer.toString('utf-8');
         const rows = csv.split('\n');
         for (let i = 0; i !== input.length; ++i) {
@@ -328,9 +389,9 @@ describe('shinylight framework', function() {
 
     it('saves and restores input data', async function() {
         this.timeout(8000);
-        const file = path.join(os.tmpdir(), 'params.json');
-        if (fs.existsSync(file)) {
-            fs.unlinkSync(file);
+        const file = path.join(tmpdir, 'params.json');
+        if (await fs.exists(file)) {
+            await fs.unlink(file);
         }
         await switchFunction(driver, 'test5');
         await clickIds(driver, ['param-dimensions', 'dimensions-3d']);
@@ -338,19 +399,19 @@ describe('shinylight framework', function() {
         await enterCellText(driver, 0, 0, ...input1);
         await clickId(driver, 'button-savedata');
         await driver.wait(async function() {
-            return fs.existsSync(file);
+            return await fs.exists(file);
         });
-        const contents1 = fs.readFileSync(file).toString('utf8');
-        fs.unlinkSync(file);
+        const contents1 = (await fs.readFile(file)).toString('utf8');
+        await fs.unlink(file);
         await clickIds(driver, ['param-dimensions', 'dimensions-2d']);
         const input2 = [['1.1', '-9'], ['4.2', '9'], ['4.3', '11'], ['-1', '10.5']];
         await enterCellText(driver, 0, 0, ...input2);
         await clickId(driver, 'button-savedata');
         await driver.wait(async function() {
-            return fs.existsSync(file);
+            return await fs.exists(file);
         });
-        const contents2 = fs.readFileSync(file).toString('utf8');
-        fs.unlinkSync(file);
+        const contents2 = (await fs.readFile(file)).toString('utf8');
+        await fs.unlink(file);
         async function loadAndAssert(fileContents, expectedData) {
             await clickId(driver, 'button-loaddata');
             var loaddata = await driver.findElement(By.id('load-file'));
@@ -531,8 +592,7 @@ describe('shinylight framework with preinitialization from R', function() {
     before(async function() {
         this.timeout(15000);
         rProcess = spawnR('test/run.R', 'test/init1.json');
-        const tmp = os.tmpdir();
-        driver = await startSelenium(tmp);
+        driver = await startSelenium();
     });
 
     after(async function() {
@@ -542,6 +602,7 @@ describe('shinylight framework with preinitialization from R', function() {
     });
 
     beforeEach(async function() {
+        this.timeout(4000);
         await portIsOpen(8000);
         await driver.get('http://localhost:8000/');
     });
@@ -564,8 +625,7 @@ describe('freeform shinylight', function() {
     before(async function() {
         this.timeout(15000);
         rProcess = spawnR('test/run_freeform.R');
-        const tmp = os.tmpdir();
-        driver = await startSelenium(tmp);
+        driver = await startSelenium();
     });
 
     after(async function() {
@@ -681,8 +741,7 @@ describe('minimal shinylight', function() {
     before(async function() {
         this.timeout(15000);
         rProcess = spawnR('test/run_minimal.R');
-        const tmp = os.tmpdir();
-        driver = await startSelenium(tmp);
+        driver = await startSelenium();
     });
 
     after(async function() {
