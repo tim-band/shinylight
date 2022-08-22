@@ -975,7 +975,7 @@ function getSvg(data) {
     });
     const width = plotRight - plotLeft;
     const height = plotBottom - plotTop;
-    const maxTickProportion = 0.02;
+    const maxTickProportion = 0.05;
     const potentialTicks = data.match(/<path [^>]*\bd="M *[0-9\.]+ +[0-9\.]+ +L *[0-9\.]+ +[0-9\.]+ *"/mg);
     let xTicks = [];
     let yTicks = [];
