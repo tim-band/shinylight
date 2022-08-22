@@ -2,7 +2,7 @@ Package: shinylight
 Title: Web Interface to R functions
 Version: 0.7
 Date: 2022-08-17
-Authors@R: c(person("Tim", "Band", email = "p.vermeesch@ucl.ac.uk", role = c("aut", "cre")))
+Authors@R: c(person("Pieter", "Vermeesch", email = "p.vermeesch@ucl.ac.uk", role = c("aut", "cre")))
 Description: Web front end for your R functions producing plots or tables.
 Author: Tim Band [aut, cre]
 Maintainer: Tim Band <t.band@ucl.ac.uk>

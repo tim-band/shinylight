@@ -534,8 +534,8 @@ slStop <- function(server=NULL) {
 #' the browser. If you want to use the Shinylight Framework, this should
 #' have one member \code{getSchema}. For details of this, see the
 #' documentation for [shinylightFrameworkStart].
-#' @param host IP address to listen on, default is \code{\link{"127.0.0.1"}}
-#' (localhost). Use \code{\link{"0.0.0.0"}} to run in a docker container.
+#' @param host IP address to listen on, default is \code{"127.0.0.1"}
+#' (localhost). Use \code{"0.0.0.0"} to run in a docker container.
 #' @param port Internet port of the virtual server. If not defined, a
 #' random free port will be chosen and the browser will be opened
 #' to show the GUI.
@@ -589,8 +589,8 @@ slServer <- function(
 #' @param permittedSymbols List of symbols that are permitted in the R
 #' commands passed. Remember to include \code{data}, \code{$} and
 #' \code{<-}.
-#' @param host IP address to listen on, default is \code{\link{"127.0.0.1"}}
-#' (localhost). Use \code{\link{"0.0.0.0"}} to run in a docker container.
+#' @param host IP address to listen on, default is \code{"127.0.0.1"}
+#' (localhost). Use \code{"0.0.0.0"} to run in a docker container.
 #' @param port Internet port of the virtual server. If not defined, a
 #' random free port will be chosen and the browser will be opened
 #' to show the GUI.

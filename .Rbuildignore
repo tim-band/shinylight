@@ -4,4 +4,7 @@
 ^jsdoc\.conf$
 ^package.*\.json$
 ^Rplots\.pdf$
+\.Rcheck
+\.tar\.gz
+^test/
 ^\.

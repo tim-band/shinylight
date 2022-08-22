@@ -21,8 +21,8 @@ commands passed. Remember to include \code{data}, \code{$} and
 \item{appDir}{Directory containing files to serve (for example
 system.file("www", package = "your-package"))}
 
-\item{host}{IP address to listen on, default is \code{\link{"127.0.0.1"}}
-(localhost). Use \code{\link{"0.0.0.0"}} to run in a docker container.}
+\item{host}{IP address to listen on, default is \code{"127.0.0.1"}
+(localhost). Use \code{"0.0.0.0"} to run in a docker container.}
 
 \item{port}{Internet port of the virtual server. If not defined, a
 random free port will be chosen and the browser will be opened
