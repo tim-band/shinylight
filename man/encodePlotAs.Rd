@@ -18,6 +18,8 @@ the dimensions of the PDF (in inches) or PNG (in pixels) if appropriate.}
 list with two keys, whose values can each be NULL:
 \code{'plot'} is a plot in HTML img src form and \code{'data'} is a
 data frame or other non-plot result.
+
+No return value
 }
 \description{
 The result can be set as the \code{src} attribute of an \code{<img>}

@@ -16,8 +16,12 @@ discovered that need to be done). However, it is not necessary to be so
 precise; you can set the numerator and denominator however you like on
 each call as long as it makes sense to the user.}
 }
+\value{
+No return value
+}
 \description{
-During a slow remote procedure call, call this to inform the client of progress.
+During a slow remote procedure call, call this to inform the client
+of progress.
 }
 \seealso{
 \code{\link{sendInfoText}} for sending text to the user.

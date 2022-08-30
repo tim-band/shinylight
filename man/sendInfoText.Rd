@@ -9,8 +9,12 @@ sendInfoText(text)
 \arguments{
 \item{text}{The text to send}
 }
+\value{
+No return value
+}
 \description{
-During a slow remote procedure call, call this to inform the client of progress.
+During a slow remote procedure call, call this to inform the client
+of progress.
 }
 \seealso{
 \code{\link{sendProgress}} for sending a progress completion

@@ -9,6 +9,9 @@ browseTo(server)
 \arguments{
 \item{server}{The server to browse to}
 }
+\value{
+No return value
+}
 \description{
 Opens a browser to look at the server
 }

@@ -1,9 +1,10 @@
 #' @importFrom utils URLdecode
-globals <- new.env(parent=emptyenv())
+globals <- new.env(parent = emptyenv())
 
 #' Sends a progress update to the client.
 #'
-#' During a slow remote procedure call, call this to inform the client of progress.
+#' During a slow remote procedure call, call this to inform the client
+#' of progress.
 #' @param numerator The progress, out of \code{denominator}
 #' @param denominator What the progress is out of. You could use this for the
 #' number of known items to be completed so that each call increases either
@@ -12,6 +13,7 @@ globals <- new.env(parent=emptyenv())
 #' precise; you can set the numerator and denominator however you like on
 #' each call as long as it makes sense to the user.
 #' @seealso \code{\link{sendInfoText}} for sending text to the user.
+#' @return No return value
 #' @export
 sendProgress <- function(numerator, denominator=1) {
   globals$ws$send(jsonlite::toJSON(list(
@@ -24,10 +26,12 @@ sendProgress <- function(numerator, denominator=1) {
 
 #' Sends informational text to the client.
 #'
-#' During a slow remote procedure call, call this to inform the client of progress.
+#' During a slow remote procedure call, call this to inform the client
+#' of progress.
 #' @param text The text to send
 #' @seealso \code{\link{sendProgress}} for sending a progress completion
 #' ratio to the user.
+#' @return No return value
 #' @export
 sendInfoText <- function(text) {
   globals$ws$send(jsonlite::toJSON(list(
@@ -286,15 +290,15 @@ rrpcServer <- function(
           else indexWithInit(initialize, index.path)
       ))
     }
-    first = path.elements[2]
-    if (first == 'lang') {
-      return (getLocaleResponse(req, langs))
-    } else if (first == 'init') {
-      return (getInitResponse(req, paths[["/index.html"]]))
+    first <- path.elements[2]
+    if (first == "lang") {
+      return(getLocaleResponse(req, langs))
+    } else if (first == "init") {
+      return(getInitResponse(req, paths[["/index.html"]]))
     }
-    list (
-      status=404L,
-      body="Unknown"
+    list(
+      status = 404L,
+      body = "Unknown"
     )
   }
   if (is.null(port)) {
@@ -320,6 +324,7 @@ getAddress <- function(server) {
 #' Opens a browser to look at the server
 #'
 #' @param server The server to browse to
+#' @return No return value
 browseTo <- function(server) {
   utils::browseURL(getAddress(server))
 }
@@ -348,6 +353,8 @@ closeAllDevices <- function() {
 encodePlot <- function(device, mimeType, width, height, plotFn) {
   tempFilename <- tempfile(pattern='plot', fileext='.tmp')
   closeAllDevices()
+  oldoptions <- options()
+  on.exit(options(oldoptions))
   options(device = function() {
     device(
       file = tempFilename,
@@ -359,34 +366,34 @@ encodePlot <- function(device, mimeType, width, height, plotFn) {
   plot <- NULL
   if (grDevices::dev.cur() != 1) {
     grDevices::dev.off()
-    fileSize <- file.size(tempFilename)
-    if (!is.na(fileSize)) {
-      raw <- readBin(tempFilename, what="raw", n=fileSize)
+    filesize <- file.size(tempFilename)
+    if (!is.na(filesize)) {
+      raw <- readBin(tempFilename, what = "raw", n = filesize)
       plot <- paste0("data:", mimeType, ";base64,", jsonlite::base64_enc(raw))
     }
   }
-  list(plot=plot, data=data)
+  list(plot = plot, data = data)
 }
 
 validateAndEncodePlotAs <- function(format, plotFn) {
   if (!is.list(format)) {
     list(
-      result=NULL,
-      error="rrpc.resultformat specified but not as {type=[,height=,width=]}"
+      result = NULL,
+      error = "rrpc.resultformat specified but not as {type=[,height=,width=]}"
     )
   } else {
     valid <- c('pdf', 'png', 'svg', 'csv')
     if (format$type %in% valid) {
       r <- encodePlotAs(format, plotFn)
-      list(result=r, error=NULL)
+      list(result = r, error = NULL)
     } else {
-      validCount <- length(valid)
-      errorText <- paste(
+      validcount <- length(valid)
+      errortext <- paste(
         "rrpc.resultformat type should be",
-        paste(valid[1:validCount-1]),
-        "or", valid[validCount]
+        paste(valid[1:validcount - 1]),
+        "or", valid[validcount]
       )
-      list(result=NULL, error=errorText)
+      list(result = NULL, error = errortext)
     }
   }
 }
@@ -405,6 +412,7 @@ validateAndEncodePlotAs <- function(format, plotFn) {
 #' \code{'plot'} is a plot in HTML img src form and \code{'data'} is a
 #' data frame or other non-plot result.
 #' @seealso \code{\link{rrpcServer}}
+#' @return No return value
 #' @export
 encodePlotAs <- function(format, plotFn) {
   type <- format$type
@@ -429,7 +437,8 @@ encodePlotAs <- function(format, plotFn) {
 
 #' Encodes a data frame as a CSV file to be downloaded
 #' @param results Data frame to be returned
-#' @export
+#' @return A list to be returned to the browser describing a CSV
+#' file to be downloaded.
 downloadCsv <- function(results) {
     forJson <- list()
     forJson$action <- "download"
@@ -497,6 +506,8 @@ sanitizeCommand <- function(command, symbolList, callback) {
 #' }, function(x) {img.setAttribute('src', x.plot[0])});
 #' ```
 #' @param symbolList A list of permitted symbols in the R command
+#' @return A function that can be passed as one of the elements of
+#' \code{\link{slServer}}'s \code{interface} argument.
 #' @export
 #' @md
 runR <- function(symbolList) {
@@ -516,6 +527,7 @@ runR <- function(symbolList) {
 #' @param server The server (returned by \code{\link{slServer}}
 #' or \code{\link{slRunRServer}})
 #' to stop. If not supplied all servers will be stopped.
+#' @return No return value
 #' @export
 slStop <- function(server=NULL) {
   if (is.null(server)) {
@@ -547,7 +559,8 @@ slStop <- function(server=NULL) {
 #' \code{var shinylight_initial_data=}, which will be replaced with
 #' code that sets \code{shinylight_initial_data} to this supplied JSON
 #' string.
-#' @return server object, unless daemonize is TRUE.
+#' @return server object, unless daemonize is TRUE in which case the
+#' function will not return.
 #' @export
 slServer <- function(
     interface,

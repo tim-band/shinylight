@@ -1351,6 +1351,8 @@ var toolkit = function() {
     /**
      * @function
      * @description
+     * Finds if a predicate is true for any member of an array or object.
+     *
      * Calls a function for each member of an array or object until either
      * one of them returns true (in which case \code{any} returns true) or
      * we run out of elements (in which case \code{any} returns false).
@@ -1363,6 +1365,8 @@ var toolkit = function() {
     /**
      * @function
      * @description
+     * Finds if a predicate is true for all members of an array or object.
+     *
      * Calls a function for each member of an array or object until either
      * one of them returns false (in which case \code{all} returns false) or
      * we run out of elements (in which case \code{all} returns true).
@@ -1423,6 +1427,8 @@ var toolkit = function() {
     /**
      * @function
      * @description
+     * Left/right panels with a draggable divider.
+     *
      * Returns a Positioned Element with a draggable vertical divider
      * bordering two other Positioned Elements.
      * @param {HTMLPositionedElement} container The container to divide.
@@ -1438,6 +1444,8 @@ var toolkit = function() {
     /**
      * @function
      * @description
+     * A panel with a smaller header.
+     *
      * Returns a Positioned Element consisting of a header and a body.
      * @param {HTMLElement} hdr The header element.
      * @param {HTMLPositionedElement} main The body element.
@@ -1448,6 +1456,8 @@ var toolkit = function() {
     /**
      * @function
      * @description
+     * A panel with a smaller footer.
+     *
      * Returns a Positioned Element consisting of a body and a footer.
      * @param {HTMLElement} ftr The footer element.
      * @param {HTMLPositionedElement} main The body element.
@@ -1467,6 +1477,8 @@ var toolkit = function() {
     /**
      * @function
      * @description
+     * A panel with a side bar.
+     *
      * Returns a Positioned Element consisting of a left side bar and a body.
      * @param {HTMLElement} bar The side bar element.
      * @param {HTMLPositionedElement} main The body element.
@@ -1477,6 +1489,8 @@ var toolkit = function() {
     /**
      * @function
      * @description
+     * A panel with a side bar.
+     *
      * Returns a Positioned Element consisting of a right side bar and a body.
      * @param {HTMLElement} bar The side bar element.
      * @param {HTMLPositionedElement} main The body element.
@@ -1487,6 +1501,8 @@ var toolkit = function() {
     /**
      * @function
      * @description
+     * A panel with an overlay.
+     *
      * Returns a Positioned Element consisting of two elements
      * placed in the same position. To be able to see the lower (main)
      * element you must either call \code{hide()} on the overlay,
@@ -1530,6 +1546,8 @@ var toolkit = function() {
     /**
      * @function
      * @description Makes a label suitable for labelling a control.
+     *
+     * The label has translatable text and a help tooltip (if translated for).
      * @param {object} translations \code{translations[id].name} is the string
      * to use as label's text, \code{translations[id].help} is the string to use as
      * the label's tooltip. If \code{id} is undefined or null, \code{translations.name}
@@ -1612,6 +1630,8 @@ var toolkit = function() {
      * @description
      * Returns a colour input Toolkit Control.
      *
+     * It is a standard HTML input control with type \code{color}. The value
+     * returned is a six-hex-digit string prefixed with a \code{#}.
      * @param {string} id when \code{getData} or \code{setData} is
      * called on the container, the value at \code{'id'} refers to this
      * selector. The HTML id is set to \code{'param-' + id}.
@@ -1630,6 +1650,7 @@ var toolkit = function() {
      * @description
      * Returns a checkbox input Toolkit Control.
      *
+     * A control for a boolean value rendered as a checkbox.
      * @param {string} id when \code{getData} or \code{setData} is
      * called on the container, the value at \code{'id'} refers to this
      * selector. The HTML id is set to \code{'param-' + id}.
@@ -1674,9 +1695,9 @@ var toolkit = function() {
     paramSelector: paramSelector,
     /**
      * @function
-     * @description
-     * Adds a group title to an {@link toolkit.optionsPage}.
+     * @description Option group title
      *
+     * Adds a group title to an {@link toolkit.optionsPage}.
      * @param {HTMLElement} container The container, preferably the
      * return value from {@link toolkit.optionsPage}.
      * @param {object} labelTranslations An object with two keys:

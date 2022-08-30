@@ -9,6 +9,10 @@ runR(symbolList)
 \arguments{
 \item{symbolList}{A list of permitted symbols in the R command}
 }
+\value{
+A function that can be passed as one of the elements of
+\code{\link{slServer}}'s \code{interface} argument.
+}
 \description{
 If you set this as a part of your interface, like:
 \code{runR=shinylight::runR(c("+", "plot", "c", "x", "y"))}

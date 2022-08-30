@@ -9,6 +9,10 @@ downloadCsv(results)
 \arguments{
 \item{results}{Data frame to be returned}
 }
+\value{
+A list to be returned to the browser describing a CSV
+file to be downloaded.
+}
 \description{
 Encodes a data frame as a CSV file to be downloaded
 }

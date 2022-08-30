@@ -40,7 +40,8 @@ code that sets \code{shinylight_initial_data} to this supplied JSON
 string.}
 }
 \value{
-server object, unless daemonize is TRUE.
+server object, unless daemonize is TRUE in which case the
+function will not return.
 }
 \description{
 Start a ShinyLight server

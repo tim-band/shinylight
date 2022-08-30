@@ -11,6 +11,9 @@ slStop(server = NULL)
 or \code{\link{slRunRServer}})
 to stop. If not supplied all servers will be stopped.}
 }
+\value{
+No return value
+}
 \description{
 Stops a ShinyLight GUI
 }
