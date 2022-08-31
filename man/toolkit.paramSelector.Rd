@@ -25,6 +25,9 @@ HTML text).}
 \item{callback}{\code{function} The (nullary) function to call when the
 value changes (optional)}
 }
+\value{
+The selection box.
+}
 \description{
 This is different to a normal selection box because it allows
 tooltips on the items within the list.

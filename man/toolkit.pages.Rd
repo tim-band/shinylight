@@ -22,6 +22,18 @@ tooltip help HTML)}
 elements, set this and the ID will be set to
 \code{tabIdPrefix + pageId}.}
 }
+\value{
+An element that has the
+tabs and the tabs that switch between them. The active tab has
+the "active" class. It has the following extra methods:
+\code{setData(data)}: data is a dictionary with keys matching the
+pageIds. The values are passed to the \code{setData()} functions
+of the corresponding elements. Pages without any data (and their
+corresponding radio buttons) are summarily disabled. Pages with
+data are enabled. \code{reposition()}: sets each page to the same
+dimensions as the container and calls each page's
+\code{reposition()} method (if it exists).
+}
 \description{
 Only one page will be visible at a time. The returned element
 has \code{getData} and \code{setData} methods that take or

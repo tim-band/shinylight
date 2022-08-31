@@ -8,6 +8,9 @@
 \item{elements}{\code{Array.<HTMLControlElement>} Initial array of elements to be added.}
 \item{className}{\code{string} HTML class for the returned banner.}
 }
+\value{
+The banner element.
+}
 \description{
 Returns a Container Element for displaying controls horizontally.
 }

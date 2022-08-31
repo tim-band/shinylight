@@ -16,3 +16,15 @@ The HTTP address as \code{protocol://address:port}
 \description{
 Obtains the address that the server is listening on
 }
+\examples{
+server <- slServer(
+  port = 50051,
+  interface = list(
+    multiply = function(x, y) { x * y }
+  )
+)
+address <- getAddress(server)
+# ...
+slStop(server)
+stopifnot(address == "http://127.0.0.1:50051")
+}

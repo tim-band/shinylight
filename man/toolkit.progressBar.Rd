@@ -4,6 +4,9 @@
 \name{toolkit.progressBar}
 \alias{toolkit.progressBar}
 \title{JavaScript function: Returns a Positioned Element progress bar.}
+\value{
+The progress bar element.
+}
 \description{
 The progress is set by calling the \code{setData()} method.
 }

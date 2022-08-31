@@ -46,6 +46,36 @@ function will not return.
 \description{
 Start a ShinyLight server
 }
+\examples{
+# You can leave out port and daemonize to launch a browser
+# pointing at your server
+server <- slServer(
+  port = 50052,
+  interface = list(
+    multiply = function(x, y) { x * y }
+  )
+)
+# Normally we would use shinylight.js to send the function over
+# and receive the result, not R and websocket.
+ws <- websocket::WebSocket$new("ws://127.0.0.1:50052/x")
+resultdata <- NULL
+ws$onMessage(function(event) {
+  resultdata <<- jsonlite::fromJSON(event$data)$result$data
+})
+ws$onOpen(function(event) {
+  ws$send('{ "method": "multiply", "params": { "x": 3, "y": 47 } }')
+})
+timeout = 30
+while(is.null(resultdata) && 0 < timeout) {
+  later::run_now()
+  Sys.sleep(0.1)
+  timeout <- timeout - 1
+}
+ws$close()
+slStop(server)
+stopifnot(resultdata == 141)  # multiply(3, 47) == 141
+grDevices::png()  # workaround; you do not have to do this
+}
 \seealso{
 \code{\link{slStop}} to stop a running server, and
 \code{\link{slRunRServer}} to run a server that just accepts R code.

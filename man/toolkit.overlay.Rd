@@ -10,6 +10,9 @@
 returned element will not be passed on to this overlay element.}
 \item{main}{\code{\link{toolkit.HTMLPositionedElement}} The lower element.}
 }
+\value{
+The element containing both elements.
+}
 \description{
 Returns a Positioned Element consisting of two elements
 placed in the same position. To be able to see the lower (main)

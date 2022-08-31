@@ -16,6 +16,9 @@ is help text to be displayed if the user hovers over the label}
 \item{callback}{\code{function} Optional function to be called whenever the
 input value changes}
 }
+\value{
+Text input control.
+}
 \description{
 It is a standard HTML input control with type \code{color}. The value
 returned is a six-hex-digit string prefixed with a \code{#}.

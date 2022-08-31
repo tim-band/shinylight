@@ -23,6 +23,25 @@ No return value
 During a slow remote procedure call, call this to inform the client
 of progress.
 }
+\examples{
+server <- slServer(
+  port = 50051,
+  interface = list(long_and_complicated = function(x) {
+    sendProgress(0,3)
+    # First part of work that takes some time
+    # ...
+    sendProgress(1,3)
+    # Second part of work that takes some time
+    # ...
+    sendProgress(2,3)
+    # Last part of work that takes some time
+    # ...
+    sendProgress(3,3)
+  })
+)
+# ...
+slStop(server)
+}
 \seealso{
 \code{\link{sendInfoText}} for sending text to the user.
 }

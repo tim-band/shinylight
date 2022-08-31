@@ -31,3 +31,15 @@ rrpc.call("runR", \{
 \}, function(x) \{img.setAttribute('src', x.plot[0])\});
 }\if{html}{\out{</div>}}
 }
+\examples{
+server <- slServer(
+  port = 50050,
+  interface = list(
+    run_the_users_r_code = runR(
+      list("c", "$", "list", "+", "-", "/", "*", "sqrt")
+    )
+  )
+)
+# ...
+slStop(server)
+}

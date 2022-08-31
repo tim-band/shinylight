@@ -8,6 +8,10 @@
 \item{bar}{\code{HTMLElement} The side bar element.}
 \item{main}{\code{\link{toolkit.HTMLPositionedElement}} The body element.}
 }
+\value{
+The Toolkit Positioned Element containing
+the side bar and body.
+}
 \description{
 Returns a Positioned Element consisting of a left side bar and a body.
 }

@@ -11,6 +11,9 @@ height to use as the returned element's default height.}
 \item{horizontalPadding}{\code{int} The number of extra pixels above the element's
 width to use as the returned element's default width.}
 }
+\value{
+The wrapper.
+}
 \description{
 This element does not gain scrollbars if it is too large for this returned
 container, and it will try to take up its full size in the layout.

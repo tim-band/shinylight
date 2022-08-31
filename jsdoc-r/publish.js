@@ -172,7 +172,6 @@ exports.publish = (taffyData, opts, tutorials) => {
     });
     doclets.each(doclet => {
         //console.log('DOCLET:', doclet);
-        //console.log('vars, scope:', doclet.vars, doclet.scope);
         for (let i in doclet.params) {
             const p = doclet.params[i];
         }
@@ -201,6 +200,10 @@ exports.publish = (taffyData, opts, tutorials) => {
             if (typeof(doclet.params) === 'object' && 0 < doclet.params.length) {
                 params = doclet.params;
             }
+            let returns = null;
+            if (typeof(doclet.returns) === 'object' && 0 < doclet.returns.length) {
+                returns = doclet.returns;
+            }
             rd = view.render('rd.tmpl', {
                 title: title,
                 filename: doclet.meta.filename,
@@ -208,6 +211,7 @@ exports.publish = (taffyData, opts, tutorials) => {
                 description: description,
                 params: params,
                 properties: doclet.properties,
+                returns: returns,
                 see: 'see' in doclet? doclet.see : [],
                 linkify: function(name) {
                     if (name in fullyQualifiedNames) {

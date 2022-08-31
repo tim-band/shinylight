@@ -8,6 +8,9 @@ vertically.}
 \arguments{
 \item{elements}{\code{Array.<HTMLElement>} Initial array of elements to be added.}
 }
+\value{
+A Container Element for displaying elements vertically.
+}
 \description{
 Returns a Container Element with a
 \code{makeSubElement} method that adds elements vertically,

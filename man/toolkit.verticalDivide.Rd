@@ -12,6 +12,10 @@ the left of the divider.}
 \item{right}{\code{\link{toolkit.HTMLPositionedElement}} The element to put
 on the right of the divider.}
 }
+\value{
+The element created.
+If a container was provided it is this argument.
+}
 \description{
 Returns a Positioned Element with a draggable vertical divider
 bordering two other Positioned Elements.

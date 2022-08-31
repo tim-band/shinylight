@@ -21,6 +21,15 @@ if the R function \code{\link{sendInfoText}} is called;
 \code{"progress"}: Function to be called if the R function
 \code{\link{sendProgress}} is called.}
 }
+\value{
+Result object that might have a \code{plot}
+property (giving a string that would work as the \code{src}
+attribute of an \code{img} element, representing graphics
+drawn by the command) and a \code{data} property (giving
+the value returned by the command). If the promise resolves
+to an error, the argument to the error function is a string
+representing the cause of the error.
+}
 \description{
 The R side must be running the slRunRServer function.
 }

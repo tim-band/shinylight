@@ -27,3 +27,9 @@ data frame or other non-plot result.
 \description{
 Renders a plot as a base64-encoded image
 }
+\examples{
+pdf <- encodePlot(grDevices::png, "image/png", 200, 300, function() {
+  barplot(c(1, 2, 3, 4))
+})
+grDevices::png()  # workaround; you do not have to do this
+}

@@ -19,6 +19,9 @@ input value changes}
 if passed a value that this control should accept or \code{false}
 otherwise.}
 }
+\value{
+Text input control.
+}
 \description{
 Any text is permitted unless a \code{validate} function is supplied.
 }

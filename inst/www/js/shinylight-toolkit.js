@@ -1389,7 +1389,7 @@ var toolkit = function() {
      * @param {Array} path The series of indices to be applied.
      * @param {any} defaultValue The default value to be returned if
      * the path cannot be followed to the end.
-     * @returns {any} Object dereferenced, \code {defaultValue}, or null.
+     * @returns {any} Object dereferenced, \code{defaultValue}, or null.
      */
     deref: deref,
     /**
@@ -1409,8 +1409,8 @@ var toolkit = function() {
      * delgate function.
      * @param {function} f Delegate function to be called
      * \code{ticks} ticks after the last call to the retuned function.
-     * @return Function that can be called often, resulting in fewer
-     * calls to the delegate function \code {f}.
+     * @return {function} Function that can be called often, resulting in fewer
+     * calls to the delegate function \code{f}.
      */
     whenQuiet: whenQuiet,
     /**

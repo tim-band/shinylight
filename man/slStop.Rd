@@ -17,3 +17,13 @@ No return value
 \description{
 Stops a ShinyLight GUI
 }
+\examples{
+server <- slServer(
+  port = 50051,  # leave this out if you don't care about the port number
+  interface = list(
+    multiply = function(x, y) { x * y }
+  )
+)
+# ...
+slStop(server)
+}

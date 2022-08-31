@@ -9,6 +9,9 @@
 \item{extraColumns}{\code{Array.<string>}, \code{number} The extra column headers
 required or the number of extra columns required.}
 }
+\value{
+Headers and rows
+}
 \description{
 Turns data received from R into a form that can be set into
 dataentrygrid.js.

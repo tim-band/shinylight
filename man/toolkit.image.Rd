@@ -8,6 +8,14 @@
 \item{updateSizeFunction}{\code{function} Nullary function called when
 the object's size is changed.}
 }
+\value{
+Image element. It has a
+\code{getSize()} method, returning an object with width and height
+members. This is the width and height set by \code{reposition()},
+not the actual on-screen width and height, if that is different
+for some reason. In other words, it returns the width and height
+the image "should" have.
+}
 \description{
 An image element.
 }

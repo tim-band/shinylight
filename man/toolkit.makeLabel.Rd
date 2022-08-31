@@ -15,6 +15,9 @@ label.}
 \item{idFor}{\code{string} [optional] The \code{id} attribute of the HTML element
 that this element refers to.}
 }
+\value{
+The label.
+}
 \description{
 The label has translatable text and a help tooltip (if translated for).
 }

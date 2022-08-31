@@ -13,7 +13,10 @@ param.description ?>}
 <?js });
 ?>}
 <?js }
-?><?js if (description) { ?>\description{
+?><?js if (returns) { returns.forEach(function(ret){ ?>\value{
+<?js= ret.description ?>
+}
+<?js }); } ?><?js if (description) { ?>\description{
 <?js= description?>
 }<?js }
 ?><?js if (properties){ ?>

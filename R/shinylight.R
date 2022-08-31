@@ -14,6 +14,24 @@ globals <- new.env(parent = emptyenv())
 #' each call as long as it makes sense to the user.
 #' @seealso \code{\link{sendInfoText}} for sending text to the user.
 #' @return No return value
+#' @examples
+#' server <- slServer(
+#'   port = 50051,
+#'   interface = list(long_and_complicated = function(x) {
+#'     sendProgress(0,3)
+#'     # First part of work that takes some time
+#'     # ...
+#'     sendProgress(1,3)
+#'     # Second part of work that takes some time
+#'     # ...
+#'     sendProgress(2,3)
+#'     # Last part of work that takes some time
+#'     # ...
+#'     sendProgress(3,3)
+#'   })
+#' )
+#' # ...
+#' slStop(server)
 #' @export
 sendProgress <- function(numerator, denominator=1) {
   globals$ws$send(jsonlite::toJSON(list(
@@ -32,6 +50,19 @@ sendProgress <- function(numerator, denominator=1) {
 #' @seealso \code{\link{sendProgress}} for sending a progress completion
 #' ratio to the user.
 #' @return No return value
+#' @examples
+#' server <- slServer(
+#'   port = 50051,
+#'   interface = list(long_and_complicated = function(x) {
+#'     # First part of work that takes some time
+#'     # ...
+#'     sendInfoText("We are about half way through")
+#'     # Second part of work that takes some time
+#'     # ...
+#'   })
+#' )
+#' # ...
+#' slStop(server)
 #' @export
 sendInfoText <- function(text) {
   globals$ws$send(jsonlite::toJSON(list(
@@ -43,7 +74,7 @@ sendInfoText <- function(text) {
 
 rrpc <- function(interface) { function(ws) {
   ws$onMessage(function(binary, message) {
-    df <- jsonlite::fromJSON(message);
+    df <- jsonlite::fromJSON(message)
     method <- df$method
     params <- df$params
     pnames <- names(params)
@@ -76,10 +107,10 @@ rrpc <- function(interface) { function(ws) {
             )
           }
         },
-        error=function(e) {
-          print(paste("Error:", e$message))
-          print(paste("call:", format(e$call)))
-          list(error=e$message, result=NULL)
+        error = function(e) {
+          warning("Error: ", e$message)
+          warning("call: ", format(e$call))
+          list(error = e$message, result = NULL)
         }
       )
       r$result$headers <- colnames(r$result$data)
@@ -253,7 +284,6 @@ getInitResponse <- function(req, path) {
 #' code that sets \code{shinylight_initial_data} to this supplied JSON
 #' string.
 #' @return The server object, can be passed to \code{\link{slStop}}
-#' @export
 rrpcServer <- function(
     interface,
     host='0.0.0.0',
@@ -311,6 +341,18 @@ rrpcServer <- function(
 #' @param server The server (returned by \code{\link{slServer}}
 #' or \code{\link{slRunRServer}})
 #' @return The HTTP address as \code{protocol://address:port}
+#' @examples
+#' server <- slServer(
+#'   port = 50051,
+#'   interface = list(
+#'     multiply = function(x, y) { x * y }
+#'   )
+#' )
+#' address <- getAddress(server)
+#' # ...
+#' slStop(server)
+#' stopifnot(address == "http://127.0.0.1:50051")
+#' @export
 getAddress <- function(server) {
   host <- server$getHost()
   port <- server$getPort()
@@ -329,14 +371,6 @@ browseTo <- function(server) {
   utils::browseURL(getAddress(server))
 }
 
-closeAllDevices <- function() {
-  cur <- grDevices::dev.cur()
-  while (cur != 1) {
-    grDevices::dev.off(which = cur)
-    cur <- grDevices::dev.cur()
-  }
-}
-
 #' Renders a plot as a base64-encoded image
 #'
 #' @param device Graphics device function, such as
@@ -349,26 +383,34 @@ closeAllDevices <- function() {
 #' @return list with two keys, whose values can each be NULL:
 #' \code{'plot'} is a plot in HTML img src form and \code{'data'} is a
 #' data frame or other non-plot result.
+#' @examples
+#' pdf <- encodePlot(grDevices::png, "image/png", 200, 300, function() {
+#'   barplot(c(1, 2, 3, 4))
+#' })
+#' grDevices::png()  # workaround; you do not have to do this
 #' @export
 encodePlot <- function(device, mimeType, width, height, plotFn) {
-  tempFilename <- tempfile(pattern='plot', fileext='.tmp')
-  closeAllDevices()
+  tempfilename <- tempfile(pattern = "plot", fileext = ".tmp")
+  grDevices::graphics.off()
   oldoptions <- options()
-  on.exit(options(oldoptions))
+  on.exit({
+    options(oldoptions)
+    grDevices::graphics.off()
+  })
   options(device = function() {
     device(
-      file = tempFilename,
+      file = tempfilename,
       width = as.numeric(width),
       height = as.numeric(height)
-    )
-  })
+    )}
+  )
   data <- plotFn()
   plot <- NULL
   if (grDevices::dev.cur() != 1) {
     grDevices::dev.off()
-    filesize <- file.size(tempFilename)
+    filesize <- file.size(tempfilename)
     if (!is.na(filesize)) {
-      raw <- readBin(tempFilename, what = "raw", n = filesize)
+      raw <- readBin(tempfilename, what = "raw", n = filesize)
       plot <- paste0("data:", mimeType, ";base64,", jsonlite::base64_enc(raw))
     }
   }
@@ -403,6 +445,11 @@ validateAndEncodePlotAs <- function(format, plotFn) {
 #' The result can be set as the \code{src} attribute of an \code{<img>}
 #' element in HTML.
 #'
+#' You will not need to call this function unless you want to return more
+#' than one plot per call, as the last plot produced will be returned
+#' in the \code{plot} property of the result from \code{shinylight.call}
+#' anyway.
+#'
 #' @param format An object specifying the output, with the following members:
 #' format$type is \code{"png"}, \code{"pdf"} or \code{"csv"}, and
 #' \code{format$width} and \code{format$height} are
@@ -412,7 +459,16 @@ validateAndEncodePlotAs <- function(format, plotFn) {
 #' \code{'plot'} is a plot in HTML img src form and \code{'data'} is a
 #' data frame or other non-plot result.
 #' @seealso \code{\link{rrpcServer}}
-#' @return No return value
+#' @return A list with an element named \code{plot} containing the
+#' plot encoded as required either for an HTML \code{image} element's
+#' \code{src} attribute, or \code{a} element's \code{href} attribute.
+#' If the function returns a matrix or data frame, this will be returned
+#' in the list's \code{data} element.
+#' @examples
+#' pdf <- encodePlotAs(list(type="pdf", width=7, height=8), function() {
+#'   barplot(c(1, 2, 3, 4))
+#' })
+#' grDevices::png()  # workaround; you do not have to do this
 #' @export
 encodePlotAs <- function(format, plotFn) {
   type <- format$type
@@ -508,6 +564,17 @@ sanitizeCommand <- function(command, symbolList, callback) {
 #' @param symbolList A list of permitted symbols in the R command
 #' @return A function that can be passed as one of the elements of
 #' \code{\link{slServer}}'s \code{interface} argument.
+#' @examples
+#' server <- slServer(
+#'   port = 50050,
+#'   interface = list(
+#'     run_the_users_r_code = runR(
+#'       list("c", "$", "list", "+", "-", "/", "*", "sqrt")
+#'     )
+#'   )
+#' )
+#' # ...
+#' slStop(server)
 #' @export
 #' @md
 runR <- function(symbolList) {
@@ -528,6 +595,15 @@ runR <- function(symbolList) {
 #' or \code{\link{slRunRServer}})
 #' to stop. If not supplied all servers will be stopped.
 #' @return No return value
+#' @examples
+#' server <- slServer(
+#'   port = 50051,  # leave this out if you don't care about the port number
+#'   interface = list(
+#'     multiply = function(x, y) { x * y }
+#'   )
+#' )
+#' # ...
+#' slStop(server)
 #' @export
 slStop <- function(server=NULL) {
   if (is.null(server)) {
@@ -561,6 +637,35 @@ slStop <- function(server=NULL) {
 #' string.
 #' @return server object, unless daemonize is TRUE in which case the
 #' function will not return.
+#' @examples
+#' # You can leave out port and daemonize to launch a browser
+#' # pointing at your server
+#' server <- slServer(
+#'   port = 50052,
+#'   interface = list(
+#'     multiply = function(x, y) { x * y }
+#'   )
+#' )
+#' # Normally we would use shinylight.js to send the function over
+#' # and receive the result, not R and websocket.
+#' ws <- websocket::WebSocket$new("ws://127.0.0.1:50052/x")
+#' resultdata <- NULL
+#' ws$onMessage(function(event) {
+#'   resultdata <<- jsonlite::fromJSON(event$data)$result$data
+#' })
+#' ws$onOpen(function(event) {
+#'   ws$send('{ "method": "multiply", "params": { "x": 3, "y": 47 } }')
+#' })
+#' timeout = 30
+#' while(is.null(resultdata) && 0 < timeout) {
+#'   later::run_now()
+#'   Sys.sleep(0.1)
+#'   timeout <- timeout - 1
+#' }
+#' ws$close()
+#' slStop(server)
+#' stopifnot(resultdata == 141)  # multiply(3, 47) == 141
+#' grDevices::png()  # workaround; you do not have to do this
 #' @export
 slServer <- function(
     interface,
@@ -578,12 +683,11 @@ slServer <- function(
   s <- rrpcServer(host=host, port=port, appDirs=appDirList, root="/",
     interface=interface, initialize=initialize
   )
-  extraMessage <- ""
+  message("Listening on ", host, ":", port)
   if (is.null(port)) {
     browseTo(s)
-    extraMessage <- "Call ShinyLight::slStop() to stop serving\n"
+    message("Call ShinyLight::slStop() to stop serving")
   }
-  cat(sprintf("Listening on %s:%d\n%s", host, port, extraMessage))
   if (daemonize) {
     while (TRUE) {
       later::run_now(9999)
@@ -616,6 +720,31 @@ slServer <- function(
 #' \code{var shinylight_initial_data=}, which will be replaced with
 #' code that sets \code{shinylight_initial_data} to this supplied JSON
 #' string.
+#' @examples
+#' server <- slRunRServer(
+#'   permitted = list("*"),
+#'   port = 50053
+#' )
+#' # Normally we would use shinylight.js to send the function over
+#' # and receive the result, not R and websocket.
+#' ws <- websocket::WebSocket$new("ws://127.0.0.1:50053/x")
+#' resultdata <- NULL
+#' ws$onMessage(function(event) {
+#'   resultdata <<- jsonlite::fromJSON(event$data)$result$data
+#' })
+#' ws$onOpen(function(event) {
+#'   ws$send('{"method":"runR","params":{"Rcommand":"3 * 57"}}')
+#' })
+#' timeout = 30
+#' while(is.null(resultdata) && 0 < timeout) {
+#'   later::run_now()
+#'   Sys.sleep(0.1)
+#'   timeout <- timeout - 1
+#' }
+#' ws$close()
+#' slStop(server)
+#' stopifnot(resultdata == 171)  # 3 * 57 == 171
+#' grDevices::png()  # workaround; you do not have to do this
 #' @export
 slRunRServer <- function(
     permittedSymbols,

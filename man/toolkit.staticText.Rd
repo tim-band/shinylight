@@ -10,6 +10,13 @@
 \item{translations}{\code{object} An object with keys \code{'name'}
 for the label displayed by the text and \code{'help'} for tooltop text.}
 }
+\value{
+The static text element. The text
+content can be set by calling its \code{setData()} function. This text
+can include HTML entities, so you might want to replace \code{&}
+with \code{&amp;} and \code{<} with \code{&lt;} if it is plain
+text.
+}
 \description{
 This element is like a control in that it has a label and actual
 text content, but it is not interactive.

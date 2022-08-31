@@ -21,6 +21,9 @@ having a value that is an object having a key \code{'name'}
 with value the display name of the button, and optionally a key
 \code{'help'} with value of the tooltip text.}
 }
+\value{
+The button.
+}
 \description{
 This button is an HTML element, but it is not an HTML button.
 Styling and JavaScript provide the button-like look-and-feel.

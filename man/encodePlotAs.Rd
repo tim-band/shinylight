@@ -19,11 +19,27 @@ list with two keys, whose values can each be NULL:
 \code{'plot'} is a plot in HTML img src form and \code{'data'} is a
 data frame or other non-plot result.
 
-No return value
+A list with an element named \code{plot} containing the
+plot encoded as required either for an HTML \code{image} element's
+\code{src} attribute, or \code{a} element's \code{href} attribute.
+If the function returns a matrix or data frame, this will be returned
+in the list's \code{data} element.
 }
 \description{
 The result can be set as the \code{src} attribute of an \code{<img>}
 element in HTML.
+}
+\details{
+You will not need to call this function unless you want to return more
+than one plot per call, as the last plot produced will be returned
+in the \code{plot} property of the result from \code{shinylight.call}
+anyway.
+}
+\examples{
+pdf <- encodePlotAs(list(type="pdf", width=7, height=8), function() {
+  barplot(c(1, 2, 3, 4))
+})
+grDevices::png()  # workaround; you do not have to do this
 }
 \seealso{
 \code{\link{rrpcServer}}

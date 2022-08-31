@@ -4,6 +4,9 @@
 \name{toolkit.optionsPage}
 \alias{toolkit.optionsPage}
 \title{JavaScript function: Returns a Container Element for displaying controls vertically.}
+\value{
+A Container Element for displaying elements vertically.
+}
 \description{
 Returns an element with a \code{makeSubElement} method that
 adds elements vertically. This differs from \code{\link{toolkit.stack}} in that the

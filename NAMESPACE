@@ -2,7 +2,7 @@
 
 export(encodePlot)
 export(encodePlotAs)
-export(rrpcServer)
+export(getAddress)
 export(runR)
 export(sendInfoText)
 export(sendProgress)

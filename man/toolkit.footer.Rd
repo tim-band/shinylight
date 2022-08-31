@@ -8,6 +8,10 @@
 \item{ftr}{\code{HTMLElement} The footer element.}
 \item{main}{\code{\link{toolkit.HTMLPositionedElement}} The body element.}
 }
+\value{
+The element containing
+the footer and body.
+}
 \description{
 Returns a Positioned Element consisting of a body and a footer.
 }

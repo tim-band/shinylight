@@ -10,6 +10,9 @@
 \item{defaultValue}{\code{\link{toolkit.any}} The default value to be returned if
 the path cannot be followed to the end.}
 }
+\value{
+Object dereferenced, \code{defaultValue}, or null.
+}
 \description{
 \code{deref(o, [a,b,c], d)} is a safe way of doing
 \code{o[a][b][c]}. If that path does not exist, d is returned.

@@ -44,6 +44,32 @@ server object, unless daemonize is TRUE.
 \description{
 Start a ShinyLight server which runs R that it is sent
 }
+\examples{
+server <- slRunRServer(
+  permitted = list("*"),
+  port = 50053
+)
+# Normally we would use shinylight.js to send the function over
+# and receive the result, not R and websocket.
+ws <- websocket::WebSocket$new("ws://127.0.0.1:50053/x")
+resultdata <- NULL
+ws$onMessage(function(event) {
+  resultdata <<- jsonlite::fromJSON(event$data)$result$data
+})
+ws$onOpen(function(event) {
+  ws$send('{"method":"runR","params":{"Rcommand":"3 * 57"}}')
+})
+timeout = 30
+while(is.null(resultdata) && 0 < timeout) {
+  later::run_now()
+  Sys.sleep(0.1)
+  timeout <- timeout - 1
+}
+ws$close()
+slStop(server)
+stopifnot(resultdata == 171)  # 3 * 57 == 171
+grDevices::png()  # workaround; you do not have to do this
+}
 \seealso{
 \code{\link{slServer}} for the more general form of this
 function, or \code{\link{slStop}} to stop a running server.

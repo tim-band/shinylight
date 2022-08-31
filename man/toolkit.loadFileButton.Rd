@@ -27,6 +27,9 @@ calls \code{doneFn()} itself. The return value of \code{createFileInput}
 should be the element itself, monkey-patched to include a \code{show()}
 method that will be called when the Load button is clicked.}
 }
+\value{
+The button.
+}
 \description{
 This button is an HTML element, but it is not an HTML button.
 Styling and JavaScript provide the button-like look-and-feel.

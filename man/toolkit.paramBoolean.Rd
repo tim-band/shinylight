@@ -16,6 +16,9 @@ is help text to be displayed if the user hovers over the label}
 \item{callback}{\code{function} Optional function to be called whenever the
 input value changes}
 }
+\value{
+Checkbox input control.
+}
 \description{
 A control for a boolean value rendered as a checkbox.
 }

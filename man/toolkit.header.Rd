@@ -8,6 +8,10 @@
 \item{hdr}{\code{HTMLElement} The header element.}
 \item{main}{\code{\link{toolkit.HTMLPositionedElement}} The body element.}
 }
+\value{
+The element containing
+the header and body.
+}
 \description{
 Returns a Positioned Element consisting of a header and a body.
 }

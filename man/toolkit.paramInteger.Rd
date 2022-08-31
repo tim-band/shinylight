@@ -18,6 +18,9 @@ input value changes}
 \item{min}{\code{int} Minimum permitted value (optional).}
 \item{max}{\code{int} Maximum permitted value (optional).}
 }
+\value{
+Text input control.
+}
 \description{
 Values outside the permitted range will gain the "invalid" class,
 but there is no other effect.
