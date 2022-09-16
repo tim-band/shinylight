@@ -108,8 +108,8 @@ rrpc <- function(interface) { function(ws) {
           }
         },
         error = function(e) {
-          warning("Error: ", e$message)
-          warning("call: ", format(e$call))
+          message("Error: ", e$message)
+          message("call: ", format(e$call))
           list(error = e$message, result = NULL)
         }
       )
