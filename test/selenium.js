@@ -12,6 +12,7 @@ const { PNG } = require("pngjs");
 const Chrome = require('selenium-webdriver/chrome');
 const Firefox = require('selenium-webdriver/firefox');
 const floor = Math.floor;
+const they = it;
 
 // hand-rolled "fs/promises" module
 const fs = {
@@ -114,6 +115,7 @@ async function portIsOpen(port) {
     return await retry(10, 300, checkPort.bind(null, port));
 }
 
+// Gets the content width (so ignoring margins and border)
 async function getWidth(element) {
     const w = await element.getCssValue('width');
     if (w.endsWith('px')) {
@@ -191,7 +193,7 @@ describe('shinylight framework', function() {
     });
 
     describe('cascading menus', function() {
-        it('allow mouse control', async function() {
+        they('allow mouse control', async function() {
             this.timeout(5000);
             await clickId(driver, 'param-plot_param');
             var param_b = await driver.findElements(By.id('param-b'));
@@ -202,7 +204,7 @@ describe('shinylight framework', function() {
             await assertParamIs(driver, 'plot_param', 'b');
         });
 
-        it('allow keyboard control', async function() {
+        they('allow keyboard control', async function() {
             this.timeout(50000);
             await assertParamIs(driver, 'plot_param', 'p');
             var box = await driver.findElement(By.xpath(
@@ -212,6 +214,23 @@ describe('shinylight framework', function() {
                 Key.ENTER, Key.DOWN, Key.RIGHT, Key.DOWN, Key.DOWN, Key.TAB
             );
             await assertParamIs(driver, 'plot_param', 'b');
+        });
+
+        they('show the correct tooltips', async function() {
+            await clickId(driver, 'param-function-selector');
+            await mouseOver(driver, 'function-selector-middles');
+            const tooltips = await driver.findElements(By.css('.option-tooltip'));
+            const allTooltipTexts = await Promise.all(tooltips.map(e => e.getText()));
+            const tooltipTexts = allTooltipTexts.filter(t => t !== '');
+            assert.deepStrictEqual(tooltipTexts, ['functions that are fun']);
+        });
+
+        they('all cancel together', async function() {
+            await clickId(driver, 'param-function-selector');
+            await clickId(driver, 'function-selector-middles');
+            await clickId(driver, 'param-function-selector');
+            await assertNotVisible(driver, 'function-selector-test2');
+            await assertNotVisible(driver, 'function-selector-test3');
         });
     });
 
@@ -1107,6 +1126,30 @@ async function assertElementText(driver, by, text) {
             return false;
         }
     });
+}
+
+async function assertNotVisible(driver, id) {
+    const e = await driver.findElement(By.id(id));
+    await driver.wait(
+        until.elementIsNotVisible(e),
+        500,
+        `Element '${id}' is visible, but should not be`
+    );
+}
+
+async function assertVisible(driver, id) {
+    const e = await driver.findElement(By.id(id));
+    await driver.wait(
+        until.elementIsVisible(e),
+        500,
+        `Element '${id}' is not visible, but should be`
+    );
+}
+
+async function mouseOver(driver, id) {
+    const e = await driver.findElement(By.id(id));
+    const a = driver.actions();
+    await a.move({ origin: e }).pause(100, a.mouse()).perform();
 }
 
 async function clickCalculate(driver) {

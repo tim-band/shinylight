@@ -27,5 +27,31 @@
                 "help": "pounds"
             }
         }
+    },
+    "functions": {
+        "middles": {
+            "name": "Fun functions",
+            "help": "functions that are fun"
+        },
+        "test1": {
+            "name": "Test 1",
+            "help": "Test one"
+        },
+        "test2": {
+            "name": "Test 2",
+            "help": "Test two"
+        },
+        "test3": {
+            "name": "Test 3",
+            "help": "Test three"
+        },
+        "test4": {
+            "name": "Test 4",
+            "help": "Test four"
+        },
+        "test5": {
+            "name": "Test 5",
+            "help": "Test five"
+        }
     }
 }

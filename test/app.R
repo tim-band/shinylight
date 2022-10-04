@@ -64,7 +64,7 @@ functions <- list(
     optiongroups=c("adjust", "plot_points"),
     paramdepends=list(
       # list of conditions ORed together
-      # for when lwd should be added to the 
+      # for when lwd should be added to the parameters
       lwd=list(
         # list of conditions ANDed together
         list(
