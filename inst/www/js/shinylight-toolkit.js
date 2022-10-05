@@ -722,7 +722,7 @@ var toolkit = function() {
         var h = document.createElement('span')
         h.className = "option-tooltip";
         h.innerHTML = trs.help;
-        optr.appendChild(h);
+        opt.appendChild(h);
       }
       optr.onmousedown = preventdefault;
       optr.onmousemove = preventdefault;
@@ -809,7 +809,9 @@ var toolkit = function() {
     );
     buttonText.onmousedown = downArrow.onmousedown = function(ev) {
       if (dropDown.classList.contains('open')) {
-        dropDown.classList.remove('open');
+        forEachDescendent(box, function(e) {
+          e.classList.remove('open');
+        });
       } else {
         dropDown.classList.add('open');
         box.focus();
@@ -853,7 +855,7 @@ var toolkit = function() {
       } else if (ev.key === 'ArrowUp') {
         goTo = highlightedElement.previousElementSibling;
       } else if (ev.key === 'ArrowRight') {
-        if (highlightedElement && highlightedElement.classList.contains('param-option-cascade')) {
+        if (highlightedElement.classList.contains('param-option-cascade')) {
           var dd = highlightedElement.getElementsByClassName('dropdown').item(0);
           if (dd) {
             dd.classList.add('open');

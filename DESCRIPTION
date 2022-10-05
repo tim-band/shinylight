@@ -1,7 +1,7 @@
 Package: shinylight
 Title: Web Interface to 'R' Functions
-Version: 0.7.1
-Date: 2022-08-17
+Version: 0.7.2
+Date: 2022-10-05
 Authors@R: c(
     person("Pieter", "Vermeesch", email = "p.vermeesch@ucl.ac.uk", role = c("aut")),
     person("Tim", "Band", email = "t.band@ucl.ac.uk", role = c("aut", "cre")))

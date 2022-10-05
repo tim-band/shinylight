@@ -37,6 +37,14 @@ It is a list with the following members:
    \item{\code{optiongroups}}{a vector of keys into the schema's
     \code{optiongroups} list giving other parameters to this function.}
  }}
+ \item{\code{functiongroups}}{optional: the menu structure for the
+  functions menu. Each item in the list is either a function name (a
+  string referencing a key in the \code{functions} list) or a list
+  representing a submenu. Submenu keys are the name to be
+  displayed in the list, which can be overridden in the app.json
+  file's \code{functions} object, just like providing localized
+  names for functions.
+ }}
  \item{\code{params}}{a list of the parameters the functions take,
   each of which is a list with the following members: \describe{
    \item{\code{type}}{either a key into the schema's \code{types} list,

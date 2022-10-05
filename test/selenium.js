@@ -5,7 +5,7 @@ const net = require('net');
 const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
-const { Builder, By, Key, until } = require('selenium-webdriver');
+const { Builder, By, Key, Origin, until } = require('selenium-webdriver');
 const { describe, before, after, it } = require('mocha');
 const assert = require("assert");
 const { PNG } = require("pngjs");
@@ -196,8 +196,8 @@ describe('shinylight framework', function() {
         they('allow mouse control', async function() {
             this.timeout(5000);
             await clickId(driver, 'param-plot_param');
-            var param_b = await driver.findElements(By.id('param-b'));
-            assert(param_b.length === 0);
+            // check that the submenu is not yet open
+            await assertNotVisible(driver, 'plot_param-b');
             await assertParamIs(driver, 'plot_param', 'p');
             await clickId(driver, 'plot_param-lines');
             await clickId(driver, 'plot_param-b');
@@ -205,7 +205,7 @@ describe('shinylight framework', function() {
         });
 
         they('allow keyboard control', async function() {
-            this.timeout(50000);
+            this.timeout(5000);
             await assertParamIs(driver, 'plot_param', 'p');
             var box = await driver.findElement(By.xpath(
                 "//*[@id='param-plot_param']/ancestor::*[contains(@class,'param-box')]"
@@ -217,17 +217,20 @@ describe('shinylight framework', function() {
         });
 
         they('show the correct tooltips', async function() {
+            this.timeout(3000);
             await clickId(driver, 'param-function-selector');
             await mouseOver(driver, 'function-selector-middles');
-            const tooltips = await driver.findElements(By.css('.option-tooltip'));
-            const allTooltipTexts = await Promise.all(tooltips.map(e => e.getText()));
-            const tooltipTexts = allTooltipTexts.filter(t => t !== '');
-            assert.deepStrictEqual(tooltipTexts, ['functions that are fun']);
+            await assertTooltipVisible(driver, 'functions that are fun');
+            await clickId(driver, 'function-selector-middles');
+            await mouseOver(driver, 'function-selector-test3');
+            await assertTooltipVisible(driver, 'Test three');
         });
 
         they('all cancel together', async function() {
             await clickId(driver, 'param-function-selector');
             await clickId(driver, 'function-selector-middles');
+            await assertVisible(driver, 'function-selector-test2');
+            await assertVisible(driver, 'function-selector-test3');
             await clickId(driver, 'param-function-selector');
             await assertNotVisible(driver, 'function-selector-test2');
             await assertNotVisible(driver, 'function-selector-test3');
@@ -319,13 +322,14 @@ describe('shinylight framework', function() {
     });
 
     it('outputs unheadered tables', async function() {
-        this.timeout(3000);
+        this.timeout(9993000);
         await switchFunction(driver, ['middles', 'test3']);
         const input = [['2', '3'], ['1', '1'], ['4', '3'], ['3', '1']];
         await enterCellText(driver, 0, 0, ...input);
         await clickCalculate(driver);
         // we should be on the table tab when the calculation returns
         // because toolkit pushes you onto pages with data on them
+        await assertElementCss(driver, '#output-tab-table.active');
         await assertElementText(driver, outputCell(0,0), '2');
         await assertElementText(driver, outputCell(0,1), '3');
         // there should be a "comments" column
@@ -1146,10 +1150,29 @@ async function assertVisible(driver, id) {
     );
 }
 
+async function assertElementCss(driver, css) {
+    const locator = By.css(css);
+    await driver.wait(
+        until.elementLocated(locator),
+        500,
+        `Element at '${css} is not locatable, but should be`
+    );
+}
+
+async function assertTooltipVisible(driver, text) {
+    const tooltips = await driver.findElements(By.css('.option-tooltip'));
+    const allTooltipTexts = await Promise.all(tooltips.map(e => e.getText()));
+    const tooltipTexts = allTooltipTexts.filter(t => t !== '');
+    assert.deepStrictEqual(tooltipTexts, [text]);
+}
+
 async function mouseOver(driver, id) {
     const e = await driver.findElement(By.id(id));
     const a = driver.actions();
-    await a.move({ origin: e }).pause(100, a.mouse()).perform();
+    // We need to move off our current spot in case that is holding
+    // a tooltip open
+    await a.move({ origin: Origin.POINTER, x: 100, y: 0 }).
+        move({ origin: e }).pause(100, a.mouse()).perform();
 }
 
 async function clickCalculate(driver) {
@@ -1190,7 +1213,12 @@ async function switchFunction(driver, funcName) {
     await driver.findElement(By.id('param-function-selector')).click();
     const names = typeof(funcName) === 'object' ? funcName : [funcName];
     for (var i in names) {
-        await driver.findElement(By.id('function-selector-' + names[i])).click();
+        const e = await driver.findElement(By.id('function-selector-' + names[i]));
+        const a = driver.actions();
+    // We need to move off our current spot in case that is holding
+    // a tooltip open
+    await a.move({ origin: Origin.POINTER, x: 100, y: 0 }).
+            move({ origin: e }).click(e).perform();
     }
 }
 

@@ -53,5 +53,11 @@
             "name": "Test 5",
             "help": "Test five"
         }
+    },
+    "params": {
+        "plot_param": {
+            "name": "Plot type",
+            "help": "Which sort of plot to make"
+        }
     }
 }
