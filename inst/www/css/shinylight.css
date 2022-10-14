@@ -158,6 +158,7 @@
   margin: 3px;
   border-radius: 3px;
   visibility: hidden;
+  white-space: pre;
 }
 
 .param-selector table.open {
