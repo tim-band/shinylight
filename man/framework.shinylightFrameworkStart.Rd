@@ -44,7 +44,7 @@ It is a list with the following members:
   displayed in the list, which can be overridden in the app.json
   file's \code{functions} object, just like providing localized
   names for functions.
- }}
+ }
  \item{\code{params}}{a list of the parameters the functions take,
   each of which is a list with the following members: \describe{
    \item{\code{type}}{either a key into the schema's \code{types} list,
