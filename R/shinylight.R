@@ -686,7 +686,7 @@ slServer <- function(
   message("Listening on ", host, ":", port)
   if (is.null(port)) {
     browseTo(s)
-    message("Call ShinyLight::slStop() to stop serving")
+    message("Call shinylight::slStop() to stop serving")
   }
   if (daemonize) {
     while (TRUE) {
