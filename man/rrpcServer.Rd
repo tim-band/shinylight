@@ -10,7 +10,8 @@ rrpcServer(
   port = NULL,
   appDirs = NULL,
   root = "/",
-  initialize = NULL
+  initialize = NULL,
+  testFunction = NULL
 )
 }
 \arguments{
@@ -32,6 +33,10 @@ non-framework apps, the index.html must contain a line containing
 \code{var shinylight_initial_data=}, which will be replaced with
 code that sets \code{shinylight_initial_data} to this supplied JSON
 string.}
+
+\item{testFunction}{Function to be called if the \code{/test}
+endpoint is requested. If the function returns successfully, a 200
+status will be returned. If not, a 500 status will be returned.}
 }
 \value{
 The server object, can be passed to \code{\link{slStop}}

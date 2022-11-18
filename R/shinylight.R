@@ -283,6 +283,9 @@ getInitResponse <- function(req, path) {
 #' \code{var shinylight_initial_data=}, which will be replaced with
 #' code that sets \code{shinylight_initial_data} to this supplied JSON
 #' string.
+#' @param testFunction Function to be called if the \code{/test}
+#' endpoint is requested. If the function returns successfully, a 200
+#' status will be returned. If not, a 500 status will be returned.
 #' @return The server object, can be passed to \code{\link{slStop}}
 rrpcServer <- function(
     interface,
@@ -290,7 +293,8 @@ rrpcServer <- function(
     port=NULL,
     appDirs=NULL,
     root="/",
-    initialize=NULL) {
+    initialize=NULL,
+    testFunction=NULL) {
   paths <- list()
   paths[[paste0(root, "lang")]] <- httpuv::excludeStaticPath()
   paths[[paste0(root, "init")]] <- httpuv::excludeStaticPath()
@@ -325,6 +329,16 @@ rrpcServer <- function(
       return(getLocaleResponse(req, langs))
     } else if (first == "init") {
       return(getInitResponse(req, paths[["/index.html"]]))
+    } else if (first == "test" && !is.null(testFunction)) {
+      return(tryCatch(
+        {
+          testFunction()
+          list(status = 200L, body="OK")
+        },
+        error = function() {
+          list(status = 500L, body="Test failed")
+        }
+      ))
     }
     list(
       status = 404L,
@@ -440,6 +454,8 @@ validateAndEncodePlotAs <- function(format, plotFn) {
   }
 }
 
+svgCapable <- all(capabilities()[c("X11", "cairo")])
+
 #' Renders a plot as a base64-encoded PNG
 #'
 #' The result can be set as the \code{src} attribute of an \code{<img>}
@@ -481,6 +497,11 @@ encodePlotAs <- function(format, plotFn) {
     encodePlot(grDevices::png, "image/png",
         format$width, format$height, plotFn)
   } else if (format$type == "svg") {
+    if (!svgCapable) {
+      stop(paste("SVG rendering failed. On MacOS this can happen if",
+      "XQuartz is not installed.",
+      "You can get XQuartz here: https://www.xquartz.org/"))
+    }
     encodePlot(grDevices::svg, "image/svg+xml",
         format$width, format$height, plotFn)
   } else if (format$type == "pdf") {
@@ -680,8 +701,12 @@ slServer <- function(
   } else {
     appDirList <- list(appDir, slDir)
   }
-  s <- rrpcServer(host=host, port=port, appDirs=appDirList, root="/",
-    interface=interface, initialize=initialize
+  s <- rrpcServer(host = host, port = port, appDirs = appDirList, root = "/",
+    interface = interface, initialize = initialize, testFunction = function() {
+      tmp <- tempfile(pattern = "test", fileext = "svg")
+      grDevices::svg(file = tmp, width = 7, height = 7)
+      grDevices::dev.off()
+    }
   )
   message("Listening on ", host, ":", port)
   if (is.null(port)) {

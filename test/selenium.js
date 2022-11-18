@@ -1,6 +1,7 @@
 "use strict";
 
 const fscb = require('fs');
+const http = require('http');
 const net = require('net');
 const os = require('os');
 const path = require('path');
@@ -9,6 +10,7 @@ const { Builder, By, Key, Origin, until } = require('selenium-webdriver');
 const { describe, before, after, it } = require('mocha');
 const assert = require("assert");
 const { PNG } = require("pngjs");
+const { URL } = require( 'url');
 const Chrome = require('selenium-webdriver/chrome');
 const Firefox = require('selenium-webdriver/firefox');
 const floor = Math.floor;
@@ -45,8 +47,20 @@ const fs = {
             });
         });
     },
-
 };
+
+// easy-to-use HTTP Get, returning status
+function httpGetStatus(path) {
+    return new Promise(function(resolve, reject) {
+        let req = http.request(new URL(path), function(response) {
+            resolve(response.statusCode);
+        });
+        req.on('error', function() {
+            reject();
+        });
+        req.end();
+    });
+}
 
 // We will remove all files in the directory and delete the directory
 // We will not worry about directories within directories
@@ -132,8 +146,9 @@ async function makeTempDir() {
 
 async function startSelenium(tmpdir) {
     let firefoxOptions = new Firefox.Options();
+    let firefoxService = new Firefox.ServiceBuilder();
     let chromeOptions = new Chrome.Options();
-        if (typeof(tmpdir) === 'string') {
+    if (typeof(tmpdir) === 'string') {
         // Prevent Firefox from opening up a download dialog when a CSV file is requested
         firefoxOptions.
             setPreference('browser.download.folderList', 2).  // do not use default download directory
@@ -141,6 +156,7 @@ async function startSelenium(tmpdir) {
             setPreference('browser.download.dir', tmpdir).
             setPreference('browser.helperApps.neverAsk.saveToDisk', 'text/*').
             setPreference('browser.download.alwaysOpenPanel', false);
+        firefoxService.addArguments('--profile-root', tmpdir);
         chromeOptions.setUserPreferences({
             'profile.default_content_settings.popups': 0,
             'download.prompt_for_download': 'false',
@@ -149,6 +165,7 @@ async function startSelenium(tmpdir) {
     }
     const driver = new Builder().forBrowser(getBrowser()).
         setFirefoxOptions(firefoxOptions).
+        setFirefoxService(firefoxService).
         setChromeOptions(chromeOptions).
         build();
     await driver.manage().setTimeouts({ implicit: 1000 });
@@ -169,9 +186,9 @@ describe('shinylight framework', function() {
 
     after(async function() {
         this.timeout(4000);
-        await rmrf(tmpdir);
-        await kill(rProcess);
         await driver.quit();
+        await kill(rProcess);
+        await rmrf(tmpdir);
     });
 
     beforeEach(async function() {
@@ -611,17 +628,20 @@ describe('shinylight framework', function() {
 describe('shinylight framework with preinitialization from R', function() {
     let rProcess;
     let driver;
+    let tmpdir;
 
     before(async function() {
         this.timeout(15000);
         rProcess = spawnR('test/run.R', 'test/init1.json');
-        driver = await startSelenium();
+        tmpdir = await makeTempDir();
+        driver = await startSelenium(tmpdir);
     });
 
     after(async function() {
         this.timeout(3000);
-        await kill(rProcess);
         await driver.quit();
+        await kill(rProcess);
+        await rmrf(tmpdir);
     });
 
     beforeEach(async function() {
@@ -644,23 +664,34 @@ describe('shinylight framework with preinitialization from R', function() {
 describe('freeform shinylight', function() {
     let rProcess;
     let driver;
+    let tmpdir;
 
     before(async function() {
         this.timeout(15000);
         rProcess = spawnR('test/run_freeform.R');
-        driver = await startSelenium();
+        tmpdir = await makeTempDir();
+        driver = await startSelenium(tmpdir);
     });
 
     after(async function() {
         this.timeout(4000);
-        await kill(rProcess);
         await driver.quit();
+        await kill(rProcess);
+        await rmrf(tmpdir);
     });
 
     beforeEach(async function() {
         this.timeout(20000);
         await portIsOpen(8001);
         await driver.get('http://localhost:8001');
+    });
+
+    it('returns 200 from the test endpoint', async function() {
+        this.timeout(9995000);
+        let unknown = await httpGetStatus('http://localhost:8001/doesnotexist');
+        assert(unknown == 404);
+        let test = await httpGetStatus('http://localhost:8001/test');
+        assert(test == 200);
     });
 
     it('calls R that returns a data frame', async function() {
@@ -760,17 +791,20 @@ describe('freeform shinylight', function() {
 describe('minimal shinylight', function() {
     let rProcess;
     let driver;
+    let tmpdir;
 
     before(async function() {
         this.timeout(15000);
         rProcess = spawnR('test/run_minimal.R');
-        driver = await startSelenium();
+        tmpdir = await makeTempDir();
+        driver = await startSelenium(tmpdir);
     });
 
     after(async function() {
         this.timeout(4000);
-        await kill(rProcess);
         await driver.quit();
+        await kill(rProcess);
+        await rmrf(tmpdir);
     });
 
     beforeEach(async function() {
