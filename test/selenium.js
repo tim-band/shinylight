@@ -339,7 +339,7 @@ describe('shinylight framework', function() {
     });
 
     it('outputs unheadered tables', async function() {
-        this.timeout(9993000);
+        this.timeout(3000);
         await switchFunction(driver, ['middles', 'test3']);
         const input = [['2', '3'], ['1', '1'], ['4', '3'], ['3', '1']];
         await enterCellText(driver, 0, 0, ...input);
@@ -687,7 +687,7 @@ describe('freeform shinylight', function() {
     });
 
     it('returns 200 from the test endpoint', async function() {
-        this.timeout(9995000);
+        this.timeout(5000);
         let unknown = await httpGetStatus('http://localhost:8001/doesnotexist');
         assert(unknown == 404);
         let test = await httpGetStatus('http://localhost:8001/test');
@@ -747,7 +747,7 @@ describe('freeform shinylight', function() {
         }
     });
 
-    describe('pass data to framework mechanism', function() {
+    describe('passing data to framework mechanism', function() {
         var frameworkProcess = null;
 
         before(async function() {
@@ -761,7 +761,7 @@ describe('freeform shinylight', function() {
         });
 
         it('works', async function() {
-            this.timeout(99910000);
+            this.timeout(10000);
             await enterCellText(driver, 0, 0, ['2', '0'], ['3', '4'], ['10', '11'], ['21', '2']);
             await clickId(driver, 'button-plot');
             await assertOutputCells(driver, 0, 0, 4, 1, [

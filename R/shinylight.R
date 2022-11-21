@@ -416,8 +416,8 @@ encodePlot <- function(device, mimeType, width, height, plotFn) {
       file = tempfilename,
       width = as.numeric(width),
       height = as.numeric(height)
-    )}
-  )
+    )
+  })
   data <- plotFn()
   plot <- NULL
   if (grDevices::dev.cur() != 1) {
@@ -454,7 +454,20 @@ validateAndEncodePlotAs <- function(format, plotFn) {
   }
 }
 
-svgCapable <- all(capabilities()[c("X11", "cairo")])
+can_render_svg <- function() {
+  tmp <- tempfile(pattern = "test", fileext = "svg")
+  grDevices::svg(file = tmp, width = 7, height = 7)
+  grDevices::dev.off()
+}
+
+svgCapable <- tryCatch({
+    can_render_svg()
+    TRUE
+  },
+  error =  function() {
+    FALSE
+  }
+)
 
 #' Renders a plot as a base64-encoded PNG
 #'
@@ -702,11 +715,7 @@ slServer <- function(
     appDirList <- list(appDir, slDir)
   }
   s <- rrpcServer(host = host, port = port, appDirs = appDirList, root = "/",
-    interface = interface, initialize = initialize, testFunction = function() {
-      tmp <- tempfile(pattern = "test", fileext = "svg")
-      grDevices::svg(file = tmp, width = 7, height = 7)
-      grDevices::dev.off()
-    }
+    interface = interface, initialize = initialize, testFunction = can_render_svg
   )
   message("Listening on ", host, ":", port)
   if (is.null(port)) {
