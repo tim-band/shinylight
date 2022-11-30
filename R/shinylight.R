@@ -435,7 +435,7 @@ validateAndEncodePlotAs <- function(format, plotFn) {
   if (!is.list(format)) {
     list(
       result = NULL,
-      error = "rrpc.resultformat specified but not as {type=[,height=,width=]}"
+      error = "rrpc.resultformat specified but not as {type=[height=,width=]}"
     )
   } else {
     valid <- c('pdf', 'png', 'svg', 'csv')
@@ -480,9 +480,15 @@ svgCapable <- tryCatch({
 #' anyway.
 #'
 #' @param format An object specifying the output, with the following members:
-#' format$type is \code{"png"}, \code{"pdf"} or \code{"csv"}, and
+#' \code{format$type} is \code{"png"}, \code{"pdf"} or \code{"csv"}, and
 #' \code{format$width} and \code{format$height} are
 #' the dimensions of the PDF (in inches) or PNG (in pixels) if appropriate.
+#' If \code{format$type} is \code{"png"} then \code{format$useDingbats}
+#' can be set to \code{TRUE} (the default) to permit plotted circles to be
+#' rendered with the Dingbats fonts or \code{FALSE} to force them to be
+#' rendered as polygons with many sides. Polygons always work even in
+#' viewers that do not include the Dingbats font (as is required by the PDF
+#' standard), but Dingbats circles look better.
 #' @param plotFn Function to call to perform the plot
 #' @return list with two keys, whose values can each be NULL:
 #' \code{'plot'} is a plot in HTML img src form and \code{'data'} is a
@@ -518,7 +524,14 @@ encodePlotAs <- function(format, plotFn) {
     encodePlot(grDevices::svg, "image/svg+xml",
         format$width, format$height, plotFn)
   } else if (format$type == "pdf") {
-    encodePlot(grDevices::pdf, "application/pdf",
+    fn <- grDevices::pdf
+    if (!is.null(format$useDingbats)) {
+      dingbats <- format$useDingbats
+      fn <- function(file, ...) {
+        grDevices::pdf(file, useDingbats = dingbats, ...)
+      }
+    }
+    encodePlot(fn, "application/pdf",
         format$width, format$height, plotFn)
   } else {
     stop(paste("Did not understand plot type", type))

@@ -65,6 +65,10 @@
     "autorefresh": {
       "name": "Automatic refresh",
       "help": "Recalculate the plot and table automatically whenever the input or options change"
+    },
+    "dingbatsInPdf": {
+      "name": "Dingbats in PDFs",
+      "help": "Use Dingbats symbols for circles in PDF plots (looks better but does not work in some PDF viewers)"
     }
   },
   "gridmenu": {

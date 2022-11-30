@@ -8,9 +8,15 @@ encodePlotAs(format, plotFn)
 }
 \arguments{
 \item{format}{An object specifying the output, with the following members:
-format$type is \code{"png"}, \code{"pdf"} or \code{"csv"}, and
+\code{format$type} is \code{"png"}, \code{"pdf"} or \code{"csv"}, and
 \code{format$width} and \code{format$height} are
-the dimensions of the PDF (in inches) or PNG (in pixels) if appropriate.}
+the dimensions of the PDF (in inches) or PNG (in pixels) if appropriate.
+If \code{format$type} is \code{"png"} then \code{format$useDingbats}
+can be set to \code{TRUE} (the default) to permit plotted circles to be
+rendered with the Dingbats fonts or \code{FALSE} to force them to be
+rendered as polygons with many sides. Polygons always work even in
+viewers that do not include the Dingbats font (as is required by the PDF
+standard), but Dingbats circles look better.}
 
 \item{plotFn}{Function to call to perform the plot}
 }

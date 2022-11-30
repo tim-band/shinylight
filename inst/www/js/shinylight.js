@@ -152,6 +152,9 @@ var shinylight = function () {
                     var f = {
                         type: extra.imgType
                     };
+                    if ('useDingbats' in extra) {
+                        f.useDingbats = extra.useDingbats;
+                    }
                     params['rrpc.resultformat'] = f;
                     if (extra.imgType === 'png') {
                         f.width = 300;

@@ -101,11 +101,16 @@ It is a list with the following members:
   There is one special key in the \code{optiongroups} list; this is the
   \code{framework} key. This is reserved for options that apply to
   the framework itself, not to any of your functions. So far, the only
-  option it has is \code{autorefresh=list(type="b", initial=FALSE)}.
-  You can set its initial value to \code{TRUE} if you prefer. If you add
-  this option, it controls whether the GUI has a "Calculate" button
-  (\code{FALSE}) or whether the output should refresh a second or
-  two after the user finishes changing parameters (\code{TRUE}).
+  options it has are \code{autorefresh=list(type="b", initial=FALSE)}
+  and \code{dingbatsInPdf=list(type="b", initial=FALSE)}.
+  If you set \code{autorefresh} an option will appear that controls
+  whether the GUI has a "Calculate" button (\code{FALSE}) or
+  whether the output should refresh a second or two after the user
+  finishes changing parameters (\code{TRUE}). If you set
+  \code{dingbatsInPdf} an option will appear that controls whether
+  the circular plot symbols are rendered in PDFs with a character
+  in the Zapf Dingbats font (which looks better) or as a polygon
+  (which works in more PDF viewers).
 }}
 
 }\section{Localization}{

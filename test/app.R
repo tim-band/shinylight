@@ -142,7 +142,8 @@ optiongroups <- list(
     bg=list(type="color", initial='#FFF')
   ),
   framework=list(
-    autorefresh=list(type="b", initial=FALSE)
+    autorefresh=list(type="b", initial=FALSE),
+    dingbatsInPdf=list(type="b", initial=TRUE)
   )
 )
 
