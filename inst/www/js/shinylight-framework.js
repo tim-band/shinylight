@@ -1029,6 +1029,10 @@ function shinylightFrameworkStart(options) {
       };
       reader.readAsText(file);
     }, buttonTranslations, createFileInput);
+    var clearData = toolkit.button('cleardata', function() {
+      var cs = new Array(inputGrid.columnCount()).fill([null]);
+      inputGrid.setColumnArray(cs);
+    }, buttonTranslations);
     var plotFooter = toolkit.banner({
       downloadPlot: toolkit.button('download-pdf',
         downloadPdf, translations(['framework', 'buttons']))
@@ -1040,7 +1044,7 @@ function shinylightFrameworkStart(options) {
           downloadCsv(outputTable, 'output.csv')
           setTimeout(callback, 200);
         },
-        translations(['framework', 'buttons'])
+        buttonTranslations
       )
     }, 'output-footer');
     var outputDebugPage = toolkit.stack();
@@ -1056,7 +1060,7 @@ function shinylightFrameworkStart(options) {
         function() {
           downloadJsonText('debug.json', debugJson);
         },
-        translations(['framework', 'buttons'])
+        buttonTranslations
       )
     }, 'output-footer');
     debugFooter.setData = function(json) {
@@ -1077,6 +1081,7 @@ function shinylightFrameworkStart(options) {
     var leftFooter = toolkit.banner({
       savedata: saveData,
       loaddata: loadData,
+      cleardata: clearData,
       calculate: calculate1
     }, 'input-footer')
     var leftPane = toolkit.footer(leftFooter, inputPane);

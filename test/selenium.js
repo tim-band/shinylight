@@ -465,6 +465,15 @@ describe('shinylight framework', function() {
         await loadAndAssert(contents2, input2);
     });
 
+    it('clears input data', async function() {
+        this.timeout(8000);
+        await switchFunction(driver, 'test5');
+        const input1 = [['4', '3'], ['1', '8.9'], ['3', '1'], ['1', '-4']];
+        await enterCellText(driver, 0, 0, ...input1);
+        await clickId(driver, 'button-cleardata');
+        await assertInputCells(driver, 0, 0, 1, 2, [['', '']]);
+    });
+
     it('allows R code to be run from the client side', async function() {
         this.timeout(2000);
         const result = await executeRrpc(driver, "2+2");
@@ -762,6 +771,7 @@ describe('freeform shinylight', function() {
 
         it('works', async function() {
             this.timeout(10000);
+            await driver.wait(until.elementLocated(By.css('#button-plot')));
             await enterCellText(driver, 0, 0, ['2', '0'], ['3', '4'], ['10', '11'], ['21', '2']);
             await clickId(driver, 'button-plot');
             await assertOutputCells(driver, 0, 0, 4, 1, [

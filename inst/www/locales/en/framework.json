@@ -49,6 +49,10 @@
     "loaddata": {
       "name": "Load Data",
       "help": "Set parameters from a file"
+    },
+    "cleardata": {
+      "name": "Clear",
+      "help": "Clear the input table"
     }
   },
   "labels": {
