@@ -353,6 +353,18 @@ describe('shinylight framework', function() {
         await assertElementText(driver, outputCell(0,2), '');
     });
 
+    it('ignores trailing blank rows', async function() {
+        this.timeout(3000);
+        await switchFunction(driver, ['middles', 'test3']);
+        const input = [['2', '3'], ['1', '1'], ['4', '3'], ['3', '1'], ['', ''], ['', ''], ['', '']];
+        await enterCellText(driver, 0, 0, ...input);
+        await clickCalculate(driver);
+        // we should be on the table tab when the calculation returns
+        // because toolkit pushes you onto pages with data on them
+        await assertElementCss(driver, '#output-tab-table.active');
+        await assertOutputRowCount(driver, 4);
+    });
+
     it('autorefreshes', async function() {
         this.timeout(12000);
         await typeIn(driver, inputCell(0,0), '5');
@@ -1276,6 +1288,11 @@ async function assertSubheaders(driver, expectedValues) {
     const es = await driver.findElements(By.css('#input-table .subheader select'));
     const vs = await Promise.all(es.map(e => e.getAttribute('value')));
     assert.deepStrictEqual(vs, expectedValues);
+}
+
+async function assertOutputRowCount(driver, count) {
+    const rs = await driver.findElements(By.css('#output-table tbody tr'));
+    assert.equal(rs.length, count);
 }
 
 async function assertOutputCells(driver, r, c, rowCount, columnCount, expectedCells) {

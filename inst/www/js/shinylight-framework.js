@@ -354,6 +354,22 @@ function shinylightFrameworkStart(options) {
     toolkit.forEach(headerParams, function(id, columnIndex) {
       p[id] = getColumn(columnIndex);
     });
+    // find number of useful rows (ignoring trailing empty rows)
+    var usefulCount = 0;
+    toolkit.forEach(headerParams, function(id) {
+      var col = p[id];
+      for (var i = col.length; i !== usefulCount; --i) {
+        var e = col[i - 1];
+        if (!isNaN(e) && e !== '') {
+          usefulCount = i;
+          return;
+        }
+      }
+    });
+    // truncate columns
+    toolkit.forEach(headerParams, function(id) {
+      p[id].length = usefulCount;
+    });
     // parameters from the main screen
     addMainParams(p);
     // relevant options
