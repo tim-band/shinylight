@@ -1045,9 +1045,10 @@ function shinylightFrameworkStart(options) {
       };
       reader.readAsText(file);
     }, buttonTranslations, createFileInput);
-    var clearData = toolkit.button('cleardata', function() {
+    var clearData = toolkit.button('cleardata', function(callback) {
       var cs = new Array(inputGrid.columnCount()).fill([null]);
       inputGrid.setColumnArray(cs);
+      callback();
     }, buttonTranslations);
     var plotFooter = toolkit.banner({
       downloadPlot: toolkit.button('download-pdf',
