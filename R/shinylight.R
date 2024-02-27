@@ -164,19 +164,19 @@ getMultipartFormData <- function(req, ctes) {
       boundary <- paste0("--", kv[[2]])
     }
   }
-  endboundary <- paste0(boundary, '--')
+  endboundary <- paste0(boundary, "--")
   lines <- req$rook.input$read_lines()
   lines <- splitVector(lines, endboundary)[[1]]
   sections <- list()
   for (section in splitVector(lines, boundary)) {
-    s <- splitVector(section, '')
+    s <- splitVector(section, "")
     if (1 < length(s)) {
       headers <- s[[1]]
       name_headers <- headers[grep('; *name="', headers)]
       if (0 < name_headers) {
         name <- sub('^.*; *name="([^""]*)".*$', "\\1", name_headers[1])
         paragraphs <- lapply(s[2:length(s)], unlines)
-        body <- paste(paragraphs, collapse="\n\n")
+        body <- paste(paragraphs, collapse = "\n\n")
         sections[[name]] <- body
       }
     }
@@ -199,7 +199,10 @@ getFormData <- function(req) {
     kve <- strsplit(kv, "=")[[1]]
     if (1 < length(kve)) {
       k <- kve[[1]]
-      v <- URLdecode(kve[[2]])
+      # Replace +s from the URL decoded string with spaces,
+      # because URLdecode does not do this itself.
+      v <- gsub("+", "%20", kve[[2]], fixed=TRUE)
+      v <- URLdecode(v)
       sections[[k]] <- v
     }
   }

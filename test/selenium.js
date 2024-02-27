@@ -484,6 +484,8 @@ describe('shinylight framework', function() {
         await enterCellText(driver, 0, 0, ...input1);
         await clickId(driver, 'button-cleardata');
         await assertInputCells(driver, 0, 0, 1, 2, [['', '']]);
+        // we should be focused on the top left cell
+        await assertElementCss(driver, '#input-table tbody tr:first-child td:nth-child(2).anchor');
     });
 
     it('allows R code to be run from the client side', async function() {
@@ -613,11 +615,29 @@ describe('shinylight framework', function() {
     });
 
     describe('preinitialization', function() {
-        it('sets the grid appropriately', async function() {
+        it('sets the grid appropriately with normal data', async function() {
             this.timeout(5000);
             const cells = [[10, 4], [9, 5], [8, 6], [7, 7]];
             const c1 = cells.map(row => row[0]);
             const c2 = cells.map(row => row[1]);
+            const settings = `{"fn":"test1","parameters":{"units":["mm","kg",""],"c1":[${c1}],"c2":[${c2}],"type":"p","factor":1,"offset":0,"pch":1,"bg":"#000000"}}`;
+            await preinitialze(driver, settings);
+            await assertInputCells(driver, 0, 0, cells.length, 2, cells);
+        });
+        it('sets the grid appropriately with multipart form data', async function() {
+            this.timeout(5000);
+            const cells = [[10, 4], [9, 5], [8, 6], [7, 7]];
+            const c1 = cells.map(row => row[0]);
+            const c2 = cells.map(row => row[1]);
+            const settings = `{"fn":"test1","parameters":{"units":["mm","kg",""],"c1":[${c1}],"c2":[${c2}],"type":"p","factor":1,"offset":0,"pch":1,"bg":"#000000"}}`;
+            await preinitialze(driver, settings, '-mfd');
+            await assertInputCells(driver, 0, 0, cells.length, 2, cells);
+        });
+        it('sets the grid appropriately, even with spaces', async function() {
+            this.timeout(5000);
+            const cells = [[10, 4], [9, 5], [8, 6], [7, 7]];
+            const c1 = cells.map(row => row[0]);
+            const c2 = cells.map(row => `${row[1]}   `);
             const settings = `{"fn":"test1","parameters":{"units":["mm","kg",""],"c1":[${c1}],"c2":[${c2}],"type":"p","factor":1,"offset":0,"pch":1,"bg":"#000000"}}`;
             await preinitialze(driver, settings);
             await assertInputCells(driver, 0, 0, cells.length, 2, cells);
@@ -1073,13 +1093,13 @@ function getSvg(data) {
     });
     xTicks.sort((x,y) => x - y);
     yTicks.sort((x,y) => x - y);
-    let potentialPoints = data.match(/<path [^>]*style="([^";]+;)*\bfill: *rgb[^>]*>/mg);
+    let potentialPoints = data.match(/<path [^>]*\bfill="rgb\([^>]*>/mg);
     if (!potentialPoints) {
         potentialPoints = [];
     }
     const coords = [];
     potentialPoints.forEach(pp => {
-        const rgb = pp.match(/\bstyle="[^"]*\bfill: *rgb\(([0-9]+)%,([0-9]+)%,([0-9]+)%\)/m);
+        const rgb = pp.match(/\bfill="rgb\( *([0-9]+)%, *([0-9]+)%, *([0-9]+)% *\)/m);
         if (rgb && 40 < Number(rgb[1]) && 40 < Number(rgb[2]) && Number(rgb[3]) < 40) {
             const d = pp.match(/\bd="([^"]*)"/m);
             if (d) {
@@ -1489,9 +1509,12 @@ function findDot(png, index, d, count, defaultReturn) {
     return defaultReturn;
 }
 
-async function preinitialze(driver, text) {
+async function preinitialze(driver, text, id_postfix) {
+    if (typeof(id_postfix) === 'undefined') {
+        id_postfix = '';
+    }
     await driver.get('http://localhost:8000/test_init.html');
-    const box = await driver.findElement(By.id('data'));
+    const box = await driver.findElement(By.id('data' + id_postfix));
     await box.sendKeys(text);
-    await driver.findElement(By.id('submit')).click();
+    await driver.findElement(By.id('submit' + id_postfix)).click();
 }
