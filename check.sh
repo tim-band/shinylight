@@ -1,7 +1,7 @@
 #!/bin/sh
 # Check this R package for upload to CRAN.
 # Don't forget to set the version in the DESCRIPTION file!
-Rscript -e "devtools::document()"
+Rscript -e "roxygen2::roxygenize()"
 npm run prepare
 version=$(awk '$1=="Version:" {print $2}' < DESCRIPTION)
 if [ -z "${version}" ]
