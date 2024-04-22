@@ -193,8 +193,8 @@ describe('shinylight framework', function() {
 
     beforeEach(async function() {
         this.timeout(20000);
-        await portIsOpen(8000);
-        await driver.get('http://localhost:8000/test.html');
+        await portIsOpen(58110);
+        await driver.get('http://localhost:58110/test.html');
     });
 
     it('selects parameters based on function chosen', async function() {
@@ -687,8 +687,8 @@ describe('shinylight framework with preinitialization from R', function() {
 
     beforeEach(async function() {
         this.timeout(4000);
-        await portIsOpen(8000);
-        await driver.get('http://localhost:8000/');
+        await portIsOpen(58110);
+        await driver.get('http://localhost:58110/');
     });
 
     it('sets the input grid', async function() {
@@ -723,15 +723,15 @@ describe('freeform shinylight', function() {
 
     beforeEach(async function() {
         this.timeout(20000);
-        await portIsOpen(8001);
-        await driver.get('http://localhost:8001');
+        await portIsOpen(58111);
+        await driver.get('http://localhost:58111');
     });
 
     it('returns 200 from the test endpoint', async function() {
         this.timeout(5000);
-        let unknown = await httpGetStatus('http://localhost:8001/doesnotexist');
+        let unknown = await httpGetStatus('http://localhost:58111/doesnotexist');
         assert(unknown == 404);
-        let test = await httpGetStatus('http://localhost:8001/test');
+        let test = await httpGetStatus('http://localhost:58111/test');
         assert(test == 200);
     });
 
@@ -794,7 +794,7 @@ describe('freeform shinylight', function() {
         before(async function() {
             this.timeout(10000);
             frameworkProcess = spawnR('test/run.R');
-            await portIsOpen(8000);
+            await portIsOpen(58110);
         });
 
         after(async function() {
@@ -851,8 +851,8 @@ describe('minimal shinylight', function() {
 
     beforeEach(async function() {
         this.timeout(20000);
-        await portIsOpen(8000);
-        await driver.get('http://localhost:8000');
+        await portIsOpen(58110);
+        await driver.get('http://localhost:58110');
     });
 
     it('calls R that returns a vector', async function() {
@@ -1513,7 +1513,7 @@ async function preinitialze(driver, text, id_postfix) {
     if (typeof(id_postfix) === 'undefined') {
         id_postfix = '';
     }
-    await driver.get('http://localhost:8000/test_init.html');
+    await driver.get('http://localhost:58110/test_init.html');
     const box = await driver.findElement(By.id('data' + id_postfix));
     await box.sendKeys(text);
     await driver.findElement(By.id('submit' + id_postfix)).click();

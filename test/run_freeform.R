@@ -1,3 +1,3 @@
 install.packages(".",repos=NULL,type="source")
 source("test/app_freeform.R")
-testServer(8001)
+testServer(58111)

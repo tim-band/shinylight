@@ -28,6 +28,5 @@ npm test -- --fgrep 'test that I want' --browser=chrome
 
 ```sh
 ./build.sh
-_R CMD build .
-_R_CHECK_FORCE_SUGGESTS_=true _R_CHECK_CRAN_INCOMING_USE_ASPELL_=true R CMD check --as-cran shinylight_<VERSION>.tar.gz
+./check.sh
 ```

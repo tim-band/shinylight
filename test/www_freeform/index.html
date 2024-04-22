@@ -88,7 +88,7 @@ function plot(callback) {
 function send() {
     var c1 = outputTable.getColumn(0);
     var c2 = outputTable.getColumn(1);
-    shinylight.passToOther("http://localhost:8000", {
+    shinylight.passToOther("http://localhost:58110", {
         fn: "test1",
         parameters: {
             c1: c1,
