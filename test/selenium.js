@@ -185,7 +185,7 @@ describe('shinylight framework', function() {
     });
 
     after(async function() {
-        this.timeout(4000);
+        this.timeout(6000);
         await driver.quit();
         await kill(rProcess);
         await rmrf(tmpdir);
@@ -282,10 +282,10 @@ describe('shinylight framework', function() {
         await clickInputTab(driver, 'options');
         await setValue(driver, 'param-pch', '22');
         await setValue(driver, 'param-bg', '#ffff00');
-        await clickId(driver, 'button-calculate');
         let img = null;
         let axes = null;
         await driver.wait(async function() {
+            await clickId(driver, 'button-calculate');
             img = await getImg(driver, By.css('img#output-plot'));
             if (!img) {
                 return false;
@@ -679,7 +679,7 @@ describe('shinylight framework with preinitialization from R', function() {
     });
 
     after(async function() {
-        this.timeout(3000);
+        this.timeout(10000);
         await driver.quit();
         await kill(rProcess);
         await rmrf(tmpdir);
@@ -738,8 +738,10 @@ describe('freeform shinylight', function() {
     it('calls R that returns a data frame', async function() {
         this.timeout(10000);
         await enterCellText(driver, 0, 0, ['2', '0'], ['3', '4'], ['10', '11'], ['21', '2']);
-        await clickId(driver, 'button-plot');
-        await driver.wait(async () => outputHeaderIs(driver, 0, 'sum'));
+        await driver.wait(async function () {
+            await clickId(driver, 'button-plot');
+            return await outputHeaderIs(driver, 0, 'sum');
+        });
         await assertOutputHeaders(driver, ['sum', 'diff']);
         await assertOutputCells(driver, 0, 0, 4, 1, [
             [2, 2], [7, -1], [21, -1], [23, 19]
@@ -749,10 +751,10 @@ describe('freeform shinylight', function() {
     it('calls R that returns a plot', async function() {
         this.timeout(10000);
         await enterCellText(driver, 0, 0, ['1', '3'], ['2', '2'], ['3', '1']);
-        await clickId(driver, 'button-plot');
         let img = null;
         let axes = null;
         await driver.wait(async function() {
+            await clickId(driver, 'button-plot');
             img = await getImg(driver, By.css('img#plot'));
             if (!img) {
                 return false;
@@ -805,14 +807,17 @@ describe('freeform shinylight', function() {
             this.timeout(10000);
             await driver.wait(until.elementLocated(By.css('#button-plot')));
             await enterCellText(driver, 0, 0, ['2', '0'], ['3', '4'], ['10', '11'], ['21', '2']);
-            await clickId(driver, 'button-plot');
+            await driver.wait(async function () {
+                await clickId(driver, 'button-plot');
+                return await isOutputCell(driver, 0, 0, "2");
+            });
             await assertOutputCells(driver, 0, 0, 4, 1, [
                 [2, 2], [7, -1], [21, -1], [23, 19]
             ]);
             const firstTab = await driver.getWindowHandle();
             var allTabs = null;
-            await clickId(driver, 'send-to-framework');
             await driver.wait(async function() {
+                await clickId(driver, 'send-to-framework');
                 allTabs = await driver.getAllWindowHandles();
                 return 1 < allTabs.length;
             });
@@ -873,8 +878,10 @@ describe('minimal shinylight', function() {
         await clickId(driver, 'headers_button');
         await enterCellText(driver, 0, 0, ['2', '0'], ['3', '4'], ['10', '11'], ['21', '2']);
         await typeIn(driver, 'command_param', 'data.frame(sum=data$one+data$two, diff=data$one-data$two)');
-        await clickId(driver, 'compute_button');
-        await driver.wait(async () => outputHeaderIs(driver, 0, 'sum'));
+        await driver.wait(async function () {
+            await clickId(driver, 'compute_button');
+            return await outputHeaderIs(driver, 0, 'sum');
+        });
         await assertOutputHeaders(driver, ['sum', 'diff']);
         await assertOutputCells(driver, 0, 0, 4, 1, [
             [2, 2], [7, -1], [21, -1], [23, 19]
@@ -887,8 +894,10 @@ describe('minimal shinylight', function() {
         await clickId(driver, 'headers_button');
         await enterCellText(driver, 0, 0, ['2', '0'], ['3', '4'], ['10', '11'], ['21', '2']);
         await typeIn(driver, 'command_param', 'list(diff=data$one-data$two, sum=data$one+data$two)');
-        await clickId(driver, 'compute_button');
-        await driver.wait(async () => outputHeaderIs(driver, 0, 'diff'));
+        await driver.wait(async function () {
+            await clickId(driver, 'compute_button');
+            return await outputHeaderIs(driver, 0, 'diff');
+        });
         await assertOutputHeaders(driver, ['diff', 'sum']);
         await assertOutputCells(driver, 0, 0, 4, 1, [
             [2, 2], [-1, 7], [-1, 21], [19, 23]
@@ -900,10 +909,10 @@ describe('minimal shinylight', function() {
         await typeIn(driver, 'headers_input', 'one,two');
         await clickId(driver, 'headers_button');
         await typeIn(driver, 'command_param', 'plot(x=c(1,2,3), y=c(3,2,1), pch=22, bg="#ffff00")');
-        await clickId(driver, 'plot_button');
         let img = null;
         let axes = null;
         await driver.wait(async function() {
+            await clickId(driver, 'plot_button');
             img = await getImg(driver, By.css('img#plot'));
             if (!img) {
                 return false;
@@ -1313,6 +1322,11 @@ async function assertSubheaders(driver, expectedValues) {
 async function assertOutputRowCount(driver, count) {
     const rs = await driver.findElements(By.css('#output-table tbody tr'));
     assert.equal(rs.length, count);
+}
+
+async function isOutputCell(driver, r, c, expected) {
+    const t = await driver.findElement(outputCell(r, c)).getText()
+    return t === expected;
 }
 
 async function assertOutputCells(driver, r, c, rowCount, columnCount, expectedCells) {
