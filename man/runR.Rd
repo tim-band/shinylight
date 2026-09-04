@@ -33,7 +33,7 @@ rrpc.call("runR", \{
 }
 \examples{
 server <- slServer(
-  port = 50050,
+  port = 50051,
   interface = list(
     run_the_users_r_code = runR(
       list("c", "$", "list", "+", "-", "/", "*", "sqrt")

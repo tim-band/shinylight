@@ -487,9 +487,6 @@ svgCapable <- tryCatch({
 #' \code{format$width} and \code{format$height} are
 #' the dimensions of the PDF (in inches) or PNG (in pixels) if appropriate.
 #' @param plotFn Function to call to perform the plot
-#' @return list with two keys, whose values can each be NULL:
-#' \code{'plot'} is a plot in HTML img src form and \code{'data'} is a
-#' data frame or other non-plot result.
 #' @seealso \code{\link{rrpcServer}}
 #' @return A list with an element named \code{plot} containing the
 #' plot encoded as required either for an HTML \code{image} element's
