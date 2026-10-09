@@ -134,11 +134,20 @@ var shinylight = function () {
             plotElement = getElement(plotElement);
             if (plotElement) {
                 if ('imgType' in extra && extra.imgType === 'svg') {
-                    const dpi = 72;
+                   /**
+		    * Render on a device of fixed height (7 inches, like the
+                    * default R devices and the PDF output) with the aspect
+                    * ratio of the element. Fonts and layouts therefore have
+                    * the same proportions regardless of the window size;
+                    * the browser scales the SVG to fit the element.
+		    */
+                    const refSize = 7;
+                    const aspect = plotElement.clientHeight > 0 ?
+                        plotElement.clientWidth / plotElement.clientHeight : 1;
                     params['rrpc.resultformat'] = {
                         type: 'svg',
-                        width: plotElement.clientWidth / dpi,
-                        height: plotElement.clientHeight / dpi
+                        width: refSize * aspect,
+                        height: refSize
                     };
                 } else {
                     params['rrpc.resultformat'] = {
